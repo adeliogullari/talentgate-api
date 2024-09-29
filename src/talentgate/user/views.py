@@ -36,13 +36,11 @@ InvalidAuthorizationException = HTTPException(
 )
 
 InvalidVerificationException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN,
-    detail="Invalid verification"
+    status_code=HTTP_403_FORBIDDEN, detail="Invalid verification"
 )
 
 InvalidPasswordException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN,
-    detail="Invalid password"
+    status_code=HTTP_403_FORBIDDEN, detail="Invalid password"
 )
 
 UserNotFoundByIdException = HTTPException(
@@ -52,17 +50,15 @@ UserNotFoundByIdException = HTTPException(
 
 UserNotFoundByEmailException = HTTPException(
     status_code=HTTP_404_NOT_FOUND,
-    detail="The user with the provided email does not exist."
+    detail="The user with the provided email does not exist.",
 )
 
 UsernameAlreadyExistsException = HTTPException(
-    status_code=HTTP_409_CONFLICT,
-    detail="A user with this username already exists"
+    status_code=HTTP_409_CONFLICT, detail="A user with this username already exists"
 )
 
 EmailAlreadyExistsException = HTTPException(
-    status_code=HTTP_409_CONFLICT,
-    detail="A user with this email already exists"
+    status_code=HTTP_409_CONFLICT, detail="A user with this email already exists"
 )
 
 router = APIRouter(tags=["user"])

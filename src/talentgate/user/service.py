@@ -16,7 +16,9 @@ password_hash_library = PasswordHashLibrary(settings.password_hash_algorithm)
 async def create(*, sqlmodel_session: Session, user: CreateUserRequest) -> User:
     password = password_hash_library.encode(password=user.password)
 
-    created_user = User(**user.model_dump(exclude_unset=True, exclude={'password'}), password=password)
+    created_user = User(
+        **user.model_dump(exclude_unset=True, exclude_none=True, exclude={"password"}), password=password
+    )
 
     sqlmodel_session.add(created_user)
     sqlmodel_session.commit()
@@ -54,8 +56,6 @@ async def retrieve_by_query_parameters(
 ) -> Sequence[User]:
     offset = query_parameters.offset
     limit = query_parameters.limit
-    print('zekeriya')
-    print(query_parameters)
     filters = {
         getattr(User, attr) == value
         for attr, value in query_parameters.model_dump(

@@ -1,3 +1,4 @@
+from tests.user.conftest import user, make_user
 import pytest
 from typing import Any, AsyncGenerator
 from fastapi import FastAPI
@@ -6,6 +7,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from config import Settings, get_settings
 
 from src.talentgate.user.views import router as user_router
+from src.talentgate.auth.views import router as auth_router
 
 from src.talentgate.database.service import get_sqlmodel_session
 
@@ -19,6 +21,7 @@ engine = create_engine(
 async def start_application() -> FastAPI | None:
     app = FastAPI()
     app.include_router(user_router)
+    app.include_router(auth_router)
     return app
 
 
@@ -51,6 +54,7 @@ async def client(
 
     async def _get_settings() -> AsyncGenerator[Settings, Any]:
         yield Settings(
+            password_hash_algorithm="scrypt",
             message_digest_algorithm="blake2b",
             access_token_expiration_minutes=60,
             access_token_key="SJ6nWJtM737AZWevVdDEr4Fh0GmoyR8k",

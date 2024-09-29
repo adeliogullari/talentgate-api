@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     postgresql_host: str
     postgresql_port: str
     postgresql_database: str
+    google_client_id: str
     password_hash_algorithm: str
     message_digest_algorithm: str | None
     access_token_expiration_minutes: float

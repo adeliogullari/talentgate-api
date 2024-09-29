@@ -4,12 +4,7 @@ from pydantic import field_validator, Field, ValidationInfo, EmailStr
 
 from config import Settings
 from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
-from crypto.token import BearerToken
-
-settings = Settings()
-password_hash_library = PasswordHashLibrary(
-    algorithm=settings.testgate_password_hash_algorithm
-)
+from src.talentgate.auth.crypto.token import BearerToken
 
 
 class LoginCredentials(SQLModel):
@@ -18,9 +13,12 @@ class LoginCredentials(SQLModel):
 
 
 class LoginResponse(SQLModel):
-    email: str
     access_token: str | None
     refresh_token: str | None
+
+
+class GoogleCredentials(SQLModel):
+    token: str | None
 
 
 class RegisterCredentials(SQLModel):

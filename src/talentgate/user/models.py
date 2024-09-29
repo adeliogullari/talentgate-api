@@ -24,14 +24,14 @@ class User(SQLModel, table=True):
 
 
 class UserRequest(SQLModel):
-    firstname: str | None
-    lastname: str | None
+    firstname: str | None = None
+    lastname: str | None = None
     username: str
     email: str
     password: str
-    verified: bool | None
-    role: UserRole | None
-    image: str | None
+    verified: bool | None = None
+    role: UserRole | None = None
+    image: str | None = None
 
 
 class UserResponse(SQLModel):
@@ -40,7 +40,7 @@ class UserResponse(SQLModel):
     lastname: str | None
     username: str
     email: str
-    verified: bool
+    verified: bool | None
     role: UserRole | None
     image: str | None
 

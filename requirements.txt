@@ -1,9 +1,10 @@
+requests==2.32.3
 fastapi==0.115.0
 uvicorn==0.30.6
-starlette==0.38.5
+starlette==0.38.6
 pydantic==2.9.2
 pydantic-settings==2.5.2
 sqlmodel==0.0.22
-alembic==1.13.2
+alembic==1.13.3
 psycopg2-binary==2.9.9
 google-auth==2.35.0
