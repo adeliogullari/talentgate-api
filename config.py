@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     access_token_key: str
     access_token_algorithm: str
     access_token_type: str
-    refresh_token_expiration_days: int
+    refresh_token_expiration_days: float
     refresh_token_key: str
     refresh_token_algorithm: str
     refresh_token_type: str

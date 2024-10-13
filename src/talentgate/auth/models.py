@@ -1,10 +1,4 @@
 from sqlmodel import SQLModel
-from datetime import datetime, timedelta
-from pydantic import field_validator, Field, ValidationInfo, EmailStr
-
-from config import Settings
-from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
-from src.talentgate.auth.crypto.token import BearerToken
 
 
 class LoginCredentials(SQLModel):
@@ -34,3 +28,12 @@ class RegisterResponse(SQLModel):
     lastname: str
     username: str
     email: str
+
+
+class VerifyToken(SQLModel):
+    access_token: str
+
+
+class TokenVerification(SQLModel):
+    is_verified: bool
+

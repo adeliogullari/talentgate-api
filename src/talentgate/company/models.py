@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 from sqlmodel import SQLModel, Field, Relationship
 
 
@@ -31,6 +33,8 @@ class CompanyLink(SQLModel, table=True):
     id: int = Field(primary_key=True)
     type: str | None = Field(default=None)
     url: str | None = Field(default=None, max_length=2048)
+    company_id: int | None = Field(default=None, foreign_key="company.id")
+    company: Optional["Company"] = Relationship(back_populates="company_link")
 
 
 class Company(SQLModel, table=True):
@@ -39,5 +43,5 @@ class Company(SQLModel, table=True):
     id: int = Field(primary_key=True)
     name: str | None = Field(default=None)
     overview: str | None = Field(default=None)
-    locations: CompanyLocationAddress = Relationship(back_populates="company")
-    links: CompanyLink = Relationship(back_populates="company")
+    locations: List[CompanyLocationAddress] = Relationship(back_populates="company")
+    links: List[CompanyLink] = Relationship(back_populates="company")
