@@ -1,4 +1,3 @@
-from tests.user.conftest import user, make_user
 import pytest
 from typing import Any, AsyncGenerator
 from fastapi import FastAPI

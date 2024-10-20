@@ -36,4 +36,3 @@ class VerifyToken(SQLModel):
 
 class TokenVerification(SQLModel):
     is_verified: bool
-

@@ -25,6 +25,8 @@ class CompanyLocation(SQLModel, table=True):
     address: CompanyLocationAddress = Relationship(
         back_populates="company", sa_relationship_kwargs={"uselist": False}
     )
+    company_id: int | None = Field(default=None, foreign_key="company.id")
+    company: Optional["Company"] = Relationship(back_populates="company_location")
 
 
 class CompanyLink(SQLModel, table=True):
@@ -43,5 +45,5 @@ class Company(SQLModel, table=True):
     id: int = Field(primary_key=True)
     name: str | None = Field(default=None)
     overview: str | None = Field(default=None)
-    locations: List[CompanyLocationAddress] = Relationship(back_populates="company")
+    locations: List[CompanyLocation] = Relationship(back_populates="company")
     links: List[CompanyLink] = Relationship(back_populates="company")

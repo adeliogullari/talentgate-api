@@ -1,5 +1,12 @@
+from enum import Enum
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.user.models import User
+
+
+class EmployeeRole(str, Enum):
+    FOUNDER = "founder"
+    HR_MANAGER = "hr_manager"
+    RECRUITER = "recruiter"
 
 
 class EmployeeSalary(SQLModel, table=True):
@@ -17,3 +24,4 @@ class Employee(SQLModel, table=True):
     title: str | None = Field(default=None)
     user: User = Relationship(back_populates="employee")
     salary: EmployeeSalary | None = Relationship(back_populates="employee")
+    role: EmployeeRole | None = Field(default=None)

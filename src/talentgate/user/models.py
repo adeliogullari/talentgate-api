@@ -1,13 +1,12 @@
 from enum import Enum
 from datetime import datetime, UTC
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 
 
 class UserRole(str, Enum):
-    STANDARD = "standard"
-    PROFESSIONAL = "professional"
-    ENTERPRISE = "enterprise"
+    ACCOUNT_OWNER = "account_owner"
     ADMIN = "admin"
+    SUPERADMIN = "super_admin"
 
 
 class UserSubscriptionType(str, Enum):
@@ -49,7 +48,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True)
     password: bytes = Field(nullable=False)
     verified: bool = Field(default=False)
-    role: UserRole | None = Field(default=UserRole.STANDARD)
+    role: UserRole | None = Field(default=UserRole.ACCOUNT_OWNER)
     image: str | None = Field(default=None)
     # subscription: UserSubscription | None = Relationship(
     #     back_populates="user", sa_relationship_kwargs={"uselist": False}

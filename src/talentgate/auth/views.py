@@ -1,38 +1,30 @@
 import random
 import string
-from typing import List, Sequence
+
 from google.oauth2 import id_token
 from google.auth.transport import requests
-from datetime import datetime, timedelta, UTC
 
 from sqlmodel import Session
-from fastapi import Depends, APIRouter, HTTPException, Query
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from starlette.status import (
-    HTTP_400_BAD_REQUEST,
-    HTTP_403_FORBIDDEN,
-    HTTP_404_NOT_FOUND,
-    HTTP_409_CONFLICT,
-)
+from fastapi import Depends, APIRouter
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
     User,
-    UserRole,
     CreateUserRequest,
-    CreateUserResponse,
-    RetrieveUserResponse,
-    UserQueryParameters,
-    UpdateUserRequest,
-    UpdateUserResponse,
-    DeleteUserResponse,
 )
-from src.talentgate.user.views import (
+from src.talentgate.auth.exceptions import (
+    InvalidAccessTokenException,
+    InvalidRefreshTokenException,
+)
+from src.talentgate.user.exceptions import (
+    InvalidAuthorizationException,
     InvalidVerificationException,
-    InvalidPasswordException,
-    UserNotFoundByEmailException,
-    EmailAlreadyExistsException
+    IncorrectPasswordException,
+    IdNotFoundException,
+    EmailNotFoundException,
+    DuplicateUsernameException,
+    DuplicateEmailException,
 )
 from src.talentgate.auth.models import (
     LoginCredentials,
@@ -41,7 +33,7 @@ from src.talentgate.auth.models import (
     RegisterCredentials,
     RegisterResponse,
     VerifyToken,
-    TokenVerification
+    TokenVerification,
 )
 from src.talentgate.auth.crypto.token import BearerToken
 from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
@@ -57,15 +49,16 @@ async def login(
     settings: Settings = Depends(get_settings),
     credentials: LoginCredentials,
 ) -> LoginResponse:
-    bearer_token = BearerToken(algorithm=settings.message_digest_algorithm)
-    password_hash_library = PasswordHashLibrary(algorithm=settings.password_hash_algorithm)
+    password_hash_library = PasswordHashLibrary(
+        algorithm=settings.password_hash_algorithm
+    )
 
     retrieved_user = await user_service.retrieve_by_email(
         sqlmodel_session=sqlmodel_session, email=credentials.email
     )
 
     if not retrieved_user:
-        raise UserNotFoundByEmailException
+        raise EmailNotFoundException
 
     if not retrieved_user.verified:
         raise InvalidVerificationException
@@ -73,17 +66,21 @@ async def login(
     if not password_hash_library.verify(
         password=credentials.password, encoded_password=retrieved_user.password
     ):
-        raise InvalidPasswordException
+        raise IncorrectPasswordException
 
-    access_token = auth_service.generate_access_token(expiration_minutes=settings.access_token_expiration_minutes,
-                                                      user_id=retrieved_user.id,
-                                                      algorithm=settings.message_digest_algorithm,
-                                                      key=settings.access_token_key)
+    access_token = auth_service.generate_access_token(
+        expiration_minutes=settings.access_token_expiration_minutes,
+        user_id=retrieved_user.id,
+        algorithm=settings.message_digest_algorithm,
+        key=settings.access_token_key,
+    )
 
-    refresh_token = auth_service.generate_refresh_token(expiration_days=settings.refresh_token_expiration_days,
-                                                        user_id=retrieved_user.id,
-                                                        algorithm=settings.message_digest_algorithm,
-                                                        key=settings.refresh_token_key)
+    refresh_token = auth_service.generate_refresh_token(
+        expiration_days=settings.refresh_token_expiration_days,
+        user_id=retrieved_user.id,
+        algorithm=settings.message_digest_algorithm,
+        key=settings.refresh_token_key,
+    )
 
     return LoginResponse(access_token=access_token, refresh_token=refresh_token)
 
@@ -95,7 +92,6 @@ async def google(
     settings: Settings = Depends(get_settings),
     credentials: GoogleCredentials,
 ) -> LoginResponse:
-    bearer_token = BearerToken(algorithm="scrypt")
     request = requests.Request()
 
     id_info = id_token.verify_oauth2_token(
@@ -113,9 +109,13 @@ async def google(
         await user_service.create(
             sqlmodel_session=sqlmodel_session,
             user=CreateUserRequest(
-                username=''.join(random.choices(string.ascii_letters + string.digits, k=12)),
+                username="".join(
+                    random.choices(string.ascii_letters + string.digits, k=12)
+                ),
                 email=id_info["email"],
-                password=''.join(random.choices(string.ascii_letters + string.digits, k=12)),
+                password="".join(
+                    random.choices(string.ascii_letters + string.digits, k=12)
+                ),
                 verified=True,
             ),
         )
@@ -124,20 +124,26 @@ async def google(
         sqlmodel_session=sqlmodel_session, email=id_info["email"]
     )
 
-    access_token = auth_service.generate_access_token(expiration_minutes=settings.access_token_expiration_minutes,
-                                                      user_id=retrieved_user.id,
-                                                      algorithm=settings.message_digest_algorithm,
-                                                      key=settings.access_token_key)
+    access_token = auth_service.generate_access_token(
+        expiration_minutes=settings.access_token_expiration_minutes,
+        user_id=retrieved_user.id,
+        algorithm=settings.message_digest_algorithm,
+        key=settings.access_token_key,
+    )
 
-    refresh_token = auth_service.generate_refresh_token(expiration_days=settings.refresh_token_expiration_days,
-                                                        user_id=retrieved_user.id,
-                                                        algorithm=settings.message_digest_algorithm,
-                                                        key=settings.refresh_token_key)
+    refresh_token = auth_service.generate_refresh_token(
+        expiration_days=settings.refresh_token_expiration_days,
+        user_id=retrieved_user.id,
+        algorithm=settings.message_digest_algorithm,
+        key=settings.refresh_token_key,
+    )
 
     return LoginResponse(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post(path="/api/v1/auth/linkedin", response_model=LoginResponse, status_code=200)
+@router.post(
+    path="/api/v1/auth/linkedin", response_model=LoginResponse, status_code=200
+)
 async def linkedin(
     *,
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
@@ -162,9 +168,13 @@ async def linkedin(
         await user_service.create(
             sqlmodel_session=sqlmodel_session,
             user=CreateUserRequest(
-                username=''.join(random.choices(string.ascii_letters + string.digits, k=12)),
+                username="".join(
+                    random.choices(string.ascii_letters + string.digits, k=12)
+                ),
                 email=id_info["email"],
-                password=''.join(random.choices(string.ascii_letters + string.digits, k=12)),
+                password="".join(
+                    random.choices(string.ascii_letters + string.digits, k=12)
+                ),
                 verified=True,
             ),
         )
@@ -173,15 +183,19 @@ async def linkedin(
         sqlmodel_session=sqlmodel_session, email=id_info["email"]
     )
 
-    access_token = auth_service.generate_access_token(expiration_minutes=settings.access_token_expiration_minutes,
-                                                      user_id=retrieved_user.id,
-                                                      algorithm=settings.message_digest_algorithm,
-                                                      key=settings.access_token_key)
+    access_token = auth_service.generate_access_token(
+        expiration_minutes=settings.access_token_expiration_minutes,
+        user_id=retrieved_user.id,
+        algorithm=settings.message_digest_algorithm,
+        key=settings.access_token_key,
+    )
 
-    refresh_token = auth_service.generate_refresh_token(expiration_days=settings.refresh_token_expiration_days,
-                                                        user_id=retrieved_user.id,
-                                                        algorithm=settings.message_digest_algorithm,
-                                                        key=settings.refresh_token_key)
+    refresh_token = auth_service.generate_refresh_token(
+        expiration_days=settings.refresh_token_expiration_days,
+        user_id=retrieved_user.id,
+        algorithm=settings.message_digest_algorithm,
+        key=settings.refresh_token_key,
+    )
 
     return LoginResponse(access_token=access_token, refresh_token=refresh_token)
 
@@ -203,7 +217,8 @@ async def register(
         raise EmailAlreadyExistsException
 
     created_user = await user_service.create(
-        sqlmodel_session=sqlmodel_session, user=CreateUserRequest(**credentials.model_dump())
+        sqlmodel_session=sqlmodel_session,
+        user=CreateUserRequest(**credentials.model_dump()),
     )
 
     return created_user
@@ -244,7 +259,8 @@ async def refresh_token(
         raise EmailAlreadyExistsException
 
     created_user = await user_service.create(
-        sqlmodel_session=sqlmodel_session, user=CreateUserRequest(**credentials.model_dump())
+        sqlmodel_session=sqlmodel_session,
+        user=CreateUserRequest(**credentials.model_dump()),
     )
 
     return created_user

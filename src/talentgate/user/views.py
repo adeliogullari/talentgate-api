@@ -1,14 +1,8 @@
 from typing import List, Sequence
 
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
 from fastapi import Depends, APIRouter, HTTPException, Query
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from starlette.status import (
-    HTTP_400_BAD_REQUEST,
-    HTTP_403_FORBIDDEN,
-    HTTP_404_NOT_FOUND,
-    HTTP_409_CONFLICT,
-)
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
@@ -22,44 +16,21 @@ from src.talentgate.user.models import (
     UpdateUserResponse,
     DeleteUserResponse,
 )
+from src.talentgate.auth.exceptions import (
+    InvalidAccessTokenException,
+    InvalidRefreshTokenException,
+)
+from src.talentgate.user.exceptions import (
+    InvalidAuthorizationException,
+    InvalidVerificationException,
+    IncorrectPasswordException,
+    IdNotFoundException,
+    EmailNotFoundException,
+    DuplicateUsernameException,
+    DuplicateEmailException,
+)
 from src.talentgate.auth.crypto.token import BearerToken
 from config import Settings, get_settings
-
-InvalidAccessTokenException = HTTPException(
-    status_code=HTTP_400_BAD_REQUEST,
-    detail="The access token is invalid or has expired",
-)
-
-InvalidAuthorizationException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN,
-    detail="Required permissions are missing to access this resource",
-)
-
-InvalidVerificationException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN, detail="Invalid verification"
-)
-
-InvalidPasswordException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN, detail="Invalid password"
-)
-
-UserNotFoundByIdException = HTTPException(
-    status_code=HTTP_404_NOT_FOUND,
-    detail="The user with the provided id does not exist.",
-)
-
-UserNotFoundByEmailException = HTTPException(
-    status_code=HTTP_404_NOT_FOUND,
-    detail="The user with the provided email does not exist.",
-)
-
-UsernameAlreadyExistsException = HTTPException(
-    status_code=HTTP_409_CONFLICT, detail="A user with this username already exists"
-)
-
-EmailAlreadyExistsException = HTTPException(
-    status_code=HTTP_409_CONFLICT, detail="A user with this email already exists"
-)
 
 router = APIRouter(tags=["user"])
 
@@ -86,7 +57,7 @@ async def retrieve_current_user(
     )
 
     if not retrieved_user:
-        raise UserNotFoundByIdException
+        raise IdNotFoundException
 
     return retrieved_user
 
@@ -122,14 +93,14 @@ async def create_user(
     )
 
     if retrieved_user:
-        raise UsernameAlreadyExistsException
+        raise DuplicateUsernameException
 
     retrieved_user = await user_service.retrieve_by_email(
         sqlmodel_session=sqlmodel_session, email=user.email
     )
 
     if retrieved_user:
-        raise EmailAlreadyExistsException
+        raise DuplicateEmailException
 
     created_user = await user_service.create(
         sqlmodel_session=sqlmodel_session, user=user
@@ -152,7 +123,7 @@ async def retrieve_user(
     )
 
     if not retrieved_user:
-        raise UserNotFoundByIdException
+        raise IdNotFoundException
 
     return retrieved_user
 
@@ -192,7 +163,7 @@ async def update_user(
     )
 
     if not retrieved_user:
-        raise UserNotFoundByIdException
+        raise IdNotFoundException
 
     updated_user = await user_service.update(
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user, user=user
@@ -215,7 +186,7 @@ async def delete_user(
     )
 
     if not retrieved_user:
-        raise UserNotFoundByIdException
+        raise IdNotFoundException
 
     deleted_user = await user_service.delete(
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user

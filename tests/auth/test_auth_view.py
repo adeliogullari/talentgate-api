@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 from src.talentgate.user.models import User
 from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
