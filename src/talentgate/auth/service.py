@@ -37,3 +37,15 @@ def generate_refresh_token(
     headers = {"alg": algorithm, "typ": "JWT"}
 
     return bearer_token.encode(payload=payload, key=key, headers=headers)
+
+
+def verify_access_token(key: str, token: str, algorithm: str):
+    bearer_token = BearerToken(algorithm=algorithm)
+
+    return bearer_token.verify(key=key, token=token)
+
+
+def verify_refresh_token(key: str, token: str, algorithm: str):
+    bearer_token = BearerToken(algorithm=algorithm)
+
+    return bearer_token.verify(key=key, token=token)

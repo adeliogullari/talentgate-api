@@ -1,7 +1,7 @@
 requests==2.32.3
-fastapi[standard]==0.115.2
+fastapi[standard]==0.115.3
 uvicorn==0.32.0
-starlette==0.40.0
+starlette==0.41.1
 pydantic==2.9.2
 pydantic-settings==2.6.0
 sqlmodel==0.0.22

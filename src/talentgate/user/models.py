@@ -9,33 +9,11 @@ class UserRole(str, Enum):
     SUPERADMIN = "super_admin"
 
 
-class UserSubscriptionType(str, Enum):
+class UserSubscription(str, Enum):
+    FREE = "free"
     STANDARD = "standard"
     PROFESSIONAL = "professional"
     ENTERPRISE = "enterprise"
-
-
-class UserSubscriptionPlanName(str, Enum):
-    STANDARD = "standard"
-    PROFESSIONAL = "professional"
-    ENTERPRISE = "enterprise"
-
-
-class UserSubscriptionPlan(SQLModel, table=True):
-    __tablename__ = "user_subscription_plan"
-    id: int = Field(primary_key=True)
-    name: UserSubscriptionPlanName = Field(unique=True)
-    price: str = Field(gt=0)
-    billing_cycle: str = Field(default="monthly")
-
-
-class UserSubscription(SQLModel, table=True):
-    __tablename__ = "user_subscription"
-
-    id: int = Field(primary_key=True)
-    type: UserSubscriptionType | None = Field(default=UserSubscriptionType.STANDARD)
-    start_date: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    end_date: datetime | None = Field(default=None)
 
 
 class User(SQLModel, table=True):
@@ -50,9 +28,7 @@ class User(SQLModel, table=True):
     verified: bool = Field(default=False)
     role: UserRole | None = Field(default=UserRole.ACCOUNT_OWNER)
     image: str | None = Field(default=None)
-    # subscription: UserSubscription | None = Relationship(
-    #     back_populates="user", sa_relationship_kwargs={"uselist": False}
-    # )
+    subscription: UserSubscription | None = Field(default=UserSubscription.FREE)
 
 
 class UserRequest(SQLModel):
@@ -64,6 +40,7 @@ class UserRequest(SQLModel):
     verified: bool | None = None
     role: UserRole | None = None
     image: str | None = None
+    subscription: UserSubscription | None = None
 
 
 class UserResponse(SQLModel):
@@ -75,17 +52,18 @@ class UserResponse(SQLModel):
     verified: bool | None
     role: UserRole | None
     image: str | None
+    subscription: UserSubscription | None = None
 
 
-class CreateUserRequest(UserRequest):
+class CreateUser(UserRequest):
     pass
 
 
-class CreateUserResponse(UserResponse):
+class CreatedUser(UserResponse):
     pass
 
 
-class RetrieveUserResponse(UserResponse):
+class RetrievedUser(UserResponse):
     pass
 
 
@@ -98,19 +76,14 @@ class UserQueryParameters(SQLModel):
     email: str | None = None
     verified: bool | None = None
     role: UserRole | None = None
+    subscription: UserSubscription | None = None
 
 
-class UpdateUserRequest(UserRequest):
+class UpdateUser(UserRequest):
     pass
 
-
-class UpdateUserResponse(UserResponse):
+class UpdatedUser(UserResponse):
     pass
 
-
-class DeleteUserRequest(SQLModel):
-    id: str
-
-
-class DeleteUserResponse(UserResponse):
-    pass
+class DeletedUser(SQLModel):
+    id: int

@@ -3,9 +3,9 @@ from sqlmodel import select, Session
 from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
 from src.talentgate.user.models import (
     User,
-    CreateUserRequest,
+    CreateUser,
     UserQueryParameters,
-    UpdateUserRequest,
+    UpdateUser,
 )
 from config import get_settings
 
@@ -13,7 +13,7 @@ settings = get_settings()
 password_hash_library = PasswordHashLibrary(settings.password_hash_algorithm)
 
 
-async def create(*, sqlmodel_session: Session, user: CreateUserRequest) -> User:
+async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
     password = password_hash_library.encode(password=user.password)
 
     created_user = User(
@@ -72,7 +72,7 @@ async def retrieve_by_query_parameters(
 
 
 async def update(
-    *, sqlmodel_session: Session, retrieved_user: User, user: UpdateUserRequest
+    *, sqlmodel_session: Session, retrieved_user: User, user: UpdateUser
 ) -> User:
     user.password = password_hash_library.encode(password=user.password)
     retrieved_user.sqlmodel_update(user)

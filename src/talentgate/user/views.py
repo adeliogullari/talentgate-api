@@ -8,13 +8,14 @@ from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
     User,
     UserRole,
-    CreateUserRequest,
-    CreateUserResponse,
-    RetrieveUserResponse,
+    UserSubscription,
+    CreateUser,
+    CreatedUser,
+    RetrievedUser,
     UserQueryParameters,
-    UpdateUserRequest,
-    UpdateUserResponse,
-    DeleteUserResponse,
+    UpdateUser,
+    UpdatedUser,
+    DeletedUser,
 )
 from src.talentgate.auth.exceptions import (
     InvalidAccessTokenException,
@@ -79,14 +80,14 @@ class IsCurrentOrAdminUser:
 
 @router.post(
     path="/api/v1/users",
-    response_model=CreateUserResponse,
+    response_model=CreatedUser,
     status_code=201,
     dependencies=[Depends(IsAdminUser)],
 )
 async def create_user(
     *,
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    user: CreateUserRequest,
+    user: CreateUser,
 ) -> User:
     retrieved_user = await user_service.retrieve_by_username(
         sqlmodel_session=sqlmodel_session, username=user.username
@@ -111,7 +112,7 @@ async def create_user(
 
 @router.get(
     path="/api/v1/users/{user_id}",
-    response_model=RetrieveUserResponse,
+    response_model=RetrievedUser,
     status_code=200,
     dependencies=[Depends(IsCurrentOrAdminUser)],
 )
@@ -130,7 +131,7 @@ async def retrieve_user(
 
 @router.get(
     path="/api/v1/users",
-    response_model=List[RetrieveUserResponse],
+    response_model=List[RetrievedUser],
     status_code=200,
     dependencies=[Depends(IsAdminUser)],
 )
@@ -148,14 +149,14 @@ async def retrieve_users(
 
 @router.put(
     path="/api/v1/users/{user_id}",
-    response_model=UpdateUserResponse,
+    response_model=UpdatedUser,
     status_code=200,
     dependencies=[Depends(IsCurrentOrAdminUser)],
 )
 async def update_user(
     *,
     user_id: int,
-    user: UpdateUserRequest,
+    user: UpdateUser,
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
 ) -> User:
     retrieved_user = await user_service.retrieve_by_id(
@@ -174,7 +175,7 @@ async def update_user(
 
 @router.delete(
     path="/api/v1/users/{user_id}",
-    response_model=DeleteUserResponse,
+    response_model=DeletedUser,
     status_code=200,
     dependencies=[Depends(IsCurrentOrAdminUser)],
 )

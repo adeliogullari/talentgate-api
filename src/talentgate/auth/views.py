@@ -214,7 +214,7 @@ async def register(
     )
 
     if retrieved_user:
-        raise EmailAlreadyExistsException
+        raise DuplicateEmailException
 
     created_user = await user_service.create(
         sqlmodel_session=sqlmodel_session,
@@ -256,7 +256,7 @@ async def refresh_token(
     )
 
     if retrieved_user:
-        raise EmailAlreadyExistsException
+        raise DuplicateEmailException
 
     created_user = await user_service.create(
         sqlmodel_session=sqlmodel_session,
