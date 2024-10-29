@@ -2,8 +2,8 @@ from sqlmodel import Session
 from src.talentgate.user.models import (
     User,
     UserRole,
-    CreateUserRequest,
-    UpdateUserRequest,
+    CreateUser,
+    UpdateUser,
 )
 from src.talentgate.user.service import (
     create,
@@ -16,15 +16,8 @@ from src.talentgate.user.service import (
 
 
 async def test_create(sqlmodel_session: Session) -> None:
-    user = CreateUserRequest(
-        firstname="firstname",
-        lastname="lastname",
-        username="username",
-        email="username@gmail.com",
-        password="password",
-        verified=True,
-        role=UserRole.ADMIN,
-        image="image",
+    user = CreateUser(
+        username="username", email="username@gmail.com", password="password"
     )
 
     created_user = await create(sqlmodel_session=sqlmodel_session, user=user)
@@ -59,7 +52,7 @@ async def test_retrieve_by_email(sqlmodel_session: Session, user: User) -> None:
 async def test_update(sqlmodel_session: Session, make_user) -> None:
     retrieved_user = make_user()
 
-    user = UpdateUserRequest(
+    user = UpdateUser(
         firstname="new_firstname",
         lastname="new_lastname",
         username="new_username",

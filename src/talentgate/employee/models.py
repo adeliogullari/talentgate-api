@@ -3,25 +3,66 @@ from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.user.models import User
 
 
-class EmployeeRole(str, Enum):
+class EmployeeTitle(str, Enum):
     FOUNDER = "founder"
-    HR_MANAGER = "hr_manager"
     RECRUITER = "recruiter"
 
 
-class EmployeeSalary(SQLModel, table=True):
-    __tablename__ = "employee_salary"
+class EmploymentType(str, Enum):
+    REMOTE = "remote"
+    HYBRID = "hybrid"
+    ONSITE = "onsite"
 
-    id: int = Field(primary_key=True)
-    amount: float | None = Field(default=None)
-    currency: str | None = Field(default=None)
+
+class EmploymentType(str, Enum):
+    REMOTE = "remote"
+    HYBRID = "hybrid"
+    ONSITE = "onsite"
 
 
 class Employee(SQLModel, table=True):
     __tablename__ = "employee"
 
     id: int = Field(primary_key=True)
-    title: str | None = Field(default=None)
-    user: User = Relationship(back_populates="employee")
-    salary: EmployeeSalary | None = Relationship(back_populates="employee")
-    role: EmployeeRole | None = Field(default=None)
+    title: EmployeeTitle | None = Field(default=None)
+    salary: str | None = Field(default=None)
+    user_id: int | None = Field(foreign_key="user.id")
+    user: User | None = Relationship(back_populates="employee")
+
+
+User.model_rebuild()
+
+
+class EmployeeRequest(SQLModel):
+    title: EmployeeTitle | None = None
+    salary: str | None = None
+
+
+class EmployeeResponse(SQLModel):
+    id: int | None = None
+    title: EmployeeTitle | None = None
+    salary: str | None = None
+
+
+class CreateEmployee(EmployeeRequest):
+    pass
+
+
+class CreatedEmployee(EmployeeResponse):
+    pass
+
+
+class RetrievedEmployee(EmployeeResponse):
+    pass
+
+
+class UpdateEmployee(EmployeeRequest):
+    pass
+
+
+class UpdatedEmployee(EmployeeResponse):
+    pass
+
+
+class DeletedEmployee(SQLModel):
+    id: int

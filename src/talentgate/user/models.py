@@ -1,6 +1,10 @@
 from enum import Enum
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime, UTC
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from src.talentgate.employee.models import Employee
 
 
 class UserRole(str, Enum):
@@ -10,7 +14,7 @@ class UserRole(str, Enum):
 
 
 class UserSubscription(str, Enum):
-    FREE = "free"
+    BASIC = "basic"
     STANDARD = "standard"
     PROFESSIONAL = "professional"
     ENTERPRISE = "enterprise"
@@ -28,7 +32,15 @@ class User(SQLModel, table=True):
     verified: bool = Field(default=False)
     role: UserRole | None = Field(default=UserRole.ACCOUNT_OWNER)
     image: str | None = Field(default=None)
-    subscription: UserSubscription | None = Field(default=UserSubscription.FREE)
+    subscription: UserSubscription | None = Field(default=UserSubscription.BASIC)
+    created_at: datetime | None = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime | None = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC)},
+    )
+    employee: Optional["Employee"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"uselist": False}
+    )
 
 
 class UserRequest(SQLModel):
@@ -41,18 +53,22 @@ class UserRequest(SQLModel):
     role: UserRole | None = None
     image: str | None = None
     subscription: UserSubscription | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class UserResponse(SQLModel):
-    id: int | None
-    firstname: str | None
-    lastname: str | None
+    id: int | None = None
+    firstname: str | None = None
+    lastname: str | None = None
     username: str
     email: str
-    verified: bool | None
-    role: UserRole | None
-    image: str | None
+    verified: bool | None = None
+    role: UserRole | None = None
+    image: str | None = None
     subscription: UserSubscription | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class CreateUser(UserRequest):
@@ -68,10 +84,10 @@ class RetrievedUser(UserResponse):
 
 
 class UserQueryParameters(SQLModel):
-    offset: int | None = Field(100, gt=0, le=100)
-    limit: int | None = Field(0, ge=0)
-    firstname: str | None
-    lastname: str | None
+    offset: int | None = None
+    limit: int | None = None
+    firstname: str | None = None
+    lastname: str | None = None
     username: str | None = None
     email: str | None = None
     verified: bool | None = None
@@ -82,8 +98,10 @@ class UserQueryParameters(SQLModel):
 class UpdateUser(UserRequest):
     pass
 
+
 class UpdatedUser(UserResponse):
     pass
+
 
 class DeletedUser(SQLModel):
     id: int

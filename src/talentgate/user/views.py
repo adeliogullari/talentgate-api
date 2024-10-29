@@ -2,13 +2,12 @@ from typing import List, Sequence
 
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
-from fastapi import Depends, APIRouter, HTTPException, Query
+from fastapi import Depends, APIRouter, Query
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
     User,
     UserRole,
-    UserSubscription,
     CreateUser,
     CreatedUser,
     RetrievedUser,
@@ -19,14 +18,9 @@ from src.talentgate.user.models import (
 )
 from src.talentgate.auth.exceptions import (
     InvalidAccessTokenException,
-    InvalidRefreshTokenException,
 )
 from src.talentgate.user.exceptions import (
-    InvalidAuthorizationException,
-    InvalidVerificationException,
-    IncorrectPasswordException,
     IdNotFoundException,
-    EmailNotFoundException,
     DuplicateUsernameException,
     DuplicateEmailException,
 )

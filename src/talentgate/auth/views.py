@@ -9,21 +9,11 @@ from fastapi import Depends, APIRouter
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user import service as user_service
-from src.talentgate.user.models import (
-    User,
-    CreateUserRequest,
-)
-from src.talentgate.auth.exceptions import (
-    InvalidAccessTokenException,
-    InvalidRefreshTokenException,
-)
+from src.talentgate.user.models import User, CreateUser
 from src.talentgate.user.exceptions import (
-    InvalidAuthorizationException,
     InvalidVerificationException,
     IncorrectPasswordException,
-    IdNotFoundException,
     EmailNotFoundException,
-    DuplicateUsernameException,
     DuplicateEmailException,
 )
 from src.talentgate.auth.models import (
@@ -108,7 +98,7 @@ async def google(
     if not retrieved_user:
         await user_service.create(
             sqlmodel_session=sqlmodel_session,
-            user=CreateUserRequest(
+            user=CreateUser(
                 username="".join(
                     random.choices(string.ascii_letters + string.digits, k=12)
                 ),
@@ -167,7 +157,7 @@ async def linkedin(
     if not retrieved_user:
         await user_service.create(
             sqlmodel_session=sqlmodel_session,
-            user=CreateUserRequest(
+            user=CreateUser(
                 username="".join(
                     random.choices(string.ascii_letters + string.digits, k=12)
                 ),
@@ -218,7 +208,7 @@ async def register(
 
     created_user = await user_service.create(
         sqlmodel_session=sqlmodel_session,
-        user=CreateUserRequest(**credentials.model_dump()),
+        user=CreateUser(**credentials.model_dump()),
     )
 
     return created_user
@@ -260,7 +250,7 @@ async def refresh_token(
 
     created_user = await user_service.create(
         sqlmodel_session=sqlmodel_session,
-        user=CreateUserRequest(**credentials.model_dump()),
+        user=CreateUser(**credentials.model_dump()),
     )
 
     return created_user

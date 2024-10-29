@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from src.talentgate.user.views import router as user_router
+from src.talentgate.employee.views import router as employee_router
 from src.talentgate.auth.views import router as auth_router
 from src.talentgate.database.service import engine
 
@@ -20,10 +21,12 @@ app.description = "TalentGate Platform"
 
 app.openapi_tags = [
     {"name": "auth", "description": "Operations with auth"},
+    {"name": "employee", "description": "Operations with employee"},
     {"name": "user", "description": "Operations with users"},
 ]
 
 app.include_router(user_router)
+app.include_router(employee_router)
 app.include_router(auth_router)
 
 

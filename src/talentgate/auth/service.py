@@ -3,15 +3,23 @@ from datetime import datetime, timedelta, UTC
 from src.talentgate.auth.crypto.token import BearerToken
 from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
 
-def encode_password(password: str, algorithm: str, ):
+
+def encode_password(
+    password: str,
+    algorithm: str,
+):
     password_hash_library = PasswordHashLibrary(algorithm=algorithm)
 
     return password_hash_library.encode(password=password)
 
+
 def verify_password(password: str, encoded_password: bytes, algorithm: str):
     password_hash_library = PasswordHashLibrary(algorithm=algorithm)
 
-    return password_hash_library.verify(password=password, encoded_password=encoded_password)
+    return password_hash_library.verify(
+        password=password, encoded_password=encoded_password
+    )
+
 
 def generate_access_token(
     expiration_minutes: float, user_id: int, algorithm: str, key: str

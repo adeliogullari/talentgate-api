@@ -5,7 +5,10 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from config import Settings, get_settings
 
+from tests.user.conftest import make_user, user
+
 from src.talentgate.user.views import router as user_router
+from src.talentgate.employee.views import router as employee_router
 from src.talentgate.auth.views import router as auth_router
 
 from src.talentgate.database.service import get_sqlmodel_session
@@ -20,6 +23,7 @@ engine = create_engine(
 async def start_application() -> FastAPI | None:
     app = FastAPI()
     app.include_router(user_router)
+    app.include_router(employee_router)
     app.include_router(auth_router)
     return app
 
