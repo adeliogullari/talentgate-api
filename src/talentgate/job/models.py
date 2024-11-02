@@ -7,11 +7,13 @@ class LocationType(str, Enum):
     HYBRID = "Hybrid"
     ONSITE = "Onsite"
 
+
 class EmploymentType(str, Enum):
     FULL_TIME = "Full-Time"
     PART_TIME = "Part-Time"
     CONTRACTOR = "Contractor"
     INTERNSHIP = "Internship"
+
 
 class JobLocation(SQLModel, table=True):
     __tablename__ = "job_location"

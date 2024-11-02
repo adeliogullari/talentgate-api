@@ -1,10 +1,9 @@
-from typing import List, Sequence
-
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
+from typing import List, Sequence
 from fastapi import Depends, APIRouter, Query
-from src.talentgate.database.service import get_sqlmodel_session
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from src.talentgate.user import service as user_service
+from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.user.models import (
     User,
     UserRole,
