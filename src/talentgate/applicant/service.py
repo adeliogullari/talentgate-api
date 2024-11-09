@@ -10,13 +10,12 @@ async def create(*, sqlmodel_session: Session, applicant: Applicant) -> Applican
     created_applicant = Applicant(
         **applicant.model_dump(exclude_unset=True, exclude_none=True),
     )
-    
+
     sqlmodel_session.add(created_applicant)
     sqlmodel_session.commit()
     sqlmodel_session.refresh(created_applicant)
 
     return applicant
-
 
 
 async def retrieve_by_id(*, sqlmodel_session: Session, applicant_id: int) -> Applicant:
@@ -27,7 +26,9 @@ async def retrieve_by_id(*, sqlmodel_session: Session, applicant_id: int) -> App
     return retrieved_applicant
 
 
-async def retrieve_by_firstname(*, sqlmodel_session: Session, applicant_firstname: str) -> Applicant:
+async def retrieve_by_firstname(
+    *, sqlmodel_session: Session, applicant_firstname: str
+) -> Applicant:
     statement: Any = select(Applicant).where(Applicant.firstname == applicant_firstname)
 
     retrieved_applicant = sqlmodel_session.exec(statement).one_or_none()
@@ -35,7 +36,9 @@ async def retrieve_by_firstname(*, sqlmodel_session: Session, applicant_firstnam
     return retrieved_applicant
 
 
-async def retrieve_by_lastname(*, sqlmodel_session: Session, applicant_lastname: str) -> Applicant:
+async def retrieve_by_lastname(
+    *, sqlmodel_session: Session, applicant_lastname: str
+) -> Applicant:
     statement: Any = select(Applicant).where(Applicant.lastname == applicant_lastname)
 
     retrieved_applicant = sqlmodel_session.exec(statement).one_or_none()
@@ -43,7 +46,9 @@ async def retrieve_by_lastname(*, sqlmodel_session: Session, applicant_lastname:
     return retrieved_applicant
 
 
-async def retrieve_by_email(*, sqlmodel_session: Session, applicant_email: str) -> Applicant:
+async def retrieve_by_email(
+    *, sqlmodel_session: Session, applicant_email: str
+) -> Applicant:
     statement: Any = select(Applicant).where(Applicant.email == applicant_email)
 
     retrieved_applicant = sqlmodel_session.exec(statement).one_or_none()
@@ -51,12 +56,15 @@ async def retrieve_by_email(*, sqlmodel_session: Session, applicant_email: str) 
     return retrieved_applicant
 
 
-async def retrieve_by_phone(*, sqlmodel_session: Session, applicant_phone: str) -> Applicant:
+async def retrieve_by_phone(
+    *, sqlmodel_session: Session, applicant_phone: str
+) -> Applicant:
     statement: Any = select(Applicant).where(Applicant.phone == applicant_phone)
 
     retrieved_applicant = sqlmodel_session.exec(statement).one_or_none()
 
     return retrieved_applicant
+
 
 async def retrieve_by_query_parameters(
     *, sqlmodel_session: Session, query_parameters: ApplicantQueryParameters
@@ -89,7 +97,9 @@ async def update(
     return retrieved_applicant
 
 
-async def delete(*, sqlmodel_session: Session, retrieved_applicant: Applicant) -> Applicant:
+async def delete(
+    *, sqlmodel_session: Session, retrieved_applicant: Applicant
+) -> Applicant:
     sqlmodel_session.delete(retrieved_applicant)
     sqlmodel_session.commit()
 

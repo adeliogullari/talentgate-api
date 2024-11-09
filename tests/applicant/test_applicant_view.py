@@ -36,21 +36,27 @@ def headers(token: str) -> Headers:
     return Headers({"Authorization": f"Bearer {token}"})
 
 
-async def test_create_applicant(client: TestClient, applicant: Applicant, headers: Headers) -> None:
+async def test_create_applicant(
+    client: TestClient, applicant: Applicant, headers: Headers
+) -> None:
     response = client.get(url=f"/api/v1/applicant/{applicant.id}", headers=headers)
 
     assert response.status_code == 200
     assert response.json()["id"] == applicant.id
 
 
-async def test_retrieve_applicant(client: TestClient, applicant: Applicant, headers: Headers) -> None:
+async def test_retrieve_applicant(
+    client: TestClient, applicant: Applicant, headers: Headers
+) -> None:
     response = client.get(url=f"/api/v1/applicant/{applicant.id}", headers=headers)
 
     assert response.status_code == 200
     assert response.json()["id"] == applicant.id
 
 
-async def test_retrieve_applicants(client: TestClient, applicant: Applicant, headers: Headers) -> None:
+async def test_retrieve_applicants(
+    client: TestClient, applicant: Applicant, headers: Headers
+) -> None:
     response = client.get(url="/api/v1/applicant", headers=headers)
 
     assert response.status_code == 200

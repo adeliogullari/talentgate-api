@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 from starlette.status import (
-    HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
 )
@@ -37,5 +36,6 @@ DuplicateEmailException = HTTPException(
 )
 
 DuplicatePhoneException = HTTPException(
-    status_code=HTTP_409_CONFLICT, detail="A user with this phone number already exists."
+    status_code=HTTP_409_CONFLICT,
+    detail="A user with this phone number already exists.",
 )

@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any
 from sqlmodel import select, Session
 from src.talentgate.employee.models import Employee, CreateEmployee, UpdateEmployee
 

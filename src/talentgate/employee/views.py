@@ -1,7 +1,5 @@
-from typing import List, Sequence
-
 from sqlmodel import Session
-from fastapi import Depends, APIRouter, Query
+from fastapi import Depends, APIRouter
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.models import (
@@ -9,11 +7,7 @@ from src.talentgate.employee.models import (
     CreateEmployee,
     CreatedEmployee,
     RetrievedEmployee,
-    UpdateEmployee,
-    UpdatedEmployee,
-    DeletedEmployee,
 )
-from src.talentgate.user.models import DeletedUser
 
 router = APIRouter(tags=["employee"])
 

@@ -3,19 +3,15 @@ from sqlmodel import Session
 from fastapi import Depends, APIRouter, Query
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.applicant import service as applicant_service
-from src.talentgate.applicant.models import (
-    Applicant,
-    ApplicantQueryParameters
-)
+from src.talentgate.applicant.models import Applicant, ApplicantQueryParameters
 from src.talentgate.applicant.exceptions import (
     DuplicateEmailException,
     DuplicatePhoneException,
     IdNotFoundException,
 )
-from src.talentgate.auth.crypto.token import BearerToken
-from config import Settings, get_settings
 
 router = APIRouter(tags=["applicant"])
+
 
 @router.post(
     path="/api/v1/applicant",
@@ -102,7 +98,9 @@ async def update_applicant(
         raise IdNotFoundException
 
     updated_applicant = await applicant_service.update(
-        sqlmodel_session=sqlmodel_session, retrieved_applicant=retrieved_applicant, applicant=applicant
+        sqlmodel_session=sqlmodel_session,
+        retrieved_applicant=retrieved_applicant,
+        applicant=applicant,
     )
 
     return updated_applicant

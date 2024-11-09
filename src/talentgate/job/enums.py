@@ -1,15 +1,5 @@
 from enum import Enum
-
-
-class Country:
-    states: Enum = None
-    cities: Enum = None
-    state_city_mapping: dict = None
-
-    @classmethod
-    def get_cities_by_state(cls, state):
-        """Returns the cities associated with a given state."""
-        return cls.state_city_mapping.get(state, [])
+from typing import Dict, List
 
 
 class GermanyStates(Enum):
@@ -20,8 +10,8 @@ class GermanyStates(Enum):
     BREMEN = "Bremen"
     HAMBURG = "Hamburg"
     HESSEN = "Hessen"
-    MECKLENBURG_VORPOMMERN = "Mecklenburg-Vorpommern"
     LOWER_SAXONY = "Lower Saxony"
+    MECKLENBURG_VORPOMMERN = "Mecklenburg-Vorpommern"
     NORTH_RHINE_WESTPHALIA = "North Rhine-Westphalia"
     RHINELAND_PALATINATE = "Rhineland-Palatinate"
     SAARLAND = "Saarland"
@@ -34,8 +24,8 @@ class GermanyStates(Enum):
 class GermanyCities(Enum):
     AACHEN = "Aachen"
     AUGSBURG = "Augsburg"
-    BIELEFELD = "Bielefeld"
     BERLIN = "Berlin"
+    BIELEFELD = "Bielefeld"
     BONN = "Bonn"
     BRAUNSCHWEIG = "Braunschweig"
     BREMEN = "Bremen"
@@ -52,17 +42,15 @@ class GermanyCities(Enum):
     FRANKFURT = "Frankfurt"
     GELSENKIRCHEN = "Gelsenkirchen"
     GOTHA = "Gotha"
-    HALLE = "Halle"
     HAMBURG = "Hamburg"
+    HALLE = "Halle"
     HANNOVER = "Hannover"
     HEIDELBERG = "Heidelberg"
-    HILDESHEIM = "Hildesheim"
-    KASSEL = "Kassel"
     KARLSRUHE = "Karlsruhe"
+    KASSEL = "Kassel"
     KIEL = "Kiel"
     KREFELD = "Krefeld"
     LEIPZIG = "Leipzig"
-    LEVERKUSEN = "Leverkusen"
     LUDWIGSHAFEN = "Ludwigshafen"
     LUEBECK = "Lübeck"
     MAGDEBURG = "Magdeburg"
@@ -74,7 +62,6 @@ class GermanyCities(Enum):
     OFFENBACH = "Offenbach"
     OLDENBURG = "Oldenburg"
     OSNABRUCK = "Osnabrück"
-    PADERBORN = "Paderborn"
     POTSDAM = "Potsdam"
     REGENSBURG = "Regensburg"
     REUTLINGEN = "Reutlingen"
@@ -83,111 +70,88 @@ class GermanyCities(Enum):
     SCHWERIN = "Schwerin"
     STUTTGART = "Stuttgart"
     ULM = "Ulm"
-    WOLFSBURG = "Wolfsburg"
     WIESBADEN = "Wiesbaden"
-    WUPPERTAL = "Wuppertal"
+    WOLFSBURG = "Wolfsburg"
 
 
-class Germany(Country):
-    # Mapping of states to their cities
-    state_city_mapping = {
-        GermanyStates.BADEN_WUERTTEMBERG: [
-            GermanyCities.STUTTGART,
-            GermanyCities.FREIBURG,
-            GermanyCities.HEIDELBERG,
-            GermanyCities.KARLSRUHE,
-            GermanyCities.MANNHEIM,
-            GermanyCities.REUTLINGEN,
-            GermanyCities.ULM,
-        ],
-        GermanyStates.BAVARIA: [
-            GermanyCities.MUNICH,
-            GermanyCities.AUGSBURG,
-            GermanyCities.NUREMBERG,
-            GermanyCities.REGENSBURG,
-        ],
-        GermanyStates.BERLIN: [GermanyCities.BERLIN],
-        GermanyStates.BRANDENBURG: [GermanyCities.POTSDAM],
-        GermanyStates.BREMEN: [GermanyCities.BREMEN, GermanyCities.BREMERHAVEN],
-        GermanyStates.HAMBURG: [GermanyCities.HAMBURG],
-        GermanyStates.HESSEN: [
-            GermanyCities.FRANKFURT,
-            GermanyCities.DARMSTADT,
-            GermanyCities.KASSEL,
-            GermanyCities.WIESBADEN,
-            GermanyCities.OFFENBACH,
-        ],
-        GermanyStates.LOWER_SAXONY: [
-            GermanyCities.HANNOVER,
-            GermanyCities.BRAUNSCHWEIG,
-            GermanyCities.OSNABRUCK,
-            GermanyCities.OLDENBURG,
-            GermanyCities.WOLFSBURG,
-        ],
-        GermanyStates.MECKLENBURG_VORPOMMERN: [
-            GermanyCities.ROSTOCK,
-            GermanyCities.SCHWERIN,
-        ],
-        GermanyStates.NORTH_RHINE_WESTPHALIA: [
-            GermanyCities.COLOGNE,
-            GermanyCities.DUSSELDORF,
-            GermanyCities.DORTMUND,
-            GermanyCities.ESSEN,
-            GermanyCities.BONN,
-            GermanyCities.AACHEN,
-            GermanyCities.BIELEFELD,
-            GermanyCities.MUNSTER,
-            GermanyCities.GELSENKIRCHEN,
-            GermanyCities.KREFELD,
-        ],
-        GermanyStates.RHINELAND_PALATINATE: [
-            GermanyCities.MAINZ,
-            GermanyCities.LUDWIGSHAFEN,
-        ],
-        GermanyStates.SAARLAND: [GermanyCities.SAARBRUCKEN],
-        GermanyStates.SAXONY: [
-            GermanyCities.LEIPZIG,
-            GermanyCities.DRESDEN,
-            GermanyCities.CHEMNITZ,
-        ],
-        GermanyStates.SAXONY_ANHALT: [GermanyCities.MAGDEBURG, GermanyCities.HALLE],
-        GermanyStates.SCHLESWIG_HOLSTEIN: [GermanyCities.KIEL, GermanyCities.LUEBECK],
-        GermanyStates.THURINGIA: [GermanyCities.ERFURT, GermanyCities.GOTHA],
-    }
+#
+#     @classmethod
+#     def cities(cls):
+#         return list(map(str, GermanyCities))
+#
+#     @classmethod
+#     def states(cls):
+#         return list(map(str, GermanyStates))
+#
+#     @classmethod
+#     def cities_by_state(cls, state):
+#         """Returns the cities associated with a given state."""
+#         return cls.state_city_mapping.get(state, [])
 
-    @classmethod
-    def cities(cls):
-        return list(map(str, GermanyCities))
+Germany: Dict[GermanyStates, List[GermanyCities]] = dict()
 
-    @classmethod
-    def states(cls):
-        return list(map(str, GermanyStates))
-
-    @classmethod
-    def cities_by_state(cls, state):
-        """Returns the cities associated with a given state."""
-        return cls.state_city_mapping.get(state, [])
-
-
-class NetherlandsCities(Enum):
-    ALMERE = "Almere"
-    AMSTERDAM = "Amsterdam"
-    APELDOORN = "Apeldoorn"
-    ARNHEM = "Arnhem"
-    BREDA = "Breda"
-    EINDHOVEN = "Eindhoven"
-    EMMEN = "Emmen"
-    GRONINGEN = "Groningen"
-    HAARLEM = "Haarlem"
-    THE_HAGUE = "The Hague"
-    LEIDEN = "Leiden"
-    MAASTRICHT = "Maastricht"
-    NIJMEGEN = "Nijmegen"
-    ROTTERDAM = "Rotterdam"
-    TILBURG = "Tilburg"
-    UTRECHT = "Utrecht"
-    ZAANSTAD = "Zaanstad"
-
-
-class Countries(Enum):
-    GERMANY = Germany
+Germany[GermanyStates.BADEN_WUERTTEMBERG] = [
+    GermanyCities.FREIBURG,
+    GermanyCities.HEIDELBERG,
+    GermanyCities.KARLSRUHE,
+    GermanyCities.MANNHEIM,
+    GermanyCities.REUTLINGEN,
+    GermanyCities.STUTTGART,
+    GermanyCities.ULM,
+]
+Germany[GermanyStates.BAVARIA] = [
+    GermanyCities.AUGSBURG,
+    GermanyCities.MUNICH,
+    GermanyCities.NUREMBERG,
+    GermanyCities.REGENSBURG,
+]
+Germany[GermanyStates.BERLIN] = [GermanyCities.BERLIN]
+Germany[GermanyStates.BRANDENBURG] = [GermanyCities.POTSDAM]
+Germany[GermanyStates.BREMEN] = [GermanyCities.BREMEN, GermanyCities.BREMERHAVEN]
+Germany[GermanyStates.HAMBURG] = [GermanyCities.HAMBURG]
+Germany[GermanyStates.HESSEN] = [
+    GermanyCities.DARMSTADT,
+    GermanyCities.FRANKFURT,
+    GermanyCities.KASSEL,
+    GermanyCities.OFFENBACH,
+    GermanyCities.WIESBADEN,
+]
+Germany[GermanyStates.LOWER_SAXONY] = [
+    GermanyCities.BRAUNSCHWEIG,
+    GermanyCities.HANNOVER,
+    GermanyCities.OLDENBURG,
+    GermanyCities.OSNABRUCK,
+    GermanyCities.WOLFSBURG,
+]
+Germany[GermanyStates.MECKLENBURG_VORPOMMERN] = [
+    GermanyCities.ROSTOCK,
+    GermanyCities.SCHWERIN,
+]
+Germany[GermanyStates.NORTH_RHINE_WESTPHALIA] = [
+    GermanyCities.AACHEN,
+    GermanyCities.BIELEFELD,
+    GermanyCities.BONN,
+    GermanyCities.COLOGNE,
+    GermanyCities.DORTMUND,
+    GermanyCities.DUSSELDORF,
+    GermanyCities.ESSEN,
+    GermanyCities.GELSENKIRCHEN,
+    GermanyCities.KREFELD,
+    GermanyCities.MUNSTER,
+]
+Germany[GermanyStates.RHINELAND_PALATINATE] = [
+    GermanyCities.LUDWIGSHAFEN,
+    GermanyCities.MAINZ,
+]
+Germany[GermanyStates.SAARLAND] = [GermanyCities.SAARBRUCKEN]
+Germany[GermanyStates.SAXONY] = [
+    GermanyCities.CHEMNITZ,
+    GermanyCities.DRESDEN,
+    GermanyCities.LEIPZIG,
+]
+Germany[GermanyStates.SAXONY_ANHALT] = [
+    GermanyCities.HALLE,
+    GermanyCities.MAGDEBURG,
+]
+Germany[GermanyStates.SCHLESWIG_HOLSTEIN] = [GermanyCities.KIEL, GermanyCities.LUEBECK]
+Germany[GermanyStates.THURINGIA] = [GermanyCities.ERFURT, GermanyCities.GOTHA]
