@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+
 async def test_retrieve_countries(client: TestClient) -> None:
     response = client.get(url=f"/api/v1/location/countries")
 
@@ -15,7 +16,9 @@ async def test_retrieve_states_by_country(client: TestClient) -> None:
 
 
 async def test_retrieve_cities_by_state(client: TestClient) -> None:
-    response = client.get(url=f"/api/v1/location/countries/Germany/states/Bavaria/cities")
+    response = client.get(
+        url=f"/api/v1/location/countries/Germany/states/Bavaria/cities"
+    )
 
     assert response.status_code == 200
     assert "Munich" in response.json()
