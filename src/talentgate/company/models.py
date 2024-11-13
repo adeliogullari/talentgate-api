@@ -47,3 +47,55 @@ class Company(SQLModel, table=True):
     overview: str | None = Field(default=None)
     locations: List[CompanyLocation] = Relationship(back_populates="company")
     links: List[CompanyLink] = Relationship(back_populates="company")
+
+
+class CompanyRequest(SQLModel):
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str
+    email: str
+    password: str
+    verified: bool | None = None
+
+
+class CompanyResponse(SQLModel):
+    id: int | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str
+    email: str
+    verified: bool | None = None
+
+
+class CreateCompany(CompanyRequest):
+    pass
+
+
+class CreatedCompany(CompanyResponse):
+    pass
+
+
+class RetrievedCompany(CompanyResponse):
+    pass
+
+
+class CompanyQueryParameters(SQLModel):
+    offset: int | None = None
+    limit: int | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str | None = None
+    email: str | None = None
+    verified: bool | None = None
+
+
+class UpdateCompany(CompanyRequest):
+    pass
+
+
+class UpdatedCompany(CompanyResponse):
+    pass
+
+
+class DeletedCompany(SQLModel):
+    id: int

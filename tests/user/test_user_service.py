@@ -5,14 +5,7 @@ from src.talentgate.user.models import (
     CreateUser,
     UpdateUser,
 )
-from src.talentgate.user.service import (
-    create,
-    retrieve_by_id,
-    retrieve_by_username,
-    retrieve_by_email,
-    update,
-    delete,
-)
+from src.talentgate.user import service as user_service
 
 
 async def test_create(sqlmodel_session: Session) -> None:
@@ -20,13 +13,13 @@ async def test_create(sqlmodel_session: Session) -> None:
         username="username", email="username@gmail.com", password="password"
     )
 
-    created_user = await create(sqlmodel_session=sqlmodel_session, user=user)
+    created_user = await user_service.create(sqlmodel_session=sqlmodel_session, user=user)
 
     assert created_user.email == user.email
 
 
 async def test_retrieve_by_id(sqlmodel_session: Session, user: User) -> None:
-    retrieved_user = await retrieve_by_id(
+    retrieved_user = await user_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session, user_id=user.id
     )
 
@@ -34,7 +27,7 @@ async def test_retrieve_by_id(sqlmodel_session: Session, user: User) -> None:
 
 
 async def test_retrieve_by_username(sqlmodel_session: Session, user: User) -> None:
-    retrieved_user = await retrieve_by_username(
+    retrieved_user = await user_service.retrieve_by_username(
         sqlmodel_session=sqlmodel_session, username=user.username
     )
 
@@ -42,7 +35,7 @@ async def test_retrieve_by_username(sqlmodel_session: Session, user: User) -> No
 
 
 async def test_retrieve_by_email(sqlmodel_session: Session, user: User) -> None:
-    retrieved_user = await retrieve_by_email(
+    retrieved_user = await user_service.retrieve_by_email(
         sqlmodel_session=sqlmodel_session, email=user.email
     )
 
@@ -53,17 +46,17 @@ async def test_update(sqlmodel_session: Session, make_user) -> None:
     retrieved_user = make_user()
 
     user = UpdateUser(
-        firstname="new_firstname",
-        lastname="new_lastname",
-        username="new_username",
-        email="new_username@gmail.com",
-        password="new_password",
+        firstname="updated_firstname",
+        lastname="updated_lastname",
+        username="updated_username",
+        email="updated_username@gmail.com",
+        password="updated_password",
         verified=True,
         role=UserRole.ADMIN,
-        image="new_image",
+        image="updated_image",
     )
 
-    updated_user = await update(
+    updated_user = await user_service.update(
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user, user=user
     )
 
@@ -73,8 +66,8 @@ async def test_update(sqlmodel_session: Session, make_user) -> None:
 async def test_delete(sqlmodel_session, make_user) -> None:
     retrieved_user = make_user()
 
-    deleted_user = await delete(
+    deleted_user = await user_service.delete(
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user
     )
 
-    assert retrieved_user.firstname == deleted_user.firstname
+    assert retrieved_user.email == deleted_user.email

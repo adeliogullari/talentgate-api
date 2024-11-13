@@ -1,7 +1,7 @@
 import pytest
 from config import get_settings
 from sqlmodel import Session
-from src.talentgate.user.models import User, UserRole
+from src.talentgate.user.models import User, UserRole, UserSubscription
 from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
 
 settings = get_settings()
@@ -15,10 +15,11 @@ def make_user(sqlmodel_session: Session):
         lastname: str = "lastname",
         username: str = "username",
         email: str = "username@gmail.com",
-        password: str = password_hash_library.encode(password="secret"),
+        password: str = password_hash_library.encode(password="password"),
         verified: bool = True,
-        role: str = UserRole.ADMIN,
         image: str = "image",
+        role: str = UserRole.ACCOUNT_OWNER,
+        subscription: str = UserSubscription.BASIC
     ):
         user = User(
             firstname=firstname,
@@ -27,8 +28,9 @@ def make_user(sqlmodel_session: Session):
             email=email,
             password=password,
             verified=verified,
-            role=role,
             image=image,
+            role=role,
+            subscription=subscription
         )
 
         sqlmodel_session.add(user)

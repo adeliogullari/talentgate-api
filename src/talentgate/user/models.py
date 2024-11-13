@@ -8,16 +8,16 @@ if TYPE_CHECKING:
 
 
 class UserRole(str, Enum):
-    ACCOUNT_OWNER = "account_owner"
-    ADMIN = "admin"
-    SUPERADMIN = "super_admin"
+    ACCOUNT_OWNER = "Account Owner"
+    ADMIN = "Admin"
+    SUPER_ADMIN = "Super Admin"
 
 
 class UserSubscription(str, Enum):
-    BASIC = "basic"
-    STANDARD = "standard"
-    PROFESSIONAL = "professional"
-    ENTERPRISE = "enterprise"
+    BASIC = "Basic"
+    STANDARD = "Standard"
+    PROFESSIONAL = "Professional"
+    ENTERPRISE = "Enterprise"
 
 
 class User(SQLModel, table=True):
@@ -30,16 +30,16 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True)
     password: bytes = Field(nullable=False)
     verified: bool = Field(default=False)
-    role: UserRole | None = Field(default=UserRole.ACCOUNT_OWNER)
     image: str | None = Field(default=None)
+    role: UserRole | None = Field(default=UserRole.ACCOUNT_OWNER)
     subscription: UserSubscription | None = Field(default=UserSubscription.BASIC)
+    employee: Optional["Employee"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"uselist": False}
+    )
     created_at: datetime | None = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime | None = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_column_kwargs={"onupdate": lambda: datetime.now(UTC)},
-    )
-    employee: Optional["Employee"] = Relationship(
-        back_populates="user", sa_relationship_kwargs={"uselist": False}
     )
 
 
@@ -50,8 +50,8 @@ class UserRequest(SQLModel):
     email: str
     password: str
     verified: bool | None = None
-    role: UserRole | None = None
     image: str | None = None
+    role: UserRole | None = None
     subscription: UserSubscription | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -64,8 +64,8 @@ class UserResponse(SQLModel):
     username: str
     email: str
     verified: bool | None = None
-    role: UserRole | None = None
     image: str | None = None
+    role: UserRole | None = None
     subscription: UserSubscription | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
