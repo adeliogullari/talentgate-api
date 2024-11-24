@@ -1,5 +1,9 @@
 from enum import Enum
+from typing import List
+
 from sqlmodel import SQLModel, Field, Relationship
+
+from src.talentgate.employee.models import Employee
 
 
 class LocationType(str, Enum):
@@ -48,3 +52,4 @@ class Job(SQLModel, table=True):
     salary: JobSalary | None = Relationship(
         back_populates="job", sa_relationship_kwargs={"uselist": False}
     )
+    observer: List["Employee"] = Relationship(back_populates="job")

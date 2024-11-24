@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, Sequence
 from sqlmodel import select, Session
-from src.talentgate.employee.models import Employee, CreateEmployee, UpdateEmployee
+from src.talentgate.employee.models import Employee, CreateEmployee, UpdateEmployee, EmployeeQueryParameters
 
 
 async def create(*, sqlmodel_session: Session, employee: CreateEmployee) -> Employee:
@@ -19,6 +19,25 @@ async def retrieve_by_id(*, sqlmodel_session: Session, employee_id: int) -> Empl
     statement: Any = select(Employee).where(Employee.id == employee_id)
 
     retrieved_employee = sqlmodel_session.exec(statement).one_or_none()
+
+    return retrieved_employee
+
+
+async def retrieve_by_query_parameters(
+    *, sqlmodel_session: Session, query_parameters: EmployeeQueryParameters
+) -> Sequence[Employee]:
+    offset = query_parameters.offset
+    limit = query_parameters.limit
+    filters = {
+        getattr(Employee, attr) == value
+        for attr, value in query_parameters.model_dump(
+            exclude={"offset", "limit"}, exclude_unset=True, exclude_none=True
+        )
+    }
+
+    statement: Any = select(Employee).offset(offset).limit(limit).where(*filters)
+
+    retrieved_employee = sqlmodel_session.exec(statement).all()
 
     return retrieved_employee
 

@@ -1,12 +1,15 @@
+from typing import List, Sequence
+
 from sqlmodel import Session
-from fastapi import Depends, APIRouter
+from fastapi import Depends, APIRouter, Query
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.employee import service as employee_service
+from src.talentgate.employee.exceptions import IdNotFoundException
 from src.talentgate.employee.models import (
     Employee,
     CreateEmployee,
     CreatedEmployee,
-    RetrievedEmployee,
+    RetrievedEmployee, EmployeeQueryParameters, UpdatedEmployee, UpdateEmployee, DeletedEmployee,
 )
 
 router = APIRouter(tags=["employee"])
@@ -41,4 +44,72 @@ async def retrieve_employee(
         sqlmodel_session=sqlmodel_session, employee_id=employee_id
     )
 
+    if not retrieved_employee:
+        raise IdNotFoundException
+
     return retrieved_employee
+
+
+@router.get(
+    path="/api/v1/employees",
+    response_model=List[RetrievedEmployee],
+    status_code=200,
+)
+async def retrieve_employees(
+    *,
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    query_parameters: EmployeeQueryParameters = Query(),
+) -> Sequence[Employee]:
+    retrieved_employee = await employee_service.retrieve_by_query_parameters(
+        sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
+    )
+
+    return retrieved_employee
+
+
+@router.put(
+    path="/api/v1/employees/{employee_id}",
+    response_model=UpdatedEmployee,
+    status_code=200
+)
+async def update_employee(
+    *,
+    employee_id: int,
+    employee: UpdateEmployee,
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+) -> Employee:
+    retrieved_employee = await employee_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, employee_id=employee_id
+    )
+
+    if not retrieved_employee:
+        raise IdNotFoundException
+
+    updated_employee = await employee_service.update(
+        sqlmodel_session=sqlmodel_session, retrieved_employee=retrieved_employee, employee=employee
+    )
+
+    return updated_employee
+
+
+@router.delete(
+    path="/api/v1/employees/{employee_id}",
+    response_model=DeletedEmployee,
+    status_code=200
+)
+async def delete_employee(
+    *,
+    employee_id: int, sqlmodel_session: Session = Depends(get_sqlmodel_session),
+) -> Employee:
+    retrieved_employee = await employee_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, employee_id=employee_id
+    )
+
+    if not retrieved_employee:
+        raise IdNotFoundException
+
+    deleted_employee = await employee_service.delete(
+        sqlmodel_session=sqlmodel_session, retrieved_employee=retrieved_employee
+    )
+
+    return deleted_employee

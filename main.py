@@ -6,7 +6,7 @@ from src.talentgate.user.views import router as user_router
 from src.talentgate.employee.views import router as employee_router
 from src.talentgate.auth.views import router as auth_router
 from src.talentgate.location.views import router as location_router
-from src.talentgate.applicant.views import router as applicant_router
+from src.talentgate.application.views import router as application_router
 from src.talentgate.database.service import engine
 
 
@@ -26,14 +26,14 @@ app.openapi_tags = [
     {"name": "location", "description": "Operations with location"},
     {"name": "employee", "description": "Operations with employee"},
     {"name": "user", "description": "Operations with users"},
-    {"name": "applicant", "description": "Operations with applicants"},
+    {"name": "application", "description": "Operations with applications"},
 ]
 
 app.include_router(user_router)
 app.include_router(employee_router)
 app.include_router(auth_router)
 app.include_router(location_router)
-app.include_router(applicant_router)
+app.include_router(application_router)
 
 
 app.add_middleware(

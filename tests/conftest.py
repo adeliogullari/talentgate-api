@@ -11,7 +11,13 @@ from src.talentgate.employee.views import router as employee_router
 from src.talentgate.auth.views import router as auth_router
 from src.talentgate.location.views import router as location_router
 from src.talentgate.applicant.views import router as applicant_router
+from src.talentgate.application.views import router as application_router
 from src.talentgate.database.service import get_sqlmodel_session
+
+from tests.employee.conftest import (
+    employee,
+    make_employee
+)
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -27,6 +33,7 @@ async def start_application() -> FastAPI | None:
     app.include_router(auth_router)
     app.include_router(location_router)
     app.include_router(applicant_router)
+    app.include_router(application_router)
     return app
 
 

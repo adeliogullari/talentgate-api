@@ -2,11 +2,11 @@ from typing import Any, Sequence
 from sqlmodel import select, Session
 from src.talentgate.applicant.models import (
     Applicant,
-    ApplicantQueryParameters,
+    ApplicantQueryParameters, CreateApplicant, UpdateApplicant,
 )
 
 
-async def create(*, sqlmodel_session: Session, applicant: Applicant) -> Applicant:
+async def create(*, sqlmodel_session: Session, applicant: CreateApplicant) -> Applicant:
     created_applicant = Applicant(
         **applicant.model_dump(exclude_unset=True, exclude_none=True),
     )
@@ -15,7 +15,7 @@ async def create(*, sqlmodel_session: Session, applicant: Applicant) -> Applican
     sqlmodel_session.commit()
     sqlmodel_session.refresh(created_applicant)
 
-    return applicant
+    return created_applicant
 
 
 async def retrieve_by_id(*, sqlmodel_session: Session, applicant_id: int) -> Applicant:
@@ -86,7 +86,7 @@ async def retrieve_by_query_parameters(
 
 
 async def update(
-    *, sqlmodel_session: Session, retrieved_applicant: Applicant, applicant: Applicant
+    *, sqlmodel_session: Session, retrieved_applicant: Applicant, applicant: UpdateApplicant
 ) -> Applicant:
     retrieved_applicant.sqlmodel_update(applicant)
 

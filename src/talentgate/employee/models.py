@@ -1,17 +1,16 @@
 from enum import Enum
 from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional, TYPE_CHECKING, List
+
 from src.talentgate.user.models import User
+
+if TYPE_CHECKING:
+    from src.talentgate.application.models import ApplicationEvaluation
 
 
 class EmployeeTitle(str, Enum):
     FOUNDER = "founder"
     RECRUITER = "recruiter"
-
-
-class EmploymentType(str, Enum):
-    REMOTE = "remote"
-    HYBRID = "hybrid"
-    ONSITE = "onsite"
 
 
 class EmploymentType(str, Enum):
@@ -28,6 +27,7 @@ class Employee(SQLModel, table=True):
     salary: str | None = Field(default=None)
     user_id: int | None = Field(foreign_key="user.id")
     user: User | None = Relationship(back_populates="employee")
+    application_evaluations: List["ApplicationEvaluation"] = Relationship(back_populates="employee")
 
 
 User.model_rebuild()
@@ -54,6 +54,14 @@ class CreatedEmployee(EmployeeResponse):
 
 class RetrievedEmployee(EmployeeResponse):
     pass
+
+
+class EmployeeQueryParameters(SQLModel):
+    offset: int | None = None
+    limit: int | None = None
+    title: str | None = None
+    salary: EmployeeTitle | None = None
+    employee_id: int | None = None
 
 
 class UpdateEmployee(EmployeeRequest):
