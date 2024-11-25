@@ -12,9 +12,11 @@ password_hash_library = PasswordHashLibrary(settings.password_hash_algorithm)
 
 
 @pytest.fixture
-def make_application_evaluation(sqlmodel_session: Session, employee: Employee, application: Application):
+def make_application_evaluation(
+    sqlmodel_session: Session, employee: Employee, application: Application
+):
     def make(
-        comment: str  = "text123",
+        comment: str = "text123",
         rating: str = "5",
         employee_id: int = employee.id,
         application_id: int = application.id,
@@ -34,6 +36,7 @@ def make_application_evaluation(sqlmodel_session: Session, employee: Employee, a
 
     return make
 
+
 @pytest.fixture
 def application_evaluation(make_application_evaluation):
     return make_application_evaluation()
@@ -48,7 +51,7 @@ def make_application(sqlmodel_session: Session):
         phone: str = "+905123456789",
         resume: str = "resume.pdf",
         employee_id: int = None,
-        application_id: int = None
+        application_id: int = None,
     ):
         application = Application(
             firstname=firstname,
@@ -57,7 +60,7 @@ def make_application(sqlmodel_session: Session):
             phone=phone,
             resume=resume,
             employee_id=employee_id,
-            application_id=application_id
+            application_id=application_id,
         )
 
         sqlmodel_session.add(application)
@@ -67,6 +70,7 @@ def make_application(sqlmodel_session: Session):
         return application
 
     return make
+
 
 @pytest.fixture
 def application(make_application):

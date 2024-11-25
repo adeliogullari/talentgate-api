@@ -27,7 +27,9 @@ class Employee(SQLModel, table=True):
     salary: str | None = Field(default=None)
     user_id: int | None = Field(foreign_key="user.id")
     user: User | None = Relationship(back_populates="employee")
-    application_evaluations: List["ApplicationEvaluation"] = Relationship(back_populates="employee")
+    application_evaluations: List["ApplicationEvaluation"] = Relationship(
+        back_populates="employee"
+    )
 
 
 User.model_rebuild()

@@ -14,10 +14,7 @@ from src.talentgate.applicant.views import router as applicant_router
 from src.talentgate.application.views import router as application_router
 from src.talentgate.database.service import get_sqlmodel_session
 
-from tests.employee.conftest import (
-    employee,
-    make_employee
-)
+from tests.employee.conftest import employee, make_employee
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 

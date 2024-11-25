@@ -9,7 +9,11 @@ from src.talentgate.employee.models import (
     Employee,
     CreateEmployee,
     CreatedEmployee,
-    RetrievedEmployee, EmployeeQueryParameters, UpdatedEmployee, UpdateEmployee, DeletedEmployee,
+    RetrievedEmployee,
+    EmployeeQueryParameters,
+    UpdatedEmployee,
+    UpdateEmployee,
+    DeletedEmployee,
 )
 
 router = APIRouter(tags=["employee"])
@@ -70,7 +74,7 @@ async def retrieve_employees(
 @router.put(
     path="/api/v1/employees/{employee_id}",
     response_model=UpdatedEmployee,
-    status_code=200
+    status_code=200,
 )
 async def update_employee(
     *,
@@ -86,7 +90,9 @@ async def update_employee(
         raise IdNotFoundException
 
     updated_employee = await employee_service.update(
-        sqlmodel_session=sqlmodel_session, retrieved_employee=retrieved_employee, employee=employee
+        sqlmodel_session=sqlmodel_session,
+        retrieved_employee=retrieved_employee,
+        employee=employee,
     )
 
     return updated_employee
@@ -95,11 +101,12 @@ async def update_employee(
 @router.delete(
     path="/api/v1/employees/{employee_id}",
     response_model=DeletedEmployee,
-    status_code=200
+    status_code=200,
 )
 async def delete_employee(
     *,
-    employee_id: int, sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    employee_id: int,
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
 ) -> Employee:
     retrieved_employee = await employee_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session, employee_id=employee_id

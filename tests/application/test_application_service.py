@@ -20,20 +20,24 @@ from src.talentgate.application.service import (
     retrieve_by_email,
     retrieve_by_phone,
     update,
-    delete, update_application_evaluation, delete_application_evaluation,
+    delete,
+    update_application_evaluation,
+    delete_application_evaluation,
 )
 from src.talentgate.employee.models import Employee
 from tests.application.conftest import make_application_evaluation
 
 
-async def test_create_application_evaluation(sqlmodel_session: Session, application: Application, employee: Employee) -> None:
+async def test_create_application_evaluation(
+    sqlmodel_session: Session, application: Application, employee: Employee
+) -> None:
     evaluation = ApplicationEvaluationRequest(
         comment="comment",
         rating=5,
         application_id=application.id,
-        employee_id=employee.id
+        employee_id=employee.id,
     )
-    
+
     created_evaluation = await create_application_evaluation(
         sqlmodel_session=sqlmodel_session, application_evaluation=evaluation
     )
@@ -43,9 +47,18 @@ async def test_create_application_evaluation(sqlmodel_session: Session, applicat
     assert created_evaluation.employee.id == employee.id
 
 
-async def test_retrieve_application_evaluation_by_employee_and_application(sqlmodel_session: Session, application: Application, employee: Employee, application_evaluation: ApplicationEvaluation) -> None:
-    retrieved_application_evaluation = await retrieve_application_evaluation_by_employee_and_application(
-        sqlmodel_session=sqlmodel_session, employee_id=employee.id, application_id=application.id
+async def test_retrieve_application_evaluation_by_employee_and_application(
+    sqlmodel_session: Session,
+    application: Application,
+    employee: Employee,
+    application_evaluation: ApplicationEvaluation,
+) -> None:
+    retrieved_application_evaluation = (
+        await retrieve_application_evaluation_by_employee_and_application(
+            sqlmodel_session=sqlmodel_session,
+            employee_id=employee.id,
+            application_id=application.id,
+        )
     )
 
     assert retrieved_application_evaluation.comment == application_evaluation.comment
@@ -53,28 +66,36 @@ async def test_retrieve_application_evaluation_by_employee_and_application(sqlmo
     assert retrieved_application_evaluation.employee.id == employee.id
 
 
-async def test_retrieve_application_evaluation_by_id(sqlmodel_session: Session, application_evaluation: ApplicationEvaluation) -> None:
+async def test_retrieve_application_evaluation_by_id(
+    sqlmodel_session: Session, application_evaluation: ApplicationEvaluation
+) -> None:
     retrieved_application_evaluation = await retrieve_application_evaluation_by_id(
-        sqlmodel_session=sqlmodel_session, application_evaluation_id=application_evaluation.id
+        sqlmodel_session=sqlmodel_session,
+        application_evaluation_id=application_evaluation.id,
     )
 
     assert retrieved_application_evaluation.comment == application_evaluation.comment
 
 
-async def test_retrieve_application_evaluations(sqlmodel_session: Session, application: Application) -> None:
-    retrieved_application_evaluations = await retrieve_application_evaluations_by_application(
-        sqlmodel_session=sqlmodel_session, application_id=application.id
+async def test_retrieve_application_evaluations(
+    sqlmodel_session: Session, application: Application
+) -> None:
+    retrieved_application_evaluations = (
+        await retrieve_application_evaluations_by_application(
+            sqlmodel_session=sqlmodel_session, application_id=application.id
+        )
     )
 
     assert retrieved_application_evaluations == application.evaluations
 
 
-async def test_update_application_evaluation(sqlmodel_session: Session, make_application_evaluation) -> None:
+async def test_update_application_evaluation(
+    sqlmodel_session: Session, make_application_evaluation
+) -> None:
     retrieved_application_evaluation = make_application_evaluation()
 
     application_evaluation = ApplicationEvaluationRequest(
-        comment="updated_comment",
-        rating="1"
+        comment="updated_comment", rating="1"
     )
 
     updated_application_evaluation = await update_application_evaluation(
@@ -86,14 +107,20 @@ async def test_update_application_evaluation(sqlmodel_session: Session, make_app
     assert application_evaluation.comment == updated_application_evaluation.comment
 
 
-async def test_delete_application_evaluation(sqlmodel_session: Session, make_application_evaluation) -> None:
+async def test_delete_application_evaluation(
+    sqlmodel_session: Session, make_application_evaluation
+) -> None:
     retrieved_application_evaluation = make_application_evaluation()
 
     deleted_application_evaluation = await delete_application_evaluation(
-        sqlmodel_session=sqlmodel_session, retrieved_application_evaluation=retrieved_application_evaluation
+        sqlmodel_session=sqlmodel_session,
+        retrieved_application_evaluation=retrieved_application_evaluation,
     )
 
-    assert retrieved_application_evaluation.comment == deleted_application_evaluation.comment
+    assert (
+        retrieved_application_evaluation.comment
+        == deleted_application_evaluation.comment
+    )
 
 
 async def test_create(sqlmodel_session: Session) -> None:
@@ -117,7 +144,9 @@ async def test_create(sqlmodel_session: Session) -> None:
     assert created_application.email == application.email
 
 
-async def test_retrieve_by_id(sqlmodel_session: Session, application: Application) -> None:
+async def test_retrieve_by_id(
+    sqlmodel_session: Session, application: Application
+) -> None:
     retrieved_application = await retrieve_by_id(
         sqlmodel_session=sqlmodel_session, application_id=application.id
     )

@@ -1,5 +1,10 @@
 from sqlmodel import Session
-from src.talentgate.employee.models import Employee, CreateEmployee, EmployeeTitle, UpdateEmployee
+from src.talentgate.employee.models import (
+    Employee,
+    CreateEmployee,
+    EmployeeTitle,
+    UpdateEmployee,
+)
 from src.talentgate.employee.service import create, retrieve_by_id, update, delete
 from tests.employee.conftest import make_employee
 
@@ -9,14 +14,13 @@ async def test_create(sqlmodel_session: Session) -> None:
         title=EmployeeTitle.FOUNDER,
         salary="60",
     )
-    
+
     created_employee = await create(
         sqlmodel_session=sqlmodel_session, employee=new_employee
     )
 
     assert created_employee.title == new_employee.title
     assert created_employee.salary == new_employee.salary
-
 
 
 async def test_retrieve_by_id(sqlmodel_session: Session, employee: Employee) -> None:
@@ -34,7 +38,6 @@ async def test_update(sqlmodel_session: Session, employee: Employee) -> None:
         title=EmployeeTitle.FOUNDER,
         salary="60",
     )
-
 
     updated_employee = await update(
         sqlmodel_session=sqlmodel_session,

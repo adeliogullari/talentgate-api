@@ -2,7 +2,7 @@ requests==2.32.3
 fastapi[standard]==0.115.5
 uvicorn==0.32.1
 starlette==0.41.3
-pydantic==2.10.0
+pydantic==2.10.1
 pydantic-settings==2.6.1
 sqlmodel==0.0.22
 alembic==1.14.0

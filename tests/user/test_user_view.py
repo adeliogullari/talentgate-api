@@ -5,7 +5,13 @@ import pytest
 from datetime import timedelta, datetime, UTC
 from config import Settings
 from src.talentgate.auth.crypto.token import BearerToken
-from src.talentgate.user.models import User, CreateUser, UserRole, UserSubscription, UpdateUser
+from src.talentgate.user.models import (
+    User,
+    CreateUser,
+    UserRole,
+    UserSubscription,
+    UpdateUser,
+)
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 
@@ -47,10 +53,16 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
         verified=True,
         image="created/image",
         role=UserRole.ACCOUNT_OWNER,
-        subscription=UserSubscription.BASIC
+        subscription=UserSubscription.BASIC,
     )
 
-    response = client.post(url=f"/api/v1/users", headers=headers, json=json.loads(created_user.model_dump_json(exclude_unset=True, exclude_none=True)))
+    response = client.post(
+        url=f"/api/v1/users",
+        headers=headers,
+        json=json.loads(
+            created_user.model_dump_json(exclude_unset=True, exclude_none=True)
+        ),
+    )
 
     assert response.status_code == 201
     assert response.json()["firstname"] == created_user.firstname
@@ -80,10 +92,16 @@ async def test_update_user(client: TestClient, user: User, headers: Headers) -> 
         verified=True,
         image="updated/image",
         role=UserRole.ACCOUNT_OWNER,
-        subscription=UserSubscription.BASIC
+        subscription=UserSubscription.BASIC,
     )
 
-    response = client.put(url=f"/api/v1/users/{user.id}", headers=headers, json=json.loads(updated_user.model_dump_json(exclude_none=True, exclude_unset=True)))
+    response = client.put(
+        url=f"/api/v1/users/{user.id}",
+        headers=headers,
+        json=json.loads(
+            updated_user.model_dump_json(exclude_none=True, exclude_unset=True)
+        ),
+    )
 
     assert response.status_code == 200
     assert response.json()["firstname"] == updated_user.firstname

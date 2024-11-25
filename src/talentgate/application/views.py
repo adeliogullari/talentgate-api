@@ -6,7 +6,10 @@ from src.talentgate.application import service as application_service
 from src.talentgate.application.models import (
     Application,
     CreateApplication,
-    ApplicationQueryParameters, UpdateApplication, ApplicationEvaluation, ApplicationEvaluationRequest
+    ApplicationQueryParameters,
+    UpdateApplication,
+    ApplicationEvaluation,
+    ApplicationEvaluationRequest,
 )
 from src.talentgate.application.exceptions import (
     DuplicateEmailException,
@@ -31,14 +34,19 @@ async def create_application_evaluation(
     application_evaluation: ApplicationEvaluationRequest,
 ) -> ApplicationEvaluation:
     retrieved_application_evaluation = await application_service.retrieve_application_evaluation_by_employee_and_application(
-        sqlmodel_session=sqlmodel_session, employee_id=application_evaluation.employee_id , application_id=application_evaluation.application_id
+        sqlmodel_session=sqlmodel_session,
+        employee_id=application_evaluation.employee_id,
+        application_id=application_evaluation.application_id,
     )
 
     if retrieved_application_evaluation:
         raise DuplicateEvaluationException
-    
-    created_application_evaluation = await application_service.create_application_evaluation(
-        sqlmodel_session=sqlmodel_session, application_evaluation=application_evaluation
+
+    created_application_evaluation = (
+        await application_service.create_application_evaluation(
+            sqlmodel_session=sqlmodel_session,
+            application_evaluation=application_evaluation,
+        )
     )
 
     return created_application_evaluation
@@ -54,8 +62,10 @@ async def retrieve_application_evaluation(
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
     evaluation_id: int,
 ) -> ApplicationEvaluation:
-    retrieved_application_evaluation = await application_service.retrieve_application_evaluation_by_id(
-        sqlmodel_session=sqlmodel_session, application_evaluation_id=evaluation_id
+    retrieved_application_evaluation = (
+        await application_service.retrieve_application_evaluation_by_id(
+            sqlmodel_session=sqlmodel_session, application_evaluation_id=evaluation_id
+        )
     )
 
     if not retrieved_application_evaluation:
@@ -74,8 +84,10 @@ async def retrieve_application_evaluations_by_application(
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
     application_id: int,
 ) -> List[ApplicationEvaluation]:
-    retrieved_application_evaluations = await application_service.retrieve_application_evaluations_by_application(
-        sqlmodel_session=sqlmodel_session, application_id=application_id
+    retrieved_application_evaluations = (
+        await application_service.retrieve_application_evaluations_by_application(
+            sqlmodel_session=sqlmodel_session, application_id=application_id
+        )
     )
 
     if not retrieved_application_evaluations:
@@ -95,17 +107,21 @@ async def update_application_evaluation(
     evaluation_id: int,
     application_evaluation: ApplicationEvaluationRequest,
 ) -> ApplicationEvaluation:
-    retrieved_application_evaluation = await application_service.retrieve_application_evaluation_by_id(
-        sqlmodel_session=sqlmodel_session, application_evaluation_id=evaluation_id
+    retrieved_application_evaluation = (
+        await application_service.retrieve_application_evaluation_by_id(
+            sqlmodel_session=sqlmodel_session, application_evaluation_id=evaluation_id
+        )
     )
 
     if not retrieved_application_evaluation:
         raise EvaluationIdNotFoundException
 
-    updated_application_evaluation = await application_service.update_application_evaluation(
-        sqlmodel_session=sqlmodel_session,
-        retrieved_application_evaluation=retrieved_application_evaluation,
-        application_evaluation=application_evaluation,
+    updated_application_evaluation = (
+        await application_service.update_application_evaluation(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_application_evaluation=retrieved_application_evaluation,
+            application_evaluation=application_evaluation,
+        )
     )
 
     return updated_application_evaluation
@@ -121,18 +137,24 @@ async def delete_application_evaluation(
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
     evaluation_id: int,
 ) -> ApplicationEvaluation:
-    retrieved_application_evaluation = await application_service.retrieve_application_evaluation_by_id(
-        sqlmodel_session=sqlmodel_session, application_evaluation_id=evaluation_id
+    retrieved_application_evaluation = (
+        await application_service.retrieve_application_evaluation_by_id(
+            sqlmodel_session=sqlmodel_session, application_evaluation_id=evaluation_id
+        )
     )
 
     if not retrieved_application_evaluation:
         raise EvaluationIdNotFoundException
 
-    deleted_application_evaluation = await application_service.delete_application_evaluation(
-        sqlmodel_session=sqlmodel_session, retrieved_application_evaluation=retrieved_application_evaluation
+    deleted_application_evaluation = (
+        await application_service.delete_application_evaluation(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_application_evaluation=retrieved_application_evaluation,
+        )
     )
 
     return deleted_application_evaluation
+
 
 # Application Endpoints
 @router.post(

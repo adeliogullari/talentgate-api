@@ -8,8 +8,12 @@ from pygments.styles.dracula import comment
 
 from config import Settings
 from src.talentgate.auth.crypto.token import BearerToken
-from src.talentgate.application.models import Application, ApplicationEvaluation, ApplicationEvaluationRequest, \
-    ApplicationRequest
+from src.talentgate.application.models import (
+    Application,
+    ApplicationEvaluation,
+    ApplicationEvaluationRequest,
+    ApplicationRequest,
+)
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 
@@ -36,21 +40,29 @@ def headers(token: str) -> Headers:
 
 
 async def test_create_application_evaluation(
-        client: TestClient, application: Application, headers
+    client: TestClient, application: Application, headers
 ) -> None:
     created_evaluation = ApplicationEvaluationRequest(comment="new_comment", rating="5")
 
-    response = client.post(url=f"/api/v1/applications/evaluations", headers=headers,
-                           json=json.loads(created_evaluation.model_dump_json(exclude_none=True, exclude_unset=True)))
+    response = client.post(
+        url=f"/api/v1/applications/evaluations",
+        headers=headers,
+        json=json.loads(
+            created_evaluation.model_dump_json(exclude_none=True, exclude_unset=True)
+        ),
+    )
 
     assert response.status_code == 201
     assert response.json()["comment"] == created_evaluation.comment
 
 
 async def test_retrieve_application_evaluation(
-        client: TestClient, application_evaluation: ApplicationEvaluation, headers
+    client: TestClient, application_evaluation: ApplicationEvaluation, headers
 ) -> None:
-    response = client.get(url=f"/api/v1/applications/evaluations/{application_evaluation.id}", headers=headers)
+    response = client.get(
+        url=f"/api/v1/applications/evaluations/{application_evaluation.id}",
+        headers=headers,
+    )
 
     assert response.status_code == 200
     assert response.json()["id"] == application_evaluation.id
@@ -58,9 +70,12 @@ async def test_retrieve_application_evaluation(
 
 
 async def test_retrieve_application_evaluations_by_application(
-        client: TestClient, application_evaluation: ApplicationEvaluation, headers
+    client: TestClient, application_evaluation: ApplicationEvaluation, headers
 ) -> None:
-    response = client.get(url=f"/api/v1/applications/{application_evaluation.application_id}/evaluations", headers=headers)
+    response = client.get(
+        url=f"/api/v1/applications/{application_evaluation.application_id}/evaluations",
+        headers=headers,
+    )
 
     assert response.status_code == 200
     assert response.json()[0]["application_id"] == application_evaluation.application_id
@@ -69,38 +84,53 @@ async def test_retrieve_application_evaluations_by_application(
 
 
 async def test_update_application_evaluation(
-        client: TestClient, application_evaluation: ApplicationEvaluation, headers
+    client: TestClient, application_evaluation: ApplicationEvaluation, headers
 ) -> None:
-    updated_application_evaluation = ApplicationEvaluationRequest(comment="updated_comment", rating="4")
+    updated_application_evaluation = ApplicationEvaluationRequest(
+        comment="updated_comment", rating="4"
+    )
 
-    response = client.put(url=f"/api/v1/applications/evaluations/{application_evaluation.id}",
-                          headers=headers, json=json.loads(updated_application_evaluation.model_dump_json(exclude_none=True, exclude_unset=True)))
+    response = client.put(
+        url=f"/api/v1/applications/evaluations/{application_evaluation.id}",
+        headers=headers,
+        json=json.loads(
+            updated_application_evaluation.model_dump_json(
+                exclude_none=True, exclude_unset=True
+            )
+        ),
+    )
 
     assert response.status_code == 200
     assert response.json()["comment"] == updated_application_evaluation.comment
 
 
 async def test_delete_application_evaluation(
-        client: TestClient, application_evaluation: ApplicationEvaluation, headers
+    client: TestClient, application_evaluation: ApplicationEvaluation, headers
 ) -> None:
-    response = client.delete(url=f"/api/v1/applications/evaluations/{application_evaluation.id}", headers=headers)
+    response = client.delete(
+        url=f"/api/v1/applications/evaluations/{application_evaluation.id}",
+        headers=headers,
+    )
 
     assert response.status_code == 200
 
 
-async def test_create_application(
-    client: TestClient, headers: Headers
-) -> None:
+async def test_create_application(client: TestClient, headers: Headers) -> None:
     created_application = ApplicationRequest(
-        firstname = "created firstname",
-        lastname = "created lastname",
-        email = "created_applicant_email@gmail.com",
-        phone = "+90532556345",
-        resume = "created_resume.pdf",
+        firstname="created firstname",
+        lastname="created lastname",
+        email="created_applicant_email@gmail.com",
+        phone="+90532556345",
+        resume="created_resume.pdf",
     )
 
-    response = client.post(url=f"/api/v1/applications", headers=headers,
-                           json=json.loads(created_application.model_dump_json(exclude_none=True, exclude_unset=True)))
+    response = client.post(
+        url=f"/api/v1/applications",
+        headers=headers,
+        json=json.loads(
+            created_application.model_dump_json(exclude_none=True, exclude_unset=True)
+        ),
+    )
 
     assert response.status_code == 201
     assert response.json()["email"] == created_application.email
@@ -129,17 +159,19 @@ async def test_update_application(
     client: TestClient, application: Application, headers: Headers
 ) -> None:
     updated_application = ApplicationRequest(
-        firstname= "updated firstname",
-        lastname= "updated lastname",
-        email= "updated_email@gmail.com",
-        phone= "+90532556999",
-        resume= "updated_resume.pdf"
+        firstname="updated firstname",
+        lastname="updated lastname",
+        email="updated_email@gmail.com",
+        phone="+90532556999",
+        resume="updated_resume.pdf",
     )
 
     response = client.put(
         url=f"/api/v1/applications/{application.id}",
         headers=headers,
-        json=json.loads(updated_application.model_dump_json(exclude_none=True, exclude_unset=True))
+        json=json.loads(
+            updated_application.model_dump_json(exclude_none=True, exclude_unset=True)
+        ),
     )
 
     assert response.status_code == 200
@@ -150,8 +182,7 @@ async def test_delete_application(
     client: TestClient, application: Application, headers: Headers
 ) -> None:
     response = client.delete(
-        url=f"/api/v1/applications/{application.id}",
-        headers=headers
+        url=f"/api/v1/applications/{application.id}", headers=headers
     )
 
     assert response.status_code == 200

@@ -1,6 +1,11 @@
 from typing import Any, Sequence
 from sqlmodel import select, Session
-from src.talentgate.employee.models import Employee, CreateEmployee, UpdateEmployee, EmployeeQueryParameters
+from src.talentgate.employee.models import (
+    Employee,
+    CreateEmployee,
+    UpdateEmployee,
+    EmployeeQueryParameters,
+)
 
 
 async def create(*, sqlmodel_session: Session, employee: CreateEmployee) -> Employee:

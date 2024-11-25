@@ -19,7 +19,7 @@ def make_user(sqlmodel_session: Session):
         verified: bool = True,
         image: str = "image",
         role: str = UserRole.ACCOUNT_OWNER,
-        subscription: str = UserSubscription.BASIC
+        subscription: str = UserSubscription.BASIC,
     ):
         user = User(
             firstname=firstname,
@@ -30,7 +30,7 @@ def make_user(sqlmodel_session: Session):
             verified=verified,
             image=image,
             role=role,
-            subscription=subscription
+            subscription=subscription,
         )
 
         sqlmodel_session.add(user)

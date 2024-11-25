@@ -13,7 +13,9 @@ async def test_create(sqlmodel_session: Session) -> None:
         username="username", email="username@gmail.com", password="password"
     )
 
-    created_user = await user_service.create(sqlmodel_session=sqlmodel_session, user=user)
+    created_user = await user_service.create(
+        sqlmodel_session=sqlmodel_session, user=user
+    )
 
     assert created_user.email == user.email
 

@@ -12,7 +12,7 @@ EvaluationIdNotFoundException = HTTPException(
 
 DuplicateEvaluationException = HTTPException(
     status_code=HTTP_409_CONFLICT,
-    detail="You have already submitted an evaluation for this application."
+    detail="You have already submitted an evaluation for this application.",
 )
 
 # Applcation Exceptions

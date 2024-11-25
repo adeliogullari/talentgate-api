@@ -2,7 +2,9 @@ from typing import Any, Sequence
 from sqlmodel import select, Session
 from src.talentgate.applicant.models import (
     Applicant,
-    ApplicantQueryParameters, CreateApplicant, UpdateApplicant,
+    ApplicantQueryParameters,
+    CreateApplicant,
+    UpdateApplicant,
 )
 
 
@@ -86,7 +88,10 @@ async def retrieve_by_query_parameters(
 
 
 async def update(
-    *, sqlmodel_session: Session, retrieved_applicant: Applicant, applicant: UpdateApplicant
+    *,
+    sqlmodel_session: Session,
+    retrieved_applicant: Applicant,
+    applicant: UpdateApplicant,
 ) -> Applicant:
     retrieved_applicant.sqlmodel_update(applicant)
 

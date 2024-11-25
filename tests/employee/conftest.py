@@ -9,10 +9,7 @@ def make_employee(sqlmodel_session: Session):
         title=EmployeeTitle.RECRUITER,
         salary="120",
     ):
-        employee = Employee(
-            title=title,
-            salary=salary
-        )
+        employee = Employee(title=title, salary=salary)
 
         sqlmodel_session.add(employee)
         sqlmodel_session.commit()
@@ -21,6 +18,7 @@ def make_employee(sqlmodel_session: Session):
         return employee
 
     return make
+
 
 @pytest.fixture
 def employee(make_employee):

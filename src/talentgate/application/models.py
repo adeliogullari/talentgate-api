@@ -6,6 +6,7 @@ from typing import List, Optional
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.employee.models import Employee
 
+
 class ApplicationStatus(str, Enum):
     APPLIED = "Applied"
     SCREENING = "Screening"
@@ -31,7 +32,9 @@ class ApplicationEvaluation(SQLModel, table=True):
     comment: str | None = Field(nullable=False)
     rating: str | None = Field(default=None)
     employee_id: int | None = Field(default=None, foreign_key="employee.id")
-    employee: Optional["Employee"] = Relationship(back_populates="application_evaluations")
+    employee: Optional["Employee"] = Relationship(
+        back_populates="application_evaluations"
+    )
     application_id: int | None = Field(default=None, foreign_key="application.id")
     application: Optional["Application"] = Relationship(back_populates="evaluations")
 
@@ -41,6 +44,7 @@ class ApplicationEvaluation(SQLModel, table=True):
         sa_column_kwargs={"onupdate": lambda: datetime.now(UTC)},
     )
 
+
 class ApplicationEvaluationRequest(SQLModel):
     comment: str | None = None
     rating: int | None = None
@@ -48,8 +52,8 @@ class ApplicationEvaluationRequest(SQLModel):
     application_id: int | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
-    
-    
+
+
 class ApplicationEvaluationQueryParameters(SQLModel):
     offset: int | None = None
     limit: int | None = None
@@ -82,7 +86,9 @@ class Application(SQLModel, table=True):
     earliest_start_date: Optional[datetime] = None
     links: List[ApplicationLink] = Relationship(back_populates="application")
     status: ApplicationStatus | None = Field(default=ApplicationStatus.APPLIED)
-    evaluations: List[ApplicationEvaluation] = Relationship(back_populates="application")
+    evaluations: List[ApplicationEvaluation] = Relationship(
+        back_populates="application"
+    )
     # job_id: int | None = Field(default=None, foreign_key="job.id") # TODO
     # job: Optional["Job"] = Relationship(back_populates="application_evaluations") # TODO
 
