@@ -54,5 +54,5 @@ async def test_delete(sqlmodel_session: Session, employee: Employee) -> None:
         sqlmodel_session=sqlmodel_session, retrieved_employee=employee
     )
 
-    assert deleted_employee.title == deleted_employee.title
-    assert deleted_employee.salary == deleted_employee.salary
+    assert deleted_employee.title == employee.title
+    assert deleted_employee.salary == employee.salary

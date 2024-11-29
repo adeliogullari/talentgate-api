@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.employee.models import Employee
+from src.talentgate.job.models import Job
 
 
 class ApplicationStatus(str, Enum):
@@ -86,16 +87,14 @@ class Application(SQLModel, table=True):
     earliest_start_date: Optional[datetime] = None
     links: List[ApplicationLink] = Relationship(back_populates="application")
     status: ApplicationStatus | None = Field(default=ApplicationStatus.APPLIED)
-    evaluations: List[ApplicationEvaluation] = Relationship(
-        back_populates="application"
-    )
-    # job_id: int | None = Field(default=None, foreign_key="job.id") # TODO
-    # job: Optional["Job"] = Relationship(back_populates="application_evaluations") # TODO
+    evaluations: List[ApplicationEvaluation] = Relationship(back_populates="application")
+    job_id: int | None = Field(default=None, foreign_key="job.id")
+    job: Optional["Job"] = Relationship(back_populates="applications")
 
-    created_at: datetime | None = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime | None = Field(default=datetime.now(UTC))
     updated_at: datetime | None = Field(
-        default_factory=lambda: datetime.now(UTC),
-        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC)},
+        default=datetime.now(UTC),
+        sa_column_kwargs={"onupdate": datetime.now(UTC)},
     )
 
 

@@ -2,6 +2,8 @@ from enum import Enum
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING, List
 
+from src.talentgate.job.models import Job
+from src.talentgate.observer.models import Observer
 from src.talentgate.user.models import User
 
 if TYPE_CHECKING:
@@ -30,6 +32,7 @@ class Employee(SQLModel, table=True):
     application_evaluations: List["ApplicationEvaluation"] = Relationship(
         back_populates="employee"
     )
+    jobs: List["Job"] = Relationship(back_populates="observers", link_model=Observer)
 
 
 User.model_rebuild()
@@ -61,9 +64,8 @@ class RetrievedEmployee(EmployeeResponse):
 class EmployeeQueryParameters(SQLModel):
     offset: int | None = None
     limit: int | None = None
-    title: str | None = None
-    salary: EmployeeTitle | None = None
-    employee_id: int | None = None
+    title: EmployeeTitle | None = None
+    salary: str | None = None
 
 
 class UpdateEmployee(EmployeeRequest):
