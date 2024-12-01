@@ -1,8 +1,7 @@
 from enum import Enum
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List
 
-from src.talentgate.job.models import Job
 from src.talentgate.observer.models import Observer
 from src.talentgate.user.models import User
 
@@ -32,7 +31,9 @@ class Employee(SQLModel, table=True):
     application_evaluations: List["ApplicationEvaluation"] = Relationship(
         back_populates="employee"
     )
-    jobs: List["Job"] = Relationship(back_populates="observers", link_model=Observer)
+    observed_jobs: List["Observer"] = Relationship(
+        back_populates="employee", cascade_delete=True
+    )
 
 
 User.model_rebuild()

@@ -7,7 +7,6 @@ from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.observer.models import Observer
 
 if TYPE_CHECKING:
-    from src.talentgate.employee.models import Employee
     from src.talentgate.application.models import Application
 
 
@@ -54,7 +53,9 @@ class Job(SQLModel, table=True):
     department: str | None = Field(default=None)
     employment_type: EmploymentType | None = Field(default=None)
     application_deadline: datetime | None = Field(default=None)
-    observers: List["Employee"] = Relationship(back_populates="jobs", link_model=Observer)
+    observers: List["Observer"] = Relationship(
+        back_populates="job", cascade_delete=True
+    )
     applications: List["Application"] = Relationship(back_populates="job")
     location_id: int | None = Field(foreign_key="job_location.id")
     location: JobLocation | None = Relationship(
