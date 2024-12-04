@@ -10,15 +10,12 @@ async def test_create(sqlmodel_session: Session) -> None:
         department="created job department",
         employment_type=EmploymentType.PART_TIME,
     )
-    
-    created_job = await create(
-        sqlmodel_session=sqlmodel_session, job=new_job
-    )
+
+    created_job = await create(sqlmodel_session=sqlmodel_session, job=new_job)
 
     assert created_job.title == new_job.title
     assert created_job.description == new_job.description
     assert created_job.department == new_job.department
-
 
 
 async def test_retrieve_by_id(sqlmodel_session: Session, job: Job) -> None:
@@ -40,7 +37,6 @@ async def test_update(sqlmodel_session: Session, job: Job) -> None:
         employment_type=EmploymentType.PART_TIME,
     )
 
-
     updated_job = await update(
         sqlmodel_session=sqlmodel_session,
         retrieved_job=job,
@@ -53,9 +49,7 @@ async def test_update(sqlmodel_session: Session, job: Job) -> None:
 
 
 async def test_delete(sqlmodel_session: Session, job: Job) -> None:
-    deleted_job = await delete(
-        sqlmodel_session=sqlmodel_session, retrieved_job=job
-    )
+    deleted_job = await delete(sqlmodel_session=sqlmodel_session, retrieved_job=job)
 
     assert deleted_job.title == job.title
     assert deleted_job.description == job.description

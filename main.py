@@ -8,7 +8,6 @@ from src.talentgate.auth.views import router as auth_router
 from src.talentgate.location.views import router as location_router
 from src.talentgate.application.views import router as application_router
 from src.talentgate.job.views import router as job_router
-from src.talentgate.observer.views import router as observer_router
 from src.talentgate.database.service import engine
 
 
@@ -30,7 +29,6 @@ app.openapi_tags = [
     {"name": "user", "description": "Operations with users"},
     {"name": "application", "description": "Operations with applications"},
     {"name": "job", "description": "Operations with jobs"},
-    {"name": "observer", "description": "Operations with observers"},
 ]
 
 app.include_router(user_router)
@@ -39,7 +37,6 @@ app.include_router(auth_router)
 app.include_router(location_router)
 app.include_router(application_router)
 app.include_router(job_router)
-app.include_router(observer_router)
 
 
 app.add_middleware(

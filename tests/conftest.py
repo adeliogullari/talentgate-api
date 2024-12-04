@@ -13,7 +13,6 @@ from src.talentgate.location.views import router as location_router
 from src.talentgate.applicant.views import router as applicant_router
 from src.talentgate.application.views import router as application_router
 from src.talentgate.job.views import router as job_router
-from src.talentgate.observer.views import router as observer_router
 from src.talentgate.database.service import get_sqlmodel_session
 from tests.employee.conftest import employee, make_employee
 from tests.job.conftest import job, make_job
@@ -34,7 +33,6 @@ async def start_application() -> FastAPI | None:
     app.include_router(applicant_router)
     app.include_router(application_router)
     app.include_router(job_router)
-    app.include_router(observer_router)
     return app
 
 

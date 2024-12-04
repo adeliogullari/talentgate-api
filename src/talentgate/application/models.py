@@ -87,7 +87,9 @@ class Application(SQLModel, table=True):
     earliest_start_date: Optional[datetime] = None
     links: List[ApplicationLink] = Relationship(back_populates="application")
     status: ApplicationStatus | None = Field(default=ApplicationStatus.APPLIED)
-    evaluations: List[ApplicationEvaluation] = Relationship(back_populates="application")
+    evaluations: List[ApplicationEvaluation] = Relationship(
+        back_populates="application"
+    )
     job_id: int | None = Field(default=None, foreign_key="job.id")
     job: Optional["Job"] = Relationship(back_populates="applications")
 

@@ -9,7 +9,11 @@ from src.talentgate.job.models import (
     Job,
     CreateJob,
     CreatedJob,
-    RetrievedJob, JobQueryParameters, UpdatedJob, UpdateJob, DeletedJob,
+    RetrievedJob,
+    JobQueryParameters,
+    UpdatedJob,
+    UpdateJob,
+    DeletedJob,
 )
 
 router = APIRouter(tags=["job"])
@@ -25,9 +29,7 @@ async def create_job(
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
     job: CreateJob,
 ) -> Job:
-    created_job = await job_service.create(
-        sqlmodel_session=sqlmodel_session, job=job
-    )
+    created_job = await job_service.create(sqlmodel_session=sqlmodel_session, job=job)
 
     return created_job
 
@@ -67,11 +69,7 @@ async def retrieve_jobs(
     return retrieved_job
 
 
-@router.put(
-    path="/api/v1/jobs/{job_id}",
-    response_model=UpdatedJob,
-    status_code=200
-)
+@router.put(path="/api/v1/jobs/{job_id}", response_model=UpdatedJob, status_code=200)
 async def update_job(
     *,
     job_id: int,
@@ -92,14 +90,11 @@ async def update_job(
     return updated_job
 
 
-@router.delete(
-    path="/api/v1/jobs/{job_id}",
-    response_model=DeletedJob,
-    status_code=200
-)
+@router.delete(path="/api/v1/jobs/{job_id}", response_model=DeletedJob, status_code=200)
 async def delete_job(
     *,
-    job_id: int, sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    job_id: int,
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
 ) -> Job:
     retrieved_job = await job_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session, job_id=job_id

@@ -5,9 +5,7 @@ from src.talentgate.job.models import Job, CreateJob, UpdateJob, JobQueryParamet
 
 
 async def create(*, sqlmodel_session: Session, job: CreateJob) -> Job:
-    created_job = Job(
-        **job.model_dump(exclude_unset=True, exclude_none=True)
-    )
+    created_job = Job(**job.model_dump(exclude_unset=True, exclude_none=True))
 
     sqlmodel_session.add(created_job)
     sqlmodel_session.commit()
@@ -55,9 +53,7 @@ async def update(
     return retrieved_job
 
 
-async def delete(
-    *, sqlmodel_session: Session, retrieved_job: Job
-) -> Job:
+async def delete(*, sqlmodel_session: Session, retrieved_job: Job) -> Job:
     sqlmodel_session.delete(retrieved_job)
     sqlmodel_session.commit()
 

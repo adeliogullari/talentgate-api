@@ -6,7 +6,8 @@ from src.talentgate.auth.crypto.token import BearerToken
 from src.talentgate.job.models import (
     Job,
     CreateJob,
-    UpdateJob, EmploymentType,
+    UpdateJob,
+    EmploymentType,
 )
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
@@ -35,11 +36,11 @@ def headers(token: str) -> Headers:
 
 async def test_create_job(client: TestClient, headers: Headers) -> None:
     created_job = CreateJob(
-        title = "created job title",
-        description = "created job description",
-        department = "created job department",
-        employment_type = EmploymentType.FULL_TIME,
-        application_deadline = datetime.now(),
+        title="created job title",
+        description="created job description",
+        department="created job department",
+        employment_type=EmploymentType.FULL_TIME,
+        application_deadline=datetime.now(),
     )
 
     response = client.post(
@@ -57,9 +58,7 @@ async def test_create_job(client: TestClient, headers: Headers) -> None:
     assert response.json()["employment_type"] == created_job.employment_type
 
 
-async def test_retrieve_job(
-    client: TestClient, job: Job, headers: Headers
-) -> None:
+async def test_retrieve_job(client: TestClient, job: Job, headers: Headers) -> None:
     response = client.get(url=f"/api/v1/jobs/{job.id}", headers=headers)
 
     assert response.status_code == 200
@@ -69,9 +68,7 @@ async def test_retrieve_job(
     assert response.json()["employment_type"] == job.employment_type
 
 
-async def test_retrieve_jobs(
-    client: TestClient, job: Job, headers: Headers
-) -> None:
+async def test_retrieve_jobs(client: TestClient, job: Job, headers: Headers) -> None:
     response = client.get(url="/api/v1/jobs", headers=headers)
 
     assert response.status_code == 200
@@ -81,15 +78,13 @@ async def test_retrieve_jobs(
     assert response.json()[0]["employment_type"] == job.employment_type
 
 
-async def test_update_job(
-    client: TestClient, job: Job, headers: Headers
-) -> None:
+async def test_update_job(client: TestClient, job: Job, headers: Headers) -> None:
     updated_job = UpdateJob(
-        title = "updated job title",
-        description = "updated job description",
-        department = "updated job department",
-        employment_type = EmploymentType.PART_TIME,
-        application_deadline = datetime.now() + timedelta(days=10)
+        title="updated job title",
+        description="updated job description",
+        department="updated job department",
+        employment_type=EmploymentType.PART_TIME,
+        application_deadline=datetime.now() + timedelta(days=10),
     )
 
     response = client.put(
@@ -107,9 +102,7 @@ async def test_update_job(
     assert response.json()["employment_type"] == updated_job.employment_type
 
 
-async def test_delete_job(
-    client: TestClient, job: Job, headers: Headers
-) -> None:
+async def test_delete_job(client: TestClient, job: Job, headers: Headers) -> None:
     response = client.delete(url=f"/api/v1/jobs/{job.id}", headers=headers)
 
     assert response.status_code == 200
