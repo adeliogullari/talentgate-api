@@ -127,3 +127,28 @@ class DeleteJob(JobRequest):
 
 class DeletedJob(JobResponse):
     pass
+
+
+class ObserverRequest(SQLModel):
+    employee_id: int
+
+
+class ObserverResponse(SQLModel):
+    job_id: int | None = None
+    employee_id: int | None = None
+
+
+class AddObserver(ObserverRequest):
+    pass
+
+
+class AddedObserver(ObserverResponse):
+    pass
+
+
+class RetrievedObserver(ObserverResponse):
+    pass
+
+
+class DeletedObserver(ObserverResponse):
+    pass
