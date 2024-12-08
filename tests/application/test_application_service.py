@@ -25,7 +25,6 @@ from src.talentgate.application.service import (
     delete_application_evaluation,
 )
 from src.talentgate.employee.models import Employee
-from tests.application.conftest import make_application_evaluation
 
 
 async def test_create_application_evaluation(

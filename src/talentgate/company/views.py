@@ -15,8 +15,6 @@ from src.talentgate.company.models import (
 )
 from src.talentgate.company.exceptions import (
     IdNotFoundException,
-    DuplicateUsernameException,
-    DuplicateEmailException,
 )
 
 router = APIRouter(tags=["company"])

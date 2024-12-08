@@ -14,8 +14,6 @@ from src.talentgate.applicant.views import router as applicant_router
 from src.talentgate.application.views import router as application_router
 from src.talentgate.job.views import router as job_router
 from src.talentgate.database.service import get_sqlmodel_session
-from tests.employee.conftest import employee, make_employee
-from tests.job.conftest import job, make_job
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -67,9 +65,9 @@ async def client(
         yield Settings(
             password_hash_algorithm="scrypt",
             message_digest_algorithm="blake2b",
-            access_token_expiration_minutes=60,
+            access_token_expiration=7200,
             access_token_key="SJ6nWJtM737AZWevVdDEr4Fh0GmoyR8k",
-            refresh_token_expiration_days=90,
+            refresh_token_expiration=86400,
             refresh_token_key="SJ6nWJtM737AZWevVdDEr4Fh0GmoyR8k",
         )
 

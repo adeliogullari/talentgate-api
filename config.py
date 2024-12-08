@@ -12,11 +12,11 @@ class Settings(BaseSettings):
     google_client_id: str
     password_hash_algorithm: str
     message_digest_algorithm: str | None
-    access_token_expiration_minutes: float
+    access_token_expiration: float
     access_token_key: str
     access_token_algorithm: str
     access_token_type: str
-    refresh_token_expiration_days: float
+    refresh_token_expiration: float
     refresh_token_key: str
     refresh_token_algorithm: str
     refresh_token_type: str

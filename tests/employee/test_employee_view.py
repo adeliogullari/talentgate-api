@@ -38,7 +38,7 @@ async def test_create_employee(client: TestClient, headers: Headers) -> None:
     created_employee = CreateEmployee(title=EmployeeTitle.FOUNDER, salary="999")
 
     response = client.post(
-        url=f"/api/v1/employees",
+        url="/api/v1/employees",
         headers=headers,
         json=json.loads(
             created_employee.model_dump_json(exclude_none=True, exclude_unset=True)

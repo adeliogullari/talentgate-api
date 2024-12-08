@@ -1,18 +1,34 @@
 from sqlmodel import SQLModel
 
 
+class AuthenticationTokens(SQLModel):
+    access_token: str | None
+    refresh_token: str | None
+
+
 class LoginCredentials(SQLModel):
     email: str
     password: str
 
 
-class LoginResponse(SQLModel):
-    access_token: str | None
-    refresh_token: str | None
+class LoginTokens(AuthenticationTokens):
+    pass
 
 
 class GoogleCredentials(SQLModel):
     token: str | None
+
+
+class GoogleTokens(AuthenticationTokens):
+    pass
+
+
+class LinkedInCredentials(SQLModel):
+    token: str | None
+
+
+class LinkedInTokens(AuthenticationTokens):
+    pass
 
 
 class RegisterCredentials(SQLModel):
@@ -23,7 +39,7 @@ class RegisterCredentials(SQLModel):
     password: str
 
 
-class RegisterResponse(SQLModel):
+class RegisteredUser(SQLModel):
     firstname: str
     lastname: str
     username: str
@@ -36,3 +52,12 @@ class VerifyToken(SQLModel):
 
 class TokenVerification(SQLModel):
     is_verified: bool
+
+
+class RefreshToken(SQLModel):
+    refresh_token: str
+
+
+class RefreshedTokens(SQLModel):
+    access_token: str
+    refresh_token: str

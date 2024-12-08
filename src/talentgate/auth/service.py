@@ -1,59 +1,38 @@
 from datetime import datetime, timedelta, UTC
-
-from src.talentgate.auth.crypto.token import BearerToken
-from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
+from pytography import PasswordHashLibrary, JsonWebToken
 
 
 def encode_password(
     password: str,
-    algorithm: str,
-):
-    password_hash_library = PasswordHashLibrary(algorithm=algorithm)
-
-    return password_hash_library.encode(password=password)
+) -> str:
+    return PasswordHashLibrary.encode(password=password)
 
 
-def verify_password(password: str, encoded_password: bytes, algorithm: str):
-    password_hash_library = PasswordHashLibrary(algorithm=algorithm)
-
-    return password_hash_library.verify(
+def verify_password(password: str, encoded_password: str) -> bool:
+    return PasswordHashLibrary.verify(
         password=password, encoded_password=encoded_password
     )
 
 
-def generate_access_token(
-    expiration_minutes: float, user_id: int, algorithm: str, key: str
-):
-    bearer_token = BearerToken(algorithm=algorithm)
-
+def generate_access_token(payload: dict, key: str, seconds: float) -> str:
     now = datetime.now(UTC)
-    exp = (now + timedelta(minutes=expiration_minutes)).timestamp()
-    payload = {"exp": exp, "id": user_id}
-    headers = {"alg": algorithm, "typ": "JWT"}
+    exp = (now + timedelta(seconds=seconds)).timestamp()
+    payload.update({"exp": exp})
 
-    return bearer_token.encode(payload=payload, key=key, headers=headers)
+    return JsonWebToken.encode(payload=payload, key=key)
 
 
-def generate_refresh_token(
-    expiration_days: float, user_id: int, algorithm: str, key: str
-):
-    bearer_token = BearerToken(algorithm=algorithm)
-
+def generate_refresh_token(payload: dict, key: str, seconds: float) -> str:
     now = datetime.now(UTC)
-    exp = (now + timedelta(days=expiration_days)).timestamp()
-    payload = {"exp": exp, "id": user_id}
-    headers = {"alg": algorithm, "typ": "JWT"}
+    exp = (now + timedelta(seconds=seconds)).timestamp()
+    payload.update({"exp": exp})
 
-    return bearer_token.encode(payload=payload, key=key, headers=headers)
-
-
-def verify_access_token(key: str, token: str, algorithm: str):
-    bearer_token = BearerToken(algorithm=algorithm)
-
-    return bearer_token.verify(key=key, token=token)
+    return JsonWebToken.encode(payload=payload, key=key)
 
 
-def verify_refresh_token(key: str, token: str, algorithm: str):
-    bearer_token = BearerToken(algorithm=algorithm)
+def verify_access_token(token: str, key: str) -> bool:
+    return JsonWebToken.verify(token=token, key=key)
 
-    return bearer_token.verify(key=key, token=token)
+
+def verify_refresh_token(token: str, key: str) -> bool:
+    return JsonWebToken.verify(token=token, key=key)

@@ -13,7 +13,6 @@ from src.talentgate.job.models import (
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 
-from tests.job.conftest import make_job
 
 settings = Settings()
 
@@ -81,7 +80,7 @@ async def test_create_job(client: TestClient, headers: Headers) -> None:
     )
 
     response = client.post(
-        url=f"/api/v1/jobs",
+        url="/api/v1/jobs",
         headers=headers,
         json=json.loads(
             created_job.model_dump_json(exclude_none=True, exclude_unset=True)

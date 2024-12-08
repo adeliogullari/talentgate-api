@@ -6,7 +6,6 @@ from src.talentgate.employee.models import (
     UpdateEmployee,
 )
 from src.talentgate.employee.service import create, retrieve_by_id, update, delete
-from tests.employee.conftest import make_employee
 
 
 async def test_create(sqlmodel_session: Session) -> None:

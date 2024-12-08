@@ -1,10 +1,8 @@
 import json
-from venv import logger
 
 import pytest
 from datetime import timedelta, datetime, UTC
 
-from pygments.styles.dracula import comment
 
 from config import Settings
 from src.talentgate.auth.crypto.token import BearerToken
@@ -45,7 +43,7 @@ async def test_create_application_evaluation(
     created_evaluation = ApplicationEvaluationRequest(comment="new_comment", rating="5")
 
     response = client.post(
-        url=f"/api/v1/applications/evaluations",
+        url="/api/v1/applications/evaluations",
         headers=headers,
         json=json.loads(
             created_evaluation.model_dump_json(exclude_none=True, exclude_unset=True)
@@ -125,7 +123,7 @@ async def test_create_application(client: TestClient, headers: Headers) -> None:
     )
 
     response = client.post(
-        url=f"/api/v1/applications",
+        url="/api/v1/applications",
         headers=headers,
         json=json.loads(
             created_application.model_dump_json(exclude_none=True, exclude_unset=True)

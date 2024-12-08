@@ -28,7 +28,7 @@ class User(SQLModel, table=True):
     lastname: str | None = Field(default=None)
     username: str = Field(unique=True)
     email: str = Field(unique=True)
-    password: bytes = Field(nullable=False)
+    password: str = Field(nullable=False)
     verified: bool = Field(default=False)
     image: str | None = Field(default=None)
     role: UserRole | None = Field(default=UserRole.ACCOUNT_OWNER)

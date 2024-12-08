@@ -57,7 +57,7 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
     )
 
     response = client.post(
-        url=f"/api/v1/users",
+        url="/api/v1/users",
         headers=headers,
         json=json.loads(
             created_user.model_dump_json(exclude_unset=True, exclude_none=True)
