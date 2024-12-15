@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, UTC
 from sqlmodel import SQLModel, Field, Relationship
+from src.talentgate.database.models import BaseModel
 
 if TYPE_CHECKING:
     from src.talentgate.employee.models import Employee
@@ -10,7 +11,6 @@ if TYPE_CHECKING:
 class UserRole(str, Enum):
     ACCOUNT_OWNER = "Account Owner"
     ADMIN = "Admin"
-    SUPER_ADMIN = "Super Admin"
 
 
 class UserSubscription(str, Enum):
@@ -43,7 +43,7 @@ class User(SQLModel, table=True):
     )
 
 
-class UserRequest(SQLModel):
+class UserRequest(BaseModel):
     firstname: str | None = None
     lastname: str | None = None
     username: str
@@ -53,11 +53,9 @@ class UserRequest(SQLModel):
     image: str | None = None
     role: UserRole | None = None
     subscription: UserSubscription | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
 
 
-class UserResponse(SQLModel):
+class UserResponse(BaseModel):
     id: int | None = None
     firstname: str | None = None
     lastname: str | None = None
@@ -83,7 +81,7 @@ class RetrievedUser(UserResponse):
     pass
 
 
-class UserQueryParameters(SQLModel):
+class UserQueryParameters(BaseModel):
     offset: int | None = None
     limit: int | None = None
     firstname: str | None = None
@@ -95,13 +93,18 @@ class UserQueryParameters(SQLModel):
     subscription: UserSubscription | None = None
 
 
-class UpdateUser(UserRequest):
-    pass
+class UpdateUser(BaseModel):
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str
+    email: str
+    password: str
+    image: str | None = None
 
 
 class UpdatedUser(UserResponse):
     pass
 
 
-class DeletedUser(SQLModel):
+class DeletedUser(BaseModel):
     id: int

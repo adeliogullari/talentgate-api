@@ -1,12 +1,12 @@
-from sqlmodel import SQLModel
+from src.talentgate.database.models import BaseModel
 
 
-class AuthenticationTokens(SQLModel):
+class AuthenticationTokens(BaseModel):
     access_token: str | None
     refresh_token: str | None
 
 
-class LoginCredentials(SQLModel):
+class LoginCredentials(BaseModel):
     email: str
     password: str
 
@@ -15,7 +15,7 @@ class LoginTokens(AuthenticationTokens):
     pass
 
 
-class GoogleCredentials(SQLModel):
+class GoogleCredentials(BaseModel):
     token: str | None
 
 
@@ -23,7 +23,7 @@ class GoogleTokens(AuthenticationTokens):
     pass
 
 
-class LinkedInCredentials(SQLModel):
+class LinkedInCredentials(BaseModel):
     token: str | None
 
 
@@ -31,7 +31,7 @@ class LinkedInTokens(AuthenticationTokens):
     pass
 
 
-class RegisterCredentials(SQLModel):
+class RegisterCredentials(BaseModel):
     firstname: str
     lastname: str
     username: str
@@ -39,25 +39,8 @@ class RegisterCredentials(SQLModel):
     password: str
 
 
-class RegisteredUser(SQLModel):
+class RegisteredUser(BaseModel):
     firstname: str
     lastname: str
     username: str
     email: str
-
-
-class VerifyToken(SQLModel):
-    access_token: str
-
-
-class TokenVerification(SQLModel):
-    is_verified: bool
-
-
-class RefreshToken(SQLModel):
-    refresh_token: str
-
-
-class RefreshedTokens(SQLModel):
-    access_token: str
-    refresh_token: str

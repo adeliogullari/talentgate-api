@@ -5,6 +5,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from config import Settings, get_settings
 
+from tests.auth.conftest import access_token, refresh_token, headers
+from tests.user.conftest import make_user, user
 
 from src.talentgate.user.views import router as user_router
 from src.talentgate.employee.views import router as employee_router

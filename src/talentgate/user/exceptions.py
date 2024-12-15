@@ -1,21 +1,17 @@
 from fastapi import HTTPException
 from starlette.status import (
+    HTTP_401_UNAUTHORIZED,
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
 )
 
-InvalidAuthorizationException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN,
-    detail="The required permissions are missing to access this resource.",
+InvalidCredentialsException = HTTPException(
+    status_code=HTTP_401_UNAUTHORIZED, detail="Invalid email or password."
 )
 
 InvalidVerificationException = HTTPException(
     status_code=HTTP_403_FORBIDDEN, detail="The user verification is invalid"
-)
-
-IncorrectPasswordException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN, detail="The password provided is incorrect."
 )
 
 IdNotFoundException = HTTPException(

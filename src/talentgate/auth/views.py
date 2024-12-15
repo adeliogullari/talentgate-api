@@ -1,26 +1,20 @@
 import random
 import string
 import requests
-from google.oauth2 import id_token
-
 from sqlmodel import Session
+from google.oauth2 import id_token
 from fastapi import Depends, APIRouter
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import CreateUser
 from src.talentgate.user.exceptions import (
+    InvalidCredentialsException,
     InvalidVerificationException,
-    IncorrectPasswordException,
     DuplicateUsernameException,
-    EmailNotFoundException,
     DuplicateEmailException,
 )
-from .exceptions import (
-    InvalidGoogleIDTokenException,
-    InvalidLinkedInAccessTokenException,
-)
-from src.talentgate.auth.models import (
+from .models import (
     LoginCredentials,
     LoginTokens,
     GoogleCredentials,
@@ -29,9 +23,12 @@ from src.talentgate.auth.models import (
     LinkedInTokens,
     RegisterCredentials,
     RegisteredUser,
-    RefreshToken,
-    RefreshedTokens,
 )
+from .exceptions import (
+    InvalidGoogleIDTokenException,
+    InvalidLinkedInAccessTokenException,
+)
+
 from config import Settings, get_settings
 
 router = APIRouter(tags=["auth"])
@@ -49,24 +46,24 @@ async def login(
     )
 
     if not retrieved_user:
-        raise EmailNotFoundException
+        raise InvalidCredentialsException
 
     if not retrieved_user.verified:
         raise InvalidVerificationException
 
-    if not auth_service.verify_password(
+    if not user_service.verify_password(
         password=credentials.password, encoded_password=retrieved_user.password
     ):
-        raise IncorrectPasswordException
+        raise InvalidCredentialsException
 
-    access_token = auth_service.generate_access_token(
-        payload={"user_id": retrieved_user.id},
+    access_token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
 
-    refresh_token = auth_service.generate_refresh_token(
-        payload={"user_id": retrieved_user.id},
+    refresh_token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )
@@ -100,7 +97,9 @@ async def google(
         firstname = id_info["given_name"].lower()
         lastname = id_info["family_name"].lower()
         username = f"{firstname}{lastname}{random.randint(1000, 9999)}"
-        password = random.choices(string.ascii_letters + string.digits, k=16)
+        password = user_service.encode_password(
+            password="".join(random.choices(string.ascii_letters + string.digits, k=16))
+        )
 
         await user_service.create(
             sqlmodel_session=sqlmodel_session,
@@ -116,14 +115,14 @@ async def google(
         sqlmodel_session=sqlmodel_session, email=email
     )
 
-    access_token = auth_service.generate_access_token(
-        payload={"user_id": retrieved_user.id},
+    access_token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
 
-    refresh_token = auth_service.generate_refresh_token(
-        payload={"user_id": retrieved_user.id},
+    refresh_token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )
@@ -162,7 +161,9 @@ async def linkedin(
         firstname = response_body["localizedFirstName"].lower()
         lastname = response_body["localizedLastName"].lower()
         username = f"{firstname}{lastname}{random.randint(1000, 9999)}"
-        password = random.choices(string.ascii_letters + string.digits, k=16)
+        password = user_service.encode_password(
+            password="".join(random.choices(string.ascii_letters + string.digits, k=16))
+        )
 
         await user_service.create(
             sqlmodel_session=sqlmodel_session,
@@ -178,14 +179,14 @@ async def linkedin(
         sqlmodel_session=sqlmodel_session, email=email
     )
 
-    access_token = auth_service.generate_access_token(
-        payload={"user_id": retrieved_user.id},
+    access_token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
 
-    refresh_token = auth_service.generate_refresh_token(
-        payload={"user_id": retrieved_user.id},
+    refresh_token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )
@@ -209,30 +210,6 @@ async def register(
     if retrieved_user:
         raise DuplicateUsernameException
 
-    retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=credentials.email
-    )
-
-    if retrieved_user:
-        raise DuplicateEmailException
-
-    created_user = await user_service.create(
-        sqlmodel_session=sqlmodel_session,
-        user=CreateUser(**credentials.model_dump()),
-    )
-
-    return created_user
-
-
-@router.post(
-    path="/api/v1/auth/token/refresh", response_model=RefreshedTokens, status_code=200
-)
-async def refresh_token(
-    *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    settings: Settings = Depends(get_settings),
-    token: RefreshToken,
-) -> RefreshedTokens:
     retrieved_user = await user_service.retrieve_by_email(
         sqlmodel_session=sqlmodel_session, email=credentials.email
     )

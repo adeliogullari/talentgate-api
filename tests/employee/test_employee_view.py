@@ -2,13 +2,13 @@ import json
 import pytest
 from datetime import timedelta, datetime, UTC
 from config import Settings
-from src.talentgate.auth.crypto.token import BearerToken
 from src.talentgate.employee.models import (
     Employee,
     CreateEmployee,
     EmployeeTitle,
     UpdateEmployee,
 )
+from pytography import JsonWebToken
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 
@@ -17,15 +17,12 @@ settings = Settings()
 
 @pytest.fixture
 def token(employee: Employee) -> str:
-    access_token = BearerToken("blake2b")
-
     now = datetime.now(UTC)
     exp = (now + timedelta(minutes=60)).timestamp()
     payload = {"exp": exp, "employee_id": employee.id}
-    return access_token.encode(
+    return JsonWebToken.encode(
         payload=payload,
         key=settings.access_token_key,
-        headers={"alg": settings.access_token_algorithm, "typ": "JWT"},
     )
 
 

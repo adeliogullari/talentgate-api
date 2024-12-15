@@ -2,11 +2,10 @@ import pytest
 from config import get_settings
 from sqlmodel import Session
 from src.talentgate.application.models import Application, ApplicationEvaluation
-from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
 from src.talentgate.employee.models import Employee
+from pytography import PasswordHashLibrary
 
 settings = get_settings()
-password_hash_library = PasswordHashLibrary(settings.password_hash_algorithm)
 
 
 @pytest.fixture

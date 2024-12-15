@@ -1,6 +1,6 @@
 from typing import Any, Sequence
 from sqlmodel import select, Session
-from src.talentgate.auth.crypto.password.library import PasswordHashLibrary
+from pytography import PasswordHashLibrary
 from src.talentgate.user.models import (
     User,
     CreateUser,
@@ -10,11 +10,20 @@ from src.talentgate.user.models import (
 from config import get_settings
 
 settings = get_settings()
-password_hash_library = PasswordHashLibrary(settings.password_hash_algorithm)
+
+
+def encode_password(password: str):
+    return PasswordHashLibrary.encode(password=password)
+
+
+def verify_password(password: str, encoded_password: str):
+    return PasswordHashLibrary.verify(
+        password=password, encoded_password=encoded_password
+    )
 
 
 async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
-    password = password_hash_library.encode(password=user.password)
+    password = encode_password(password=user.password)
 
     created_user = User(
         **user.model_dump(exclude_unset=True, exclude_none=True, exclude={"password"}),
@@ -74,7 +83,7 @@ async def retrieve_by_query_parameters(
 async def update(
     *, sqlmodel_session: Session, retrieved_user: User, user: UpdateUser
 ) -> User:
-    user.password = password_hash_library.encode(password=user.password)
+    user.password = encode_password(password=user.password)
     retrieved_user.sqlmodel_update(user)
 
     sqlmodel_session.add(retrieved_user)

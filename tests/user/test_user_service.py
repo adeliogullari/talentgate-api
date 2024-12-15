@@ -1,16 +1,33 @@
 from sqlmodel import Session
 from src.talentgate.user.models import (
     User,
-    UserRole,
     CreateUser,
     UpdateUser,
+    UserRole,
+    UserSubscription
 )
 from src.talentgate.user import service as user_service
 
 
+async def test_verify_password(user: User) -> None:
+    is_verified = user_service.verify_password(
+        password="password", encoded_password=user.password
+    )
+
+    assert is_verified == True
+
+
 async def test_create(sqlmodel_session: Session) -> None:
     user = CreateUser(
-        username="username", email="username@gmail.com", password="password"
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="username@example.com",
+        password="password",
+        verified=True,
+        image="image",
+        role=UserRole.ACCOUNT_OWNER,
+        subscription=UserSubscription.BASIC,
     )
 
     created_user = await user_service.create(
@@ -48,14 +65,12 @@ async def test_update(sqlmodel_session: Session, make_user) -> None:
     retrieved_user = make_user()
 
     user = UpdateUser(
-        firstname="updated_firstname",
-        lastname="updated_lastname",
-        username="updated_username",
-        email="updated_username@gmail.com",
-        password="updated_password",
-        verified=True,
-        role=UserRole.ADMIN,
-        image="updated_image",
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="username@example.com",
+        password="password",
+        image="image",
     )
 
     updated_user = await user_service.update(

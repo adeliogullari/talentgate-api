@@ -2,8 +2,10 @@ import uuid
 import random
 import pytest
 from datetime import timedelta, datetime, UTC
+
+from pytography import JsonWebToken
+
 from config import Settings
-from src.talentgate.auth.crypto.token import BearerToken
 from src.talentgate.applicant.models import Applicant
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
@@ -19,15 +21,12 @@ invalid_headers = {"Authorization": f"Bearer {INVALID_ACCESS_TOKEN}"}
 
 @pytest.fixture
 def token(applicant: Applicant) -> str:
-    access_token = BearerToken("blake2b")
-
     now = datetime.now(UTC)
     exp = (now + timedelta(minutes=60)).timestamp()
     payload = {"exp": exp, "applicant_id": applicant.id}
-    return access_token.encode(
+    return JsonWebToken.encode(
         payload=payload,
         key=settings.access_token_key,
-        headers={"alg": settings.access_token_algorithm, "typ": "JWT"},
     )
 
 

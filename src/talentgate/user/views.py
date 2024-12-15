@@ -1,7 +1,9 @@
 from sqlmodel import Session
 from typing import List, Sequence
+from pytography import JsonWebToken
 from fastapi import Depends, APIRouter, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from src.talentgate.auth import service as auth_service
 from src.talentgate.user import service as user_service
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.user.models import (
@@ -17,13 +19,13 @@ from src.talentgate.user.models import (
 )
 from src.talentgate.auth.exceptions import (
     InvalidAccessTokenException,
+    InvalidAuthorizationException,
 )
 from src.talentgate.user.exceptions import (
     IdNotFoundException,
     DuplicateUsernameException,
     DuplicateEmailException,
 )
-from src.talentgate.auth.crypto.token import BearerToken
 from config import Settings, get_settings
 
 router = APIRouter(tags=["user"])
@@ -35,16 +37,14 @@ async def retrieve_current_user(
     settings: Settings = Depends(get_settings),
     http_authorization: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
 ) -> User:
-    bearer_token = BearerToken(algorithm=settings.message_digest_algorithm)
-
-    is_verified = bearer_token.verify(
-        key=settings.access_token_key, token=http_authorization.credentials
+    is_verified = auth_service.verify_token(
+        token=http_authorization.credentials, key=settings.access_token_key
     )
 
     if not is_verified:
         raise InvalidAccessTokenException
 
-    payload, _, _ = bearer_token.decode(token=http_authorization.credentials)
+    _, payload, _ = JsonWebToken.decode(token=http_authorization.credentials)
 
     retrieved_user = await user_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session, user_id=payload["user_id"]
@@ -56,26 +56,46 @@ async def retrieve_current_user(
     return retrieved_user
 
 
-class IsCurrentUser:
-    def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
-        return user.id == user_id
-
-
-class IsAdminUser:
+class CreateUserDependency:
     def __call__(self, user: User = Depends(retrieve_current_user)):
-        return user.role == UserRole.ADMIN
+        if user.role == UserRole.ADMIN:
+            return True
+        raise InvalidAuthorizationException
 
 
-class IsCurrentOrAdminUser:
+class RetrieveUserDependency:
     def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
-        return (user.id == user_id) or (user.role == UserRole.ADMIN)
+        if (user.id == user_id) or (user.role == UserRole.ADMIN):
+            return True
+        raise InvalidAuthorizationException
+
+
+class RetrieveUsersDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)):
+        if user.role == UserRole.ADMIN:
+            return True
+        raise InvalidAuthorizationException
+
+
+class UpdateUserDependency:
+    def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
+        if (user.id == user_id) or (user.role == UserRole.ADMIN):
+            return True
+        raise InvalidAuthorizationException
+
+
+class DeleteUserDependency:
+    def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
+        if (user.id == user_id) or (user.role == UserRole.ADMIN):
+            return True
+        raise InvalidAuthorizationException
 
 
 @router.post(
     path="/api/v1/users",
     response_model=CreatedUser,
     status_code=201,
-    dependencies=[Depends(IsAdminUser)],
+    dependencies=[Depends(CreateUserDependency())],
 )
 async def create_user(
     *,
@@ -107,7 +127,7 @@ async def create_user(
     path="/api/v1/users/{user_id}",
     response_model=RetrievedUser,
     status_code=200,
-    dependencies=[Depends(IsCurrentOrAdminUser)],
+    dependencies=[Depends(RetrieveUserDependency())],
 )
 async def retrieve_user(
     *, user_id: int, sqlmodel_session: Session = Depends(get_sqlmodel_session)
@@ -126,7 +146,7 @@ async def retrieve_user(
     path="/api/v1/users",
     response_model=List[RetrievedUser],
     status_code=200,
-    dependencies=[Depends(IsAdminUser)],
+    dependencies=[Depends(RetrieveUsersDependency())],
 )
 async def retrieve_users(
     *,
@@ -144,7 +164,7 @@ async def retrieve_users(
     path="/api/v1/users/{user_id}",
     response_model=UpdatedUser,
     status_code=200,
-    dependencies=[Depends(IsCurrentOrAdminUser)],
+    dependencies=[Depends(UpdateUserDependency())],
 )
 async def update_user(
     *,
@@ -170,7 +190,7 @@ async def update_user(
     path="/api/v1/users/{user_id}",
     response_model=DeletedUser,
     status_code=200,
-    dependencies=[Depends(IsCurrentOrAdminUser)],
+    dependencies=[Depends(DeleteUserDependency())],
 )
 async def delete_user(
     *, user_id: int, sqlmodel_session: Session = Depends(get_sqlmodel_session)
