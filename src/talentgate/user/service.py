@@ -66,24 +66,23 @@ async def retrieve_by_query_parameters(
 ) -> Sequence[User]:
     offset = query_parameters.offset
     limit = query_parameters.limit
-    filters = {
+    filters = [
         getattr(User, attr) == value
         for attr, value in query_parameters.model_dump(
             exclude={"offset", "limit"}, exclude_unset=True, exclude_none=True
-        )
-    }
+        ).items()
+    ]
 
     statement: Any = select(User).offset(offset).limit(limit).where(*filters)
 
-    retrieved_user = sqlmodel_session.exec(statement).all()
+    retrieved_users = sqlmodel_session.exec(statement).all()
 
-    return retrieved_user
+    return retrieved_users
 
 
 async def update(
     *, sqlmodel_session: Session, retrieved_user: User, user: UpdateUser
 ) -> User:
-    user.password = encode_password(password=user.password)
     retrieved_user.sqlmodel_update(user)
 
     sqlmodel_session.add(retrieved_user)

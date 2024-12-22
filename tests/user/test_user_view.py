@@ -1,21 +1,15 @@
 import json
-import uuid
-import random
 import pytest
 from src.talentgate.user.models import (
     User,
-    CreateUser,
-    UpdateUser,
     UserRole,
     UserSubscription,
+    CreateUser,
+    UpdateUser,
+    UpdateCurrentUser
 )
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
-
-INVALID_ACCESS_TOKEN = uuid.uuid4()
-INVALID_USER_ID = random.randint(1, 1000)
-
-invalid_headers = {"Authorization": f"Bearer {INVALID_ACCESS_TOKEN}"}
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
@@ -27,7 +21,6 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
         email="username@example.com",
         password="password",
         verified=True,
-        image="image",
         role=UserRole.ACCOUNT_OWNER,
         subscription=UserSubscription.BASIC,
     )
@@ -44,9 +37,7 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
     assert response.json()["email"] == created_user.email
 
 
-@pytest.mark.parametrize(
-    "user", [{"role": UserRole.ACCOUNT_OWNER}, {"role": UserRole.ADMIN}], indirect=True
-)
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_user(client: TestClient, user: User, headers: Headers) -> None:
     response = client.get(url=f"/api/v1/users/{user.id}", headers=headers)
 
@@ -54,28 +45,49 @@ async def test_retrieve_user(client: TestClient, user: User, headers: Headers) -
     assert response.json()["id"] == user.id
 
 
+async def test_retrieve_current_user(
+    client: TestClient, user, headers: Headers
+) -> None:
+    response = client.get(url=f"/api/v1/me", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["id"] == user.id
+
+
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_users(client: TestClient, user: User, headers: Headers) -> None:
-    response = client.get(url="/api/v1/users", headers=headers)
+    params = {
+        "offset": 0,
+        "limit": 100,
+        "id": user.id,
+        "firstname": user.firstname,
+        "lastname": user.lastname,
+        "username": user.username,
+        "email": user.email,
+        "verified": user.verified,
+        "role": user.role,
+        "subscription": user.subscription,
+    }
+
+    response = client.get(url="/api/v1/users", params=params, headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["id"] == user.id
 
 
-@pytest.mark.parametrize(
-    "user", [{"role": UserRole.ACCOUNT_OWNER}, {"role": UserRole.ADMIN}], indirect=True
-)
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_update_user(client: TestClient, user: User, headers: Headers) -> None:
     updated_user = UpdateUser(
         firstname="firstname",
         lastname="lastname",
         username="username",
         email="username@example.com",
-        password="password",
-        image="image",
+        verified=True,
+        role=UserRole.ACCOUNT_OWNER,
+        subscription=UserSubscription.BASIC,
     )
 
-    response = client.put(
+    response = client.patch(
         url=f"/api/v1/users/{user.id}",
         headers=headers,
         json=json.loads(
@@ -87,10 +99,36 @@ async def test_update_user(client: TestClient, user: User, headers: Headers) -> 
     assert response.json()["email"] == updated_user.email
 
 
-@pytest.mark.parametrize(
-    "user", [{"role": UserRole.ACCOUNT_OWNER}, {"role": UserRole.ADMIN}], indirect=True
-)
+async def test_update_current_user(
+    client: TestClient, user: User, headers: Headers
+) -> None:
+    updated_user = UpdateCurrentUser(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="username@example.com",
+    )
+
+    response = client.patch(
+        url=f"/api/v1/me",
+        headers=headers,
+        json=json.loads(
+            updated_user.model_dump_json(exclude_none=True, exclude_unset=True)
+        ),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["email"] == updated_user.email
+
+
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_delete_user(client: TestClient, user: User, headers: Headers) -> None:
     response = client.delete(url=f"/api/v1/users/{user.id}", headers=headers)
+
+    assert response.status_code == 200
+
+
+async def test_delete_current_user(client: TestClient, headers: Headers) -> None:
+    response = client.delete(url=f"/api/v1/me", headers=headers)
 
     assert response.status_code == 200

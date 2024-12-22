@@ -7,9 +7,8 @@ from src.talentgate.employee.models import Employee, EmployeeTitle
 def make_employee(sqlmodel_session: Session):
     def make(
         title=EmployeeTitle.RECRUITER,
-        salary="120",
     ):
-        employee = Employee(title=title, salary=salary)
+        employee = Employee(title=title)
 
         sqlmodel_session.add(employee)
         sqlmodel_session.commit()

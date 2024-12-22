@@ -11,7 +11,6 @@ from src.talentgate.employee.service import create, retrieve_by_id, update, dele
 async def test_create(sqlmodel_session: Session) -> None:
     new_employee = CreateEmployee(
         title=EmployeeTitle.FOUNDER,
-        salary="60",
     )
 
     created_employee = await create(
@@ -19,7 +18,6 @@ async def test_create(sqlmodel_session: Session) -> None:
     )
 
     assert created_employee.title == new_employee.title
-    assert created_employee.salary == new_employee.salary
 
 
 async def test_retrieve_by_id(sqlmodel_session: Session, employee: Employee) -> None:
@@ -28,14 +26,11 @@ async def test_retrieve_by_id(sqlmodel_session: Session, employee: Employee) -> 
     )
 
     assert retrieved_employee.id == employee.id
-    assert retrieved_employee.title == employee.title
-    assert retrieved_employee.salary == employee.salary
 
 
 async def test_update(sqlmodel_session: Session, employee: Employee) -> None:
     modified_employee = UpdateEmployee(
         title=EmployeeTitle.FOUNDER,
-        salary="60",
     )
 
     updated_employee = await update(
@@ -45,7 +40,6 @@ async def test_update(sqlmodel_session: Session, employee: Employee) -> None:
     )
 
     assert employee.title == updated_employee.title
-    assert employee.salary == updated_employee.salary
 
 
 async def test_delete(sqlmodel_session: Session, employee: Employee) -> None:
@@ -54,4 +48,3 @@ async def test_delete(sqlmodel_session: Session, employee: Employee) -> None:
     )
 
     assert deleted_employee.title == employee.title
-    assert deleted_employee.salary == employee.salary

@@ -11,7 +11,7 @@ from src.talentgate.job.models import (
     RetrievedObserver,
     DeletedObserver,
 )
-from src.talentgate.link.models import Observer
+from src.talentgate.database.models import Observer
 
 
 # Observer Service

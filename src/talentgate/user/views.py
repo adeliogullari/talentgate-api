@@ -1,7 +1,7 @@
 from sqlmodel import Session
 from typing import List, Sequence
 from pytography import JsonWebToken
-from fastapi import Depends, APIRouter, Query
+from fastapi import Depends, APIRouter
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user import service as user_service
@@ -12,10 +12,14 @@ from src.talentgate.user.models import (
     CreateUser,
     CreatedUser,
     RetrievedUser,
+    RetrievedCurrentUser,
     UserQueryParameters,
     UpdateUser,
     UpdatedUser,
+    UpdateCurrentUser,
+    UpdatedCurrentUser,
     DeletedUser,
+    DeletedCurrentUser,
 )
 from src.talentgate.auth.exceptions import (
     InvalidAccessTokenException,
@@ -31,6 +35,11 @@ from config import Settings, get_settings
 router = APIRouter(tags=["user"])
 
 
+@router.get(
+    path="/api/v1/me",
+    response_model=RetrievedCurrentUser,
+    status_code=200,
+)
 async def retrieve_current_user(
     *,
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
@@ -65,7 +74,7 @@ class CreateUserDependency:
 
 class RetrieveUserDependency:
     def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
-        if (user.id == user_id) or (user.role == UserRole.ADMIN):
+        if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
@@ -79,14 +88,14 @@ class RetrieveUsersDependency:
 
 class UpdateUserDependency:
     def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
-        if (user.id == user_id) or (user.role == UserRole.ADMIN):
+        if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class DeleteUserDependency:
     def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
-        if (user.id == user_id) or (user.role == UserRole.ADMIN):
+        if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
@@ -151,16 +160,16 @@ async def retrieve_user(
 async def retrieve_users(
     *,
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    query_parameters: UserQueryParameters = Query(),
+    query_parameters: UserQueryParameters,
 ) -> Sequence[User]:
-    retrieved_user = await user_service.retrieve_by_query_parameters(
+    retrieved_users = await user_service.retrieve_by_query_parameters(
         sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
     )
 
-    return retrieved_user
+    return retrieved_users
 
 
-@router.put(
+@router.patch(
     path="/api/v1/users/{user_id}",
     response_model=UpdatedUser,
     status_code=200,
@@ -186,6 +195,24 @@ async def update_user(
     return updated_user
 
 
+@router.patch(
+    path="/api/v1/me",
+    response_model=UpdatedCurrentUser,
+    status_code=200,
+)
+async def update_current_user(
+    *,
+    user: UpdateCurrentUser,
+    retrieved_user: User = Depends(retrieve_current_user),
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+) -> User:
+    updated_user = await user_service.update(
+        sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user, user=user
+    )
+
+    return updated_user
+
+
 @router.delete(
     path="/api/v1/users/{user_id}",
     response_model=DeletedUser,
@@ -202,6 +229,23 @@ async def delete_user(
     if not retrieved_user:
         raise IdNotFoundException
 
+    deleted_user = await user_service.delete(
+        sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user
+    )
+
+    return deleted_user
+
+
+@router.delete(
+    path="/api/v1/me",
+    response_model=DeletedCurrentUser,
+    status_code=200,
+)
+async def delete_current_user(
+    *,
+    retrieved_user: User = Depends(retrieve_current_user),
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+) -> User:
     deleted_user = await user_service.delete(
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user
     )

@@ -4,7 +4,7 @@ from typing import List, Optional, TYPE_CHECKING
 
 from sqlmodel import SQLModel, Field, Relationship
 
-from src.talentgate.link.models import Observer
+from src.talentgate.database.models import Observer
 
 
 if TYPE_CHECKING:

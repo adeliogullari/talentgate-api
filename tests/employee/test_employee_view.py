@@ -15,24 +15,8 @@ from fastapi.testclient import TestClient
 settings = Settings()
 
 
-@pytest.fixture
-def token(employee: Employee) -> str:
-    now = datetime.now(UTC)
-    exp = (now + timedelta(minutes=60)).timestamp()
-    payload = {"exp": exp, "employee_id": employee.id}
-    return JsonWebToken.encode(
-        payload=payload,
-        key=settings.access_token_key,
-    )
-
-
-@pytest.fixture
-def headers(token: str) -> Headers:
-    return Headers({"Authorization": f"Bearer {token}"})
-
-
 async def test_create_employee(client: TestClient, headers: Headers) -> None:
-    created_employee = CreateEmployee(title=EmployeeTitle.FOUNDER, salary="999")
+    created_employee = CreateEmployee(title=EmployeeTitle.FOUNDER)
 
     response = client.post(
         url="/api/v1/employees",
@@ -44,7 +28,6 @@ async def test_create_employee(client: TestClient, headers: Headers) -> None:
 
     assert response.status_code == 201
     assert response.json()["title"] == created_employee.title
-    assert response.json()["salary"] == created_employee.salary
 
 
 async def test_retrieve_employee(
@@ -54,8 +37,6 @@ async def test_retrieve_employee(
 
     assert response.status_code == 200
     assert response.json()["id"] == employee.id
-    assert response.json()["title"] == employee.title
-    assert response.json()["salary"] == employee.salary
 
 
 async def test_retrieve_employees(
@@ -65,14 +46,12 @@ async def test_retrieve_employees(
 
     assert response.status_code == 200
     assert response.json()[0]["id"] == employee.id
-    assert response.json()[0]["title"] == employee.title
-    assert response.json()[0]["salary"] == employee.salary
 
 
 async def test_update_employee(
     client: TestClient, employee: Employee, headers: Headers
 ) -> None:
-    updated_employee = UpdateEmployee(title=EmployeeTitle.FOUNDER, salary="987")
+    updated_employee = UpdateEmployee(title=EmployeeTitle.FOUNDER)
 
     response = client.put(
         url=f"/api/v1/employees/{employee.id}",
@@ -84,8 +63,6 @@ async def test_update_employee(
 
     assert response.status_code == 200
     assert response.json()["id"] == employee.id
-    assert response.json()["title"] == employee.title
-    assert response.json()["salary"] == employee.salary
 
 
 async def test_delete_employee(

@@ -1,24 +1,18 @@
+from datetime import datetime
 from enum import Enum
-from sqlmodel import SQLModel, Field, Relationship
 from typing import TYPE_CHECKING, List
-
+from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.job.models import Job
-from src.talentgate.link.models import Observer
-from src.talentgate.user.models import User
+from src.talentgate.database.models import BaseModel, Observer
+from src.talentgate.user.models import User, UserRole, UserSubscription
 
 if TYPE_CHECKING:
     from src.talentgate.application.models import ApplicationEvaluation
 
 
 class EmployeeTitle(str, Enum):
-    FOUNDER = "founder"
-    RECRUITER = "recruiter"
-
-
-class EmploymentType(str, Enum):
-    REMOTE = "remote"
-    HYBRID = "hybrid"
-    ONSITE = "onsite"
+    FOUNDER = "Founder"
+    RECRUITER = "Recruiter"
 
 
 class Employee(SQLModel, table=True):
@@ -26,7 +20,6 @@ class Employee(SQLModel, table=True):
 
     id: int = Field(primary_key=True)
     title: EmployeeTitle | None = Field(default=None)
-    salary: str | None = Field(default=None)
     user_id: int | None = Field(foreign_key="user.id")
     user: User | None = Relationship(back_populates="employee")
     application_evaluations: List["ApplicationEvaluation"] = Relationship(
@@ -40,15 +33,30 @@ class Employee(SQLModel, table=True):
 User.model_rebuild()
 
 
-class EmployeeRequest(SQLModel):
+class EmployeeRequest(BaseModel):
     title: EmployeeTitle | None = None
-    salary: str | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str
+    email: str
+    password: str
+    verified: bool | None = None
+    image: str | None = None
 
 
 class EmployeeResponse(SQLModel):
     id: int | None = None
     title: EmployeeTitle | None = None
-    salary: str | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str
+    email: str
+    verified: bool | None = None
+    image: str | None = None
+    role: UserRole | None = None
+    subscription: UserSubscription | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class CreateEmployee(EmployeeRequest):
@@ -67,7 +75,14 @@ class EmployeeQueryParameters(SQLModel):
     offset: int | None = None
     limit: int | None = None
     title: EmployeeTitle | None = None
-    salary: str | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str
+    email: str
+    verified: bool | None = None
+    image: str | None = None
+    role: UserRole | None = None
+    subscription: UserSubscription | None = None
 
 
 class UpdateEmployee(EmployeeRequest):

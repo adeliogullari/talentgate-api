@@ -1,6 +1,6 @@
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
 from datetime import datetime, UTC
+from typing import Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.database.models import BaseModel
 
@@ -16,21 +16,18 @@ class UserRole(str, Enum):
 class UserSubscription(str, Enum):
     BASIC = "Basic"
     STANDARD = "Standard"
-    PROFESSIONAL = "Professional"
-    ENTERPRISE = "Enterprise"
 
 
 class User(SQLModel, table=True):
     __tablename__ = "user"
 
     id: int = Field(primary_key=True)
-    firstname: str | None = Field(default=None)
-    lastname: str | None = Field(default=None)
+    firstname: str = Field(nullable=False)
+    lastname: str = Field(nullable=False)
     username: str = Field(unique=True)
     email: str = Field(unique=True)
     password: str = Field(nullable=False)
     verified: bool = Field(default=False)
-    image: str | None = Field(default=None)
     role: UserRole | None = Field(default=UserRole.ACCOUNT_OWNER)
     subscription: UserSubscription | None = Field(default=UserSubscription.BASIC)
     employee: Optional["Employee"] = Relationship(
@@ -43,47 +40,60 @@ class User(SQLModel, table=True):
     )
 
 
-class UserRequest(BaseModel):
-    firstname: str | None = None
-    lastname: str | None = None
+class CreateUser(BaseModel):
+    firstname: str
+    lastname: str
     username: str
     email: str
     password: str
-    verified: bool | None = None
-    image: str | None = None
-    role: UserRole | None = None
-    subscription: UserSubscription | None = None
+    verified: bool
+    role: UserRole
+    subscription: UserSubscription
 
 
-class UserResponse(BaseModel):
-    id: int | None = None
-    firstname: str | None = None
-    lastname: str | None = None
+class CreatedUser(BaseModel):
+    id: int
+    firstname: str
+    lastname: str
     username: str
     email: str
-    verified: bool | None = None
-    image: str | None = None
-    role: UserRole | None = None
-    subscription: UserSubscription | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+    verified: bool
+    role: UserRole
+    subscription: UserSubscription
+    created_at: datetime
+    updated_at: datetime
 
 
-class CreateUser(UserRequest):
-    pass
+class RetrievedUser(BaseModel):
+    id: int
+    firstname: str
+    lastname: str
+    username: str
+    email: str
+    verified: bool
+    role: UserRole
+    subscription: UserSubscription
+    created_at: datetime
+    updated_at: datetime
 
 
-class CreatedUser(UserResponse):
-    pass
-
-
-class RetrievedUser(UserResponse):
-    pass
+class RetrievedCurrentUser(BaseModel):
+    id: int
+    firstname: str
+    lastname: str
+    username: str
+    email: str
+    verified: bool
+    role: UserRole
+    subscription: UserSubscription
+    created_at: datetime
+    updated_at: datetime
 
 
 class UserQueryParameters(BaseModel):
-    offset: int | None = None
-    limit: int | None = None
+    offset: int
+    limit: int
+    id: int | None = None
     firstname: str | None = None
     lastname: str | None = None
     username: str | None = None
@@ -96,15 +106,46 @@ class UserQueryParameters(BaseModel):
 class UpdateUser(BaseModel):
     firstname: str | None = None
     lastname: str | None = None
+    username: str | None = None
+    email: str | None = None
+    verified: bool | None = None
+    role: UserRole | None = None
+    subscription: UserSubscription | None
+
+
+class UpdatedUser(BaseModel):
+    id: int
+    firstname: str
+    lastname: str
     username: str
     email: str
-    password: str
-    image: str | None = None
+    verified: bool
+    role: UserRole
+    subscription: UserSubscription
+    created_at: datetime
+    updated_at: datetime
 
 
-class UpdatedUser(UserResponse):
-    pass
+class UpdateCurrentUser(BaseModel):
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str | None = None
+    email: str | None = None
+
+
+class UpdatedCurrentUser(BaseModel):
+    id: int
+    firstname: str
+    lastname: str
+    username: str
+    email: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class DeletedUser(BaseModel):
+    id: int
+
+
+class DeletedCurrentUser(BaseModel):
     id: int

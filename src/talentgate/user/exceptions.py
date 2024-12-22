@@ -11,7 +11,7 @@ InvalidCredentialsException = HTTPException(
 )
 
 InvalidVerificationException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN, detail="The user verification is invalid"
+    status_code=HTTP_403_FORBIDDEN, detail="The user verification is invalid."
 )
 
 IdNotFoundException = HTTPException(
