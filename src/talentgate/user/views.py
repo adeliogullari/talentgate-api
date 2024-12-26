@@ -159,8 +159,8 @@ async def retrieve_user(
 )
 async def retrieve_users(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
     query_parameters: UserQueryParameters,
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
 ) -> Sequence[User]:
     retrieved_users = await user_service.retrieve_by_query_parameters(
         sqlmodel_session=sqlmodel_session, query_parameters=query_parameters

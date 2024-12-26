@@ -13,9 +13,19 @@ class UserRole(str, Enum):
     ADMIN = "Admin"
 
 
-class UserSubscription(str, Enum):
+class SubscriptionType(str, Enum):
     BASIC = "Basic"
     STANDARD = "Standard"
+
+
+class UserSubscription(SQLModel, table=True):
+    __tablename__ = "user_subscription"
+
+    id: int = Field(primary_key=True)
+    type: SubscriptionType = Field(default=SubscriptionType.BASIC)
+    start_date: datetime | None = Field(default_factory=lambda: datetime.now(UTC))
+    end_date: datetime | None = Field(default_factory=lambda: datetime.now(UTC))
+    user: Optional["User"] = Relationship(back_populates="subscription", sa_relationship_kwargs={"uselist": False})
 
 
 class User(SQLModel, table=True):
@@ -29,8 +39,11 @@ class User(SQLModel, table=True):
     password: str = Field(nullable=False)
     verified: bool = Field(default=False)
     role: UserRole | None = Field(default=UserRole.ACCOUNT_OWNER)
-    subscription: UserSubscription | None = Field(default=UserSubscription.BASIC)
     employee: Optional["Employee"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"uselist": False}
+    )
+    subscription_id: int | None = Field(default=None, foreign_key="user_subscription.id")
+    subscription: Optional["UserSubscription"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"uselist": False}
     )
     created_at: datetime | None = Field(default_factory=lambda: datetime.now(UTC))
@@ -40,15 +53,23 @@ class User(SQLModel, table=True):
     )
 
 
+class Subscription(BaseModel):
+    id: int | None = None
+    type: SubscriptionType | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    is_active: bool | None = None
+
+
 class CreateUser(BaseModel):
     firstname: str
     lastname: str
     username: str
     email: str
     password: str
-    verified: bool
-    role: UserRole
-    subscription: UserSubscription
+    verified: bool | None = None
+    role: UserRole | None = None
+    subscription_id: int | None = None
 
 
 class CreatedUser(BaseModel):
@@ -59,7 +80,7 @@ class CreatedUser(BaseModel):
     email: str
     verified: bool
     role: UserRole
-    subscription: UserSubscription
+    subscription: Subscription | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -72,7 +93,7 @@ class RetrievedUser(BaseModel):
     email: str
     verified: bool
     role: UserRole
-    subscription: UserSubscription
+    subscription: Subscription | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -85,7 +106,7 @@ class RetrievedCurrentUser(BaseModel):
     email: str
     verified: bool
     role: UserRole
-    subscription: UserSubscription
+    subscription: Subscription | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -100,7 +121,6 @@ class UserQueryParameters(BaseModel):
     email: str | None = None
     verified: bool | None = None
     role: UserRole | None = None
-    subscription: UserSubscription | None = None
 
 
 class UpdateUser(BaseModel):
@@ -110,7 +130,7 @@ class UpdateUser(BaseModel):
     email: str | None = None
     verified: bool | None = None
     role: UserRole | None = None
-    subscription: UserSubscription | None
+    subscription_id: int | None = None
 
 
 class UpdatedUser(BaseModel):
@@ -121,7 +141,7 @@ class UpdatedUser(BaseModel):
     email: str
     verified: bool
     role: UserRole
-    subscription: UserSubscription
+    subscription: Subscription | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -1,21 +1,62 @@
 import pytest
 import secrets
+from datetime import datetime, UTC
 from sqlmodel import Session
-from src.talentgate.user.models import User, UserRole, UserSubscription
+from src.talentgate.user.models import (
+    User,
+    UserRole,
+    UserSubscription,
+    SubscriptionType,
+)
 from src.talentgate.user import service as user_service
 
 
 @pytest.fixture
-def make_user(sqlmodel_session: Session):
+def make_user_subscription(sqlmodel_session: Session):
     def make(
-        firstname: str = None,
-        lastname: str = None,
-        username: str = None,
-        email: str = None,
-        password: str = None,
-        verified: bool = None,
+        type: SubscriptionType | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ):
+        subscription = UserSubscription(
+            type=type or SubscriptionType.BASIC,
+            start_date=start_date or datetime.now(UTC),
+            end_date=end_date or datetime.now(UTC),
+        )
+
+        sqlmodel_session.add(subscription)
+        sqlmodel_session.commit()
+        sqlmodel_session.refresh(subscription)
+
+        return subscription
+
+    return make
+
+
+@pytest.fixture
+def user_subscription(make_user_subscription, request):
+    param = getattr(request, "param", {})
+    type = param.get("type", None)
+    start_date = param.get("start_date", None)
+    end_date = param.get("end_date", None)
+
+    return make_user_subscription(
+        type=type,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
+@pytest.fixture
+def make_user(sqlmodel_session: Session, user_subscription):
+    def make(
+        firstname: str | None = None,
+        lastname: str | None = None,
+        username: str | None = None,
+        email: str | None = None,
+        password: str | None = None,
+        verified: bool | None = None,
         role: str = None,
-        subscription: str = None,
     ):
         user = User(
             firstname=firstname or secrets.token_hex(12),
@@ -26,7 +67,6 @@ def make_user(sqlmodel_session: Session):
             or user_service.encode_password(password=secrets.token_hex(16)),
             verified=verified or True,
             role=role or UserRole.ACCOUNT_OWNER,
-            subscription=subscription or UserSubscription.BASIC,
         )
 
         sqlmodel_session.add(user)
@@ -48,7 +88,6 @@ def user(make_user, request):
     password = param.get("password", None)
     verified = param.get("verified", None)
     role = param.get("role", None)
-    subscription = param.get("subscription", None)
 
     return make_user(
         firstname=firstname,
@@ -58,5 +97,4 @@ def user(make_user, request):
         password=password,
         verified=verified,
         role=role,
-        subscription=subscription,
     )

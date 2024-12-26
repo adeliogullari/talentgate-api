@@ -19,7 +19,6 @@ async def test_create(sqlmodel_session: Session) -> None:
         password="password",
         verified=True,
         role=UserRole.ACCOUNT_OWNER,
-        subscription=UserSubscription.BASIC,
     )
 
     created_user = await user_service.create(
@@ -66,7 +65,6 @@ async def test_retrieve_by_query_parameters(
         email=user.email,
         verified=user.verified,
         role=user.role,
-        subscription=user.subscription,
     )
 
     retrieved_users = await user_service.retrieve_by_query_parameters(

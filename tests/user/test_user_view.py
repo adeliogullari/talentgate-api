@@ -6,7 +6,7 @@ from src.talentgate.user.models import (
     UserSubscription,
     CreateUser,
     UpdateUser,
-    UpdateCurrentUser
+    UpdateCurrentUser,
 )
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
@@ -22,7 +22,6 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
         password="password",
         verified=True,
         role=UserRole.ACCOUNT_OWNER,
-        subscription=UserSubscription.BASIC,
     )
 
     response = client.post(
@@ -66,7 +65,6 @@ async def test_retrieve_users(client: TestClient, user: User, headers: Headers) 
         "email": user.email,
         "verified": user.verified,
         "role": user.role,
-        "subscription": user.subscription,
     }
 
     response = client.get(url="/api/v1/users", params=params, headers=headers)
@@ -84,7 +82,6 @@ async def test_update_user(client: TestClient, user: User, headers: Headers) -> 
         email="username@example.com",
         verified=True,
         role=UserRole.ACCOUNT_OWNER,
-        subscription=UserSubscription.BASIC,
     )
 
     response = client.patch(

@@ -83,7 +83,9 @@ async def retrieve_by_query_parameters(
 async def update(
     *, sqlmodel_session: Session, retrieved_user: User, user: UpdateUser
 ) -> User:
-    retrieved_user.sqlmodel_update(user)
+    retrieved_user.sqlmodel_update(
+        user.model_dump(exclude_none=True, exclude_unset=True)
+    )
 
     sqlmodel_session.add(retrieved_user)
     sqlmodel_session.commit()

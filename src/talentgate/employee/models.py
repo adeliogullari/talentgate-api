@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.job.models import Job
 from src.talentgate.database.models import BaseModel, Observer
-from src.talentgate.user.models import User, UserRole, UserSubscription
+from src.talentgate.user.models import User, UserRole, Subscription
 
 if TYPE_CHECKING:
     from src.talentgate.application.models import ApplicationEvaluation
@@ -13,13 +13,14 @@ if TYPE_CHECKING:
 class EmployeeTitle(str, Enum):
     FOUNDER = "Founder"
     RECRUITER = "Recruiter"
+    INITIATE = "Initiate"
 
 
 class Employee(SQLModel, table=True):
     __tablename__ = "employee"
 
     id: int = Field(primary_key=True)
-    title: EmployeeTitle | None = Field(default=None)
+    title: EmployeeTitle | None = Field(default=EmployeeTitle.INITIATE)
     user_id: int | None = Field(foreign_key="user.id")
     user: User | None = Relationship(back_populates="employee")
     application_evaluations: List["ApplicationEvaluation"] = Relationship(
@@ -54,7 +55,7 @@ class EmployeeResponse(SQLModel):
     verified: bool | None = None
     image: str | None = None
     role: UserRole | None = None
-    subscription: UserSubscription | None = None
+    subscription: Subscription | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -82,7 +83,7 @@ class EmployeeQueryParameters(SQLModel):
     verified: bool | None = None
     image: str | None = None
     role: UserRole | None = None
-    subscription: UserSubscription | None = None
+    subscription: Subscription | None = None
 
 
 class UpdateEmployee(EmployeeRequest):
