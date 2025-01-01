@@ -6,7 +6,7 @@ from src.talentgate.user.models import (
     User,
     UserRole,
     UserSubscription,
-    SubscriptionType,
+    SubscriptionPlan,
 )
 from src.talentgate.user import service as user_service
 
@@ -14,12 +14,12 @@ from src.talentgate.user import service as user_service
 @pytest.fixture
 def make_user_subscription(sqlmodel_session: Session):
     def make(
-        type: SubscriptionType | None = None,
+        plan: SubscriptionPlan | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
     ):
         subscription = UserSubscription(
-            type=type or SubscriptionType.BASIC,
+            plan=plan or SubscriptionPlan.BASIC,
             start_date=start_date or datetime.now(UTC),
             end_date=end_date or datetime.now(UTC),
         )
@@ -36,12 +36,12 @@ def make_user_subscription(sqlmodel_session: Session):
 @pytest.fixture
 def user_subscription(make_user_subscription, request):
     param = getattr(request, "param", {})
-    type = param.get("type", None)
+    plan = param.get("plan", None)
     start_date = param.get("start_date", None)
     end_date = param.get("end_date", None)
 
     return make_user_subscription(
-        type=type,
+        plan=plan,
         start_date=start_date,
         end_date=end_date,
     )
@@ -56,7 +56,8 @@ def make_user(sqlmodel_session: Session, user_subscription):
         email: str | None = None,
         password: str | None = None,
         verified: bool | None = None,
-        role: str = None,
+        role: str | None = None,
+        subscription: UserSubscription | None = None,
     ):
         user = User(
             firstname=firstname or secrets.token_hex(12),
@@ -67,6 +68,7 @@ def make_user(sqlmodel_session: Session, user_subscription):
             or user_service.encode_password(password=secrets.token_hex(16)),
             verified=verified or True,
             role=role or UserRole.ACCOUNT_OWNER,
+            subscription=subscription or user_subscription,
         )
 
         sqlmodel_session.add(user)
@@ -88,6 +90,7 @@ def user(make_user, request):
     password = param.get("password", None)
     verified = param.get("verified", None)
     role = param.get("role", None)
+    subscription = param.get("subscription", None)
 
     return make_user(
         firstname=firstname,
@@ -97,4 +100,5 @@ def user(make_user, request):
         password=password,
         verified=verified,
         role=role,
+        subscription=subscription,
     )

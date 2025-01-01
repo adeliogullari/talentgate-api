@@ -3,6 +3,7 @@ from sqlmodel import select, Session
 from pytography import PasswordHashLibrary
 from src.talentgate.user.models import (
     User,
+    UserSubscription,
     CreateUser,
     UserQueryParameters,
     UpdateUser,
@@ -26,7 +27,9 @@ async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
     password = encode_password(password=user.password)
 
     created_user = User(
-        **user.model_dump(exclude_unset=True, exclude_none=True, exclude={"password"}),
+        **user.model_dump(
+            exclude_unset=True, exclude_none=True, exclude={"password", "subscription"}
+        ),
         password=password,
     )
 

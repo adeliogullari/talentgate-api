@@ -4,7 +4,9 @@ from src.talentgate.user.models import User
 from src.talentgate.user import service as user_service
 
 
-@pytest.mark.parametrize("user", [{"password": user_service.encode_password("password")}], indirect=True)
+@pytest.mark.parametrize(
+    "user", [{"password": user_service.encode_password("password")}], indirect=True
+)
 async def test_login(client: TestClient, user: User) -> None:
     response = client.post(
         url="/api/v1/auth/login",
