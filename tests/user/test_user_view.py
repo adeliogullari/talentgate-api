@@ -3,7 +3,6 @@ import pytest
 from src.talentgate.user.models import (
     User,
     UserRole,
-    UserSubscription,
     CreateUser,
     UpdateUser,
     UpdateCurrentUser,

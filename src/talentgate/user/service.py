@@ -3,7 +3,6 @@ from sqlmodel import select, Session
 from pytography import PasswordHashLibrary
 from src.talentgate.user.models import (
     User,
-    UserSubscription,
     CreateUser,
     UserQueryParameters,
     UpdateUser,

@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import datetime, timedelta, UTC
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Any
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.database.models import BaseModel
 
@@ -11,37 +11,6 @@ if TYPE_CHECKING:
 class UserRole(str, Enum):
     ACCOUNT_OWNER = "Account Owner"
     ADMIN = "Admin"
-
-
-class SubscriptionPlan(str, Enum):
-    BASIC = "Basic"
-    STANDARD = "Standard"
-
-
-class SubscriptionStatus(str, Enum):
-    ACTIVE = "Active"
-    EXPIRED = "Expired"
-
-
-class UserSubscription(SQLModel, table=True):
-    __tablename__ = "user_subscription"
-
-    id: int = Field(primary_key=True)
-    plan: SubscriptionPlan = Field(default=SubscriptionPlan.BASIC)
-    start_date: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    end_date: datetime = Field(
-        default_factory=lambda: datetime.now(UTC) - timedelta(days=1)
-    )
-    user: Optional["User"] = Relationship(
-        back_populates="subscription", sa_relationship_kwargs={"uselist": False}
-    )
-
-    @property
-    def status(self) -> str:
-        if self.end_date > datetime.now(UTC):
-            return SubscriptionStatus.ACTIVE
-        else:
-            return SubscriptionStatus.EXPIRED
 
 
 class User(SQLModel, table=True):
@@ -59,10 +28,8 @@ class User(SQLModel, table=True):
         back_populates="user",
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
     )
-    subscription_id: int | None = Field(
-        default=None, foreign_key="user_subscription.id"
-    )
-    subscription: Optional["UserSubscription"] = Relationship(
+    subscription_id: int | None = Field(default=None, foreign_key="subscription.id")
+    subscription: Optional["Subscription"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
     )
@@ -73,20 +40,6 @@ class User(SQLModel, table=True):
     )
 
 
-class CreateUserSubscription(BaseModel):
-    plan: SubscriptionPlan | None = None
-    start_date: datetime | None = None
-    end_date: datetime | None = None
-
-
-class Subscription(BaseModel):
-    id: int | None = None
-    plan: SubscriptionPlan | None = None
-    start_date: datetime | None = None
-    end_date: datetime | None = None
-    status: SubscriptionStatus | None = None
-
-
 class CreateUser(BaseModel):
     firstname: str
     lastname: str
@@ -95,7 +48,7 @@ class CreateUser(BaseModel):
     password: str
     verified: bool | None = None
     role: UserRole | None = None
-    subscription: Subscription | None = None
+    subscription: Any | None = None
     subscription_id: int | None = None
 
 
@@ -107,7 +60,7 @@ class CreatedUser(BaseModel):
     email: str
     verified: bool
     role: UserRole
-    subscription: Subscription | None = None
+    subscription: Any | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -120,7 +73,7 @@ class RetrievedUser(BaseModel):
     email: str
     verified: bool
     role: UserRole
-    subscription: Subscription | None = None
+    subscription: Any | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -133,7 +86,7 @@ class RetrievedCurrentUser(BaseModel):
     email: str
     verified: bool
     role: UserRole
-    subscription: Subscription | None = None
+    subscription: Any | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -157,7 +110,7 @@ class UpdateUser(BaseModel):
     email: str | None = None
     verified: bool | None = None
     role: UserRole | None = None
-    subscription: Subscription | None = None
+    subscription: Any | None = None
     subscription_id: int | None = None
 
 
@@ -169,7 +122,7 @@ class UpdatedUser(BaseModel):
     email: str
     verified: bool
     role: UserRole
-    subscription: Subscription | None = None
+    subscription: Any | None = None
     created_at: datetime
     updated_at: datetime
 

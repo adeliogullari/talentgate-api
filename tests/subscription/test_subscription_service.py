@@ -1,30 +1,28 @@
 from sqlmodel import Session
-from src.talentgate.user.models import (
-    User,
-    UserRole,
-    CreateUser,
-    UserQueryParameters,
-    UpdateUser,
+from datetime import datetime, UTC
+from src.talentgate.subscription.models import (
+    Subscription,
+    SubscriptionPlan,
+    SubscriptionStatus,
+    CreateSubscription,
+    SubscriptionQueryParameters,
+    UpdateSubscription,
 )
-from src.talentgate.user import service as user_service
+from src.talentgate.subscription import service as subscription_service
 
 
 async def test_create(sqlmodel_session: Session) -> None:
-    user = CreateUser(
-        firstname="firstname",
-        lastname="lastname",
-        username="username",
-        email="username@example.com",
-        password="password",
-        verified=True,
-        role=UserRole.ACCOUNT_OWNER,
+    subscription = CreateSubscription(
+        plan=SubscriptionPlan.BASIC,
+        start_date=datetime.now(UTC),
+        end_date=None,
     )
 
-    created_user = await user_service.create(
-        sqlmodel_session=sqlmodel_session, user=user
+    created_subscription = await subscription_service.create(
+        sqlmodel_session=sqlmodel_session, subscription=subscription
     )
 
-    assert created_user.email == user.email
+    assert created_subscription.plan == subscription.plan
 
 
 async def test_retrieve_by_id(sqlmodel_session: Session, user: User) -> None:

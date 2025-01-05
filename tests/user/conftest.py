@@ -1,74 +1,27 @@
 import pytest
 import secrets
-from datetime import datetime, UTC
 from sqlmodel import Session
+from src.talentgate.subscription.models import Subscription
 from src.talentgate.user.models import (
     User,
     UserRole,
-    UserSubscription,
-    SubscriptionPlan,
 )
 from src.talentgate.user import service as user_service
 
 
 @pytest.fixture
-def make_user_subscription(sqlmodel_session: Session):
-    def make(
-        plan: SubscriptionPlan | None = None,
-        start_date: str | None = None,
-        end_date: str | None = None,
-    ):
-        subscription = UserSubscription(
-            plan=plan or SubscriptionPlan.BASIC,
-            start_date=start_date or datetime.now(UTC),
-            end_date=end_date or datetime.now(UTC),
-        )
-
-        sqlmodel_session.add(subscription)
-        sqlmodel_session.commit()
-        sqlmodel_session.refresh(subscription)
-
-        return subscription
-
-    return make
-
-
-@pytest.fixture
-def user_subscription(make_user_subscription, request):
-    param = getattr(request, "param", {})
-    plan = param.get("plan", None)
-    start_date = param.get("start_date", None)
-    end_date = param.get("end_date", None)
-
-    return make_user_subscription(
-        plan=plan,
-        start_date=start_date,
-        end_date=end_date,
-    )
-
-
-@pytest.fixture
-def make_user(sqlmodel_session: Session, user_subscription):
-    def make(
-        firstname: str | None = None,
-        lastname: str | None = None,
-        username: str | None = None,
-        email: str | None = None,
-        password: str | None = None,
-        verified: bool | None = None,
-        role: str | None = None,
-        subscription: UserSubscription | None = None,
-    ):
+def make_user(sqlmodel_session: Session, subscription: Subscription):
+    def make(**kwargs):
         user = User(
-            firstname=firstname or secrets.token_hex(12),
-            lastname=lastname or secrets.token_hex(12),
-            username=username or secrets.token_hex(16),
-            email=email or f"{secrets.token_hex(16)}@example.com",
-            password=password
+            firstname=kwargs.get("firstname") or secrets.token_hex(12),
+            lastname=kwargs.get("lastname") or secrets.token_hex(12),
+            username=kwargs.get("username") or secrets.token_hex(16),
+            email=kwargs.get("email") or f"{secrets.token_hex(16)}@example.com",
+            password=kwargs.get("password")
             or user_service.encode_password(password=secrets.token_hex(16)),
-            verified=verified or True,
-            role=role or UserRole.ACCOUNT_OWNER,
-            subscription=subscription or user_subscription,
+            verified=kwargs.get("verified") or True,
+            role=kwargs.get("role") or UserRole.ACCOUNT_OWNER,
+            subscription=kwargs.get("subscription") or subscription,
         )
 
         sqlmodel_session.add(user)
