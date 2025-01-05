@@ -39,7 +39,7 @@ async def create_subscription(
 
 
 @router.get(
-    path="/api/v1/subscription/{subscription_id}",
+    path="/api/v1/subscriptions/{subscription_id}",
     response_model=RetrievedSubscription,
     status_code=200,
 )
@@ -101,7 +101,7 @@ async def update_subscription(
 
 
 @router.delete(
-    path="/api/v1/subscription/{subscription_id}",
+    path="/api/v1/subscriptions/{subscription_id}",
     response_model=DeletedSubscription,
     status_code=200,
 )

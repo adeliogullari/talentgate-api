@@ -15,7 +15,7 @@ async def test_create(sqlmodel_session: Session) -> None:
     subscription = CreateSubscription(
         plan=SubscriptionPlan.BASIC,
         start_date=datetime.now(UTC),
-        end_date=None,
+        end_date=datetime.now(UTC),
     )
 
     created_subscription = await subscription_service.create(
@@ -25,74 +25,52 @@ async def test_create(sqlmodel_session: Session) -> None:
     assert created_subscription.plan == subscription.plan
 
 
-async def test_retrieve_by_id(sqlmodel_session: Session, user: User) -> None:
-    retrieved_user = await user_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, user_id=user.id
+async def test_retrieve_by_id(sqlmodel_session: Session, subscription: Subscription) -> None:
+    retrieved_subscription = await subscription_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, subscription_id=subscription.id
     )
 
-    assert retrieved_user.id == user.id
-
-
-async def test_retrieve_by_username(sqlmodel_session: Session, user: User) -> None:
-    retrieved_user = await user_service.retrieve_by_username(
-        sqlmodel_session=sqlmodel_session, username=user.username
-    )
-
-    assert retrieved_user.username == user.username
-
-
-async def test_retrieve_by_email(sqlmodel_session: Session, user: User) -> None:
-    retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=user.email
-    )
-
-    assert retrieved_user.email == user.email
+    assert retrieved_subscription.id == subscription.id
 
 
 async def test_retrieve_by_query_parameters(
-    sqlmodel_session: Session, user: User
+    sqlmodel_session: Session, subscription: Subscription
 ) -> None:
-    query_parameters = UserQueryParameters(
+    query_parameters = SubscriptionQueryParameters(
         offset=0,
         limit=100,
-        id=user.id,
-        firstname=user.firstname,
-        lastname=user.lastname,
-        username=user.username,
-        email=user.email,
-        verified=user.verified,
-        role=user.role,
+        id=subscription.id,
     )
 
-    retrieved_users = await user_service.retrieve_by_query_parameters(
+    retrieved_subscriptions = await subscription_service.retrieve_by_query_parameters(
         sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
     )
 
-    assert retrieved_users[0].id == user.id
+    assert retrieved_subscriptions[0].id == subscription.id
 
 
-async def test_update(sqlmodel_session: Session, make_user) -> None:
-    retrieved_user = make_user()
+async def test_update(sqlmodel_session: Session, make_subscription) -> None:
+    retrieved_subscription = make_subscription()
 
-    user = UpdateUser(
-        firstname="firstname",
-        lastname="lastname",
-        username="username",
-        email="username@example.com",
+    subscription = UpdateSubscription(
+    plan = SubscriptionPlan.STANDARD,
+    start_date = datetime.now(UTC),
+    end_date = datetime.now(UTC),
     )
 
-    updated_user = await user_service.update(
-        sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user, user=user
+    updated_subscription = await subscription_service.update(
+        sqlmodel_session=sqlmodel_session, retrieved_subscription=retrieved_subscription, subscription=subscription
     )
 
-    assert updated_user.email == user.email
+    assert updated_subscription.id == retrieved_subscription.id
+    assert updated_subscription.plan == subscription.plan
 
 
-async def test_delete(sqlmodel_session, make_user) -> None:
-    retrieved_user = make_user()
+async def test_delete(sqlmodel_session, make_subscription) -> None:
+    retrieved_subscription = make_subscription()
 
-    deleted_user = await user_service.delete(
-        sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user
+    deleted_subscription = await subscription_service.delete(
+        sqlmodel_session=sqlmodel_session, retrieved_subscription=retrieved_subscription
     )
 
-    assert deleted_user.email == retrieved_user.email
+    assert deleted_subscription.id == retrieved_subscription.id
