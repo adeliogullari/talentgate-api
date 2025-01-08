@@ -25,7 +25,9 @@ async def test_create(sqlmodel_session: Session) -> None:
     assert created_subscription.plan == subscription.plan
 
 
-async def test_retrieve_by_id(sqlmodel_session: Session, subscription: Subscription) -> None:
+async def test_retrieve_by_id(
+    sqlmodel_session: Session, subscription: Subscription
+) -> None:
     retrieved_subscription = await subscription_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session, subscription_id=subscription.id
     )
@@ -53,13 +55,15 @@ async def test_update(sqlmodel_session: Session, make_subscription) -> None:
     retrieved_subscription = make_subscription()
 
     subscription = UpdateSubscription(
-    plan = SubscriptionPlan.STANDARD,
-    start_date = datetime.now(UTC),
-    end_date = datetime.now(UTC),
+        plan=SubscriptionPlan.STANDARD,
+        start_date=datetime.now(UTC),
+        end_date=datetime.now(UTC),
     )
 
     updated_subscription = await subscription_service.update(
-        sqlmodel_session=sqlmodel_session, retrieved_subscription=retrieved_subscription, subscription=subscription
+        sqlmodel_session=sqlmodel_session,
+        retrieved_subscription=retrieved_subscription,
+        subscription=subscription,
     )
 
     assert updated_subscription.id == retrieved_subscription.id

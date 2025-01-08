@@ -20,7 +20,7 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
         email="username@example.com",
         password="password",
         verified=True,
-        role=UserRole.ACCOUNT_OWNER,
+        role=UserRole.ADMIN,
     )
 
     response = client.post(
@@ -80,7 +80,7 @@ async def test_update_user(client: TestClient, user: User, headers: Headers) -> 
         username="username",
         email="username@example.com",
         verified=True,
-        role=UserRole.ACCOUNT_OWNER,
+        role=UserRole.ADMIN,
     )
 
     response = client.patch(

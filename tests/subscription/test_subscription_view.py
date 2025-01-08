@@ -16,9 +16,9 @@ from fastapi.testclient import TestClient
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_subscription(client: TestClient, headers: Headers) -> None:
     created_subscription = CreateSubscription(
-    plan = SubscriptionPlan.STANDARD,
-    start_date = datetime.now(timezone.utc),
-    end_date = datetime.now(timezone.utc),
+        plan=SubscriptionPlan.STANDARD,
+        start_date=datetime.now(timezone.utc),
+        end_date=datetime.now(timezone.utc),
     )
 
     response = client.post(
@@ -33,15 +33,21 @@ async def test_create_subscription(client: TestClient, headers: Headers) -> None
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
-async def test_retrieve_subscription(client: TestClient, subscription: Subscription, headers: Headers) -> None:
-    response = client.get(url=f"/api/v1/subscriptions/{subscription.id}", headers=headers)
+async def test_retrieve_subscription(
+    client: TestClient, subscription: Subscription, headers: Headers
+) -> None:
+    response = client.get(
+        url=f"/api/v1/subscriptions/{subscription.id}", headers=headers
+    )
 
     assert response.status_code == 200
     assert response.json()["id"] == subscription.id
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
-async def test_retrieve_subscriptions(client: TestClient, subscription: Subscription, headers: Headers) -> None:
+async def test_retrieve_subscriptions(
+    client: TestClient, subscription: Subscription, headers: Headers
+) -> None:
     params = {
         "offset": 0,
         "limit": 100,
@@ -55,7 +61,9 @@ async def test_retrieve_subscriptions(client: TestClient, subscription: Subscrip
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
-async def test_update_subscription(client: TestClient, subscription: Subscription, headers: Headers) -> None:
+async def test_update_subscription(
+    client: TestClient, subscription: Subscription, headers: Headers
+) -> None:
     updated_subscription = UpdateSubscription(
         plan=SubscriptionPlan.STANDARD,
         start_date=datetime.now(timezone.utc),
@@ -76,7 +84,11 @@ async def test_update_subscription(client: TestClient, subscription: Subscriptio
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
-async def test_delete_subscription(client: TestClient, subscription: Subscription, headers: Headers) -> None:
-    response = client.delete(url=f"/api/v1/subscriptions/{subscription.id}", headers=headers)
+async def test_delete_subscription(
+    client: TestClient, subscription: Subscription, headers: Headers
+) -> None:
+    response = client.delete(
+        url=f"/api/v1/subscriptions/{subscription.id}", headers=headers
+    )
 
     assert response.status_code == 200

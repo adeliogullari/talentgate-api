@@ -17,7 +17,7 @@ async def test_create(sqlmodel_session: Session) -> None:
         email="username@example.com",
         password="password",
         verified=True,
-        role=UserRole.ACCOUNT_OWNER,
+        role=UserRole.ADMIN,
     )
 
     created_user = await user_service.create(

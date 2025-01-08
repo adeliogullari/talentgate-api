@@ -1,11 +1,8 @@
 import pytest
 import secrets
 from sqlmodel import Session
+from src.talentgate.user.models import User
 from src.talentgate.subscription.models import Subscription
-from src.talentgate.user.models import (
-    User,
-    UserRole,
-)
 from src.talentgate.user import service as user_service
 
 
@@ -20,7 +17,7 @@ def make_user(sqlmodel_session: Session, subscription: Subscription):
             password=kwargs.get("password")
             or user_service.encode_password(password=secrets.token_hex(16)),
             verified=kwargs.get("verified") or True,
-            role=kwargs.get("role") or UserRole.ACCOUNT_OWNER,
+            role=kwargs.get("role") or None,
             subscription=kwargs.get("subscription") or subscription,
         )
 
