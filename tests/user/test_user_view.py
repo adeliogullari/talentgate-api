@@ -46,7 +46,7 @@ async def test_retrieve_user(client: TestClient, user: User, headers: Headers) -
 async def test_retrieve_current_user(
     client: TestClient, user, headers: Headers
 ) -> None:
-    response = client.get(url=f"/api/v1/me", headers=headers)
+    response = client.get(url="/api/v1/me", headers=headers)
 
     assert response.status_code == 200
     assert response.json()["id"] == user.id
@@ -66,7 +66,7 @@ async def test_retrieve_users(client: TestClient, user: User, headers: Headers) 
         "role": user.role,
     }
 
-    response = client.get(url="/api/v1/users", params=params, headers=headers)
+    response = client.get(url="/api/v1/users/", params=params, headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["id"] == user.id
@@ -106,7 +106,7 @@ async def test_update_current_user(
     )
 
     response = client.patch(
-        url=f"/api/v1/me",
+        url="/api/v1/me",
         headers=headers,
         json=json.loads(
             updated_user.model_dump_json(exclude_none=True, exclude_unset=True)
@@ -125,6 +125,6 @@ async def test_delete_user(client: TestClient, user: User, headers: Headers) -> 
 
 
 async def test_delete_current_user(client: TestClient, headers: Headers) -> None:
-    response = client.delete(url=f"/api/v1/me", headers=headers)
+    response = client.delete(url="/api/v1/me", headers=headers)
 
     assert response.status_code == 200

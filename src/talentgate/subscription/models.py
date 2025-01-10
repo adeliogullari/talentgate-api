@@ -1,16 +1,16 @@
-from enum import Enum
+from enum import StrEnum
 from datetime import datetime, timedelta, timezone
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.database.models import BaseModel
 
 
-class SubscriptionPlan(str, Enum):
+class SubscriptionPlan(StrEnum):
     BASIC = "Basic"
     STANDARD = "Standard"
 
 
-class SubscriptionStatus(str, Enum):
+class SubscriptionStatus(StrEnum):
     ACTIVE = "Active"
     EXPIRED = "Expired"
 

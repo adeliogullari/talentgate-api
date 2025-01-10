@@ -1,7 +1,7 @@
 from sqlmodel import Session
-from typing import List, Sequence
+from typing import List, Sequence, Annotated
 from pytography import JsonWebToken
-from fastapi import Depends, APIRouter
+from fastapi import Depends, APIRouter, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user import service as user_service
@@ -152,14 +152,14 @@ async def retrieve_user(
 
 
 @router.get(
-    path="/api/v1/users",
+    path="/api/v1/users/",
     response_model=List[RetrievedUser],
     status_code=200,
     dependencies=[Depends(RetrieveUsersDependency())],
 )
 async def retrieve_users(
     *,
-    query_parameters: UserQueryParameters,
+    query_parameters: Annotated[UserQueryParameters, Query()],
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
 ) -> Sequence[User]:
     retrieved_users = await user_service.retrieve_by_query_parameters(

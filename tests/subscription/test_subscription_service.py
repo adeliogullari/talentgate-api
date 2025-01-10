@@ -3,7 +3,6 @@ from datetime import datetime, UTC
 from src.talentgate.subscription.models import (
     Subscription,
     SubscriptionPlan,
-    SubscriptionStatus,
     CreateSubscription,
     SubscriptionQueryParameters,
     UpdateSubscription,

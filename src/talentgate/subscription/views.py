@@ -1,6 +1,6 @@
 from sqlmodel import Session
-from typing import List, Sequence
-from fastapi import Depends, APIRouter
+from typing import List, Sequence, Annotated
+from fastapi import Depends, APIRouter, Query
 from src.talentgate.subscription import service as subscription_service
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.subscription.models import (
@@ -57,13 +57,13 @@ async def retrieve_subscription(
 
 
 @router.get(
-    path="/api/v1/subscriptions",
+    path="/api/v1/subscriptions/",
     response_model=List[RetrievedSubscription],
     status_code=200,
 )
 async def retrieve_subscriptions(
     *,
-    query_parameters: SubscriptionQueryParameters,
+    query_parameters: Annotated[SubscriptionQueryParameters, Query()],
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
 ) -> Sequence[Subscription]:
     retrieved_subscriptions = await subscription_service.retrieve_by_query_parameters(

@@ -3,7 +3,6 @@ from config import get_settings
 from sqlmodel import Session
 from src.talentgate.application.models import Application, ApplicationEvaluation
 from src.talentgate.employee.models import Employee
-from pytography import PasswordHashLibrary
 
 settings = get_settings()
 

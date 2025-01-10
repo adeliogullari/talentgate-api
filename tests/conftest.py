@@ -5,9 +5,9 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from config import Settings, get_settings
 
-from tests.auth.conftest import access_token, refresh_token, headers
-from tests.user.conftest import make_user, user
-from tests.subscription.conftest import make_subscription, subscription
+from tests.auth.conftest import headers, access_token, refresh_token
+from tests.subscription.conftest import subscription, make_subscription
+from tests.user.conftest import user, make_user
 
 from src.talentgate.user.views import router as user_router
 from src.talentgate.subscription.views import router as subscription_router

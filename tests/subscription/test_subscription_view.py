@@ -1,10 +1,9 @@
 import json
 import pytest
-from datetime import datetime, UTC, timezone
+from datetime import datetime, timezone
 from src.talentgate.subscription.models import (
     Subscription,
     SubscriptionPlan,
-    SubscriptionStatus,
     CreateSubscription,
     UpdateSubscription,
 )
@@ -54,7 +53,7 @@ async def test_retrieve_subscriptions(
         "id": subscription.id,
     }
 
-    response = client.get(url="/api/v1/subscriptions", params=params, headers=headers)
+    response = client.get(url="/api/v1/subscriptions/", params=params, headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["id"] == subscription.id

@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from datetime import datetime, UTC
 from typing import Optional, TYPE_CHECKING, Any
 from sqlmodel import SQLModel, Field, Relationship
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from src.talentgate.subscription.models import Subscription
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     ADMIN = "Admin"
 
 
