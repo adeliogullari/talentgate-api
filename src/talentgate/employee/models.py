@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, List, Any
 from sqlmodel import SQLModel, Field, Relationship
@@ -47,17 +46,6 @@ class EmployeeRequest(BaseModel):
 
 class EmployeeResponse(SQLModel):
     id: int | None = None
-    title: EmployeeTitle | None = None
-    firstname: str | None = None
-    lastname: str | None = None
-    username: str
-    email: str
-    verified: bool | None = None
-    image: str | None = None
-    role: UserRole | None = None
-    subscription: Any | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
 
 
 class CreateEmployee(EmployeeRequest):
@@ -78,8 +66,8 @@ class EmployeeQueryParameters(SQLModel):
     title: EmployeeTitle | None = None
     firstname: str | None = None
     lastname: str | None = None
-    username: str
-    email: str
+    username: str | None = None
+    email: str | None = None
     verified: bool | None = None
     image: str | None = None
     role: UserRole | None = None

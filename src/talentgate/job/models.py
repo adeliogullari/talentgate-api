@@ -4,6 +4,7 @@ from typing import List, Optional, TYPE_CHECKING
 
 from sqlmodel import SQLModel, Field, Relationship
 
+from src.talentgate.company.models import Company
 from src.talentgate.database.models import Observer
 
 
@@ -54,7 +55,7 @@ class Job(SQLModel, table=True):
     description: str | None = Field(default=None)
     department: str | None = Field(default=None)
     employment_type: EmploymentType | None = Field(default=None)
-    application_deadline: datetime | None = Field(default=None)
+    job_post_deadline: datetime | None = Field(default=None)
     observers: List["Employee"] = Relationship(
         back_populates="observed_jobs", link_model=Observer
     )
@@ -66,6 +67,10 @@ class Job(SQLModel, table=True):
     salary_id: int | None = Field(foreign_key="job_salary.id")
     salary: JobSalary | None = Relationship(
         back_populates="job", sa_relationship_kwargs={"uselist": False}
+    )
+    company_id: int | None = Field(foreign_key="company.id")
+    company: Company | None = Relationship(
+        back_populates="jobs", sa_relationship_kwargs={"uselist": False}
     )
     created_at: datetime | None = Field(default=datetime.now(UTC))
     updated_at: datetime | None = Field(
@@ -79,7 +84,8 @@ class JobRequest(SQLModel):
     description: str | None = None
     department: str | None = None
     employment_type: EmploymentType | None = None
-    application_deadline: datetime | None = None
+    job_post_deadline: datetime | None = None
+    company_id: int | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -90,7 +96,8 @@ class JobResponse(SQLModel):
     description: str | None = None
     department: str | None = None
     employment_type: EmploymentType | None = None
-    application_deadline: datetime | None = None
+    job_post_deadline: datetime | None = None
+    company_id: int | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -126,29 +133,4 @@ class DeleteJob(JobRequest):
 
 
 class DeletedJob(JobResponse):
-    pass
-
-
-class ObserverRequest(SQLModel):
-    employee_id: int
-
-
-class ObserverResponse(SQLModel):
-    job_id: int | None = None
-    employee_id: int | None = None
-
-
-class AddObserver(ObserverRequest):
-    pass
-
-
-class AddedObserver(ObserverResponse):
-    pass
-
-
-class RetrievedObserver(ObserverResponse):
-    pass
-
-
-class DeletedObserver(ObserverResponse):
     pass

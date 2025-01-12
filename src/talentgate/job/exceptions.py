@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from starlette.status import HTTP_404_NOT_FOUND
 
 IdNotFoundException = HTTPException(
     status_code=HTTP_404_NOT_FOUND,
@@ -7,11 +7,9 @@ IdNotFoundException = HTTPException(
 )
 
 ObserverAlreadyExistsException = HTTPException(
-    status_code=HTTP_409_CONFLICT,
-    detail="Observer already exists for this job.",
+    status_code=409, detail="Employee is already observing this job."
 )
 
 ObserverNotFoundException = HTTPException(
-    status_code=HTTP_404_NOT_FOUND,
-    detail="Observer not found for the provided employee and job ids.",
+    status_code=404, detail="Given employee is not observing this job."
 )

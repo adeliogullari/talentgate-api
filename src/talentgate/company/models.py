@@ -1,6 +1,9 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from src.talentgate.job.models import Job
 
 
 class CompanyLocationAddress(SQLModel, table=True):
@@ -13,6 +16,10 @@ class CompanyLocationAddress(SQLModel, table=True):
     state: str | None = Field(default=None)
     country: str | None = Field(default=None)
     postal_code: str | None = Field(default=None)
+    company_location: Optional["CompanyLocation"] = Relationship(
+        back_populates="company_location_address",
+        sa_relationship_kwargs={"uselist": False},
+    )
 
 
 class CompanyLocation(SQLModel, table=True):
@@ -22,11 +29,12 @@ class CompanyLocation(SQLModel, table=True):
     type: str | None = Field(default=None)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
-    address: CompanyLocationAddress = Relationship(
-        back_populates="company", sa_relationship_kwargs={"uselist": False}
-    )
+
+    company_location_address_id: int | None = Field(default=None, foreign_key="company_location_address.id")
+    company_location_address: Optional[CompanyLocationAddress] = Relationship(back_populates="company_location")
+
     company_id: int | None = Field(default=None, foreign_key="company.id")
-    company: Optional["Company"] = Relationship(back_populates="company_location")
+    company: Optional["Company"] = Relationship(back_populates="locations")
 
 
 class CompanyLink(SQLModel, table=True):
@@ -36,7 +44,7 @@ class CompanyLink(SQLModel, table=True):
     type: str | None = Field(default=None)
     url: str | None = Field(default=None, max_length=2048)
     company_id: int | None = Field(default=None, foreign_key="company.id")
-    company: Optional["Company"] = Relationship(back_populates="company_link")
+    company: Optional["Company"] = Relationship(back_populates="links")
 
 
 class Company(SQLModel, table=True):
@@ -47,24 +55,18 @@ class Company(SQLModel, table=True):
     overview: str | None = Field(default=None)
     locations: List[CompanyLocation] = Relationship(back_populates="company")
     links: List[CompanyLink] = Relationship(back_populates="company")
+    jobs: List["Job"] = Relationship(back_populates="company")
 
 
 class CompanyRequest(SQLModel):
-    firstname: str | None = None
-    lastname: str | None = None
-    username: str
-    email: str
-    password: str
-    verified: bool | None = None
+    name: str
+    overview: str | None = None
 
 
 class CompanyResponse(SQLModel):
-    id: int | None = None
-    firstname: str | None = None
-    lastname: str | None = None
-    username: str
-    email: str
-    verified: bool | None = None
+    id: int
+    name: str
+    overview: str | None = None
 
 
 class CreateCompany(CompanyRequest):
@@ -82,11 +84,7 @@ class RetrievedCompany(CompanyResponse):
 class CompanyQueryParameters(SQLModel):
     offset: int | None = None
     limit: int | None = None
-    firstname: str | None = None
-    lastname: str | None = None
-    username: str | None = None
-    email: str | None = None
-    verified: bool | None = None
+    name: str | None = None
 
 
 class UpdateCompany(CompanyRequest):

@@ -8,6 +8,9 @@ from config import Settings, get_settings
 from tests.auth.conftest import headers, access_token, refresh_token
 from tests.subscription.conftest import subscription, make_subscription
 from tests.user.conftest import user, make_user
+from tests.employee.conftest import make_employee, employee
+from tests.job.conftest import make_job, job
+from tests.company.conftest import make_company, company
 
 from src.talentgate.user.views import router as user_router
 from src.talentgate.subscription.views import router as subscription_router
@@ -17,6 +20,7 @@ from src.talentgate.location.views import router as location_router
 from src.talentgate.applicant.views import router as applicant_router
 from src.talentgate.application.views import router as application_router
 from src.talentgate.job.views import router as job_router
+from src.talentgate.company.views import router as company_router
 from src.talentgate.database.service import get_sqlmodel_session
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -36,6 +40,7 @@ async def start_application() -> FastAPI | None:
     app.include_router(applicant_router)
     app.include_router(application_router)
     app.include_router(job_router)
+    app.include_router(company_router)
     return app
 
 

@@ -1,61 +1,7 @@
 from sqlmodel import Session
 
-from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job, CreateJob, UpdateJob, EmploymentType
-from src.talentgate.job.service import (
-    create,
-    retrieve_by_id,
-    update,
-    delete,
-    add_observers,
-    retrieve_observers_of_single_job,
-    retrieve_observer_by_job_and_employee,
-    delete_observer,
-)
-
-
-async def test_add_observers(sqlmodel_session: Session, employee: Employee) -> None:
-    job = Job(title="Test Job")
-    sqlmodel_session.add(job)
-    sqlmodel_session.commit()
-
-    created_observer = await add_observers(
-        sqlmodel_session=sqlmodel_session, job=job, employees=[employee]
-    )
-
-    assert created_observer[0].job_id == job.id
-    assert created_observer[0].employee_id == employee.id
-
-
-async def test_retrieve_observer_by_job_and_employee(
-    sqlmodel_session: Session, job: Job, employee: Employee
-) -> None:
-    retrieved_observer = await retrieve_observer_by_job_and_employee(
-        sqlmodel_session=sqlmodel_session, job=job, employee=employee
-    )
-
-    assert retrieved_observer.job_id == job.id
-    assert retrieved_observer.employee_id == employee.id
-
-
-async def test_retrieve_observers_of_single_job(
-    sqlmodel_session: Session, job: Job
-) -> None:
-    retrieved_observers = await retrieve_observers_of_single_job(job=job)
-
-    assert retrieved_observers[0].job_id == job.id
-    assert retrieved_observers[0].employee_id == job.observers[0].id
-
-
-async def test_delete_observer(
-    sqlmodel_session: Session, job: Job, employee: Employee
-) -> None:
-    deleted_observer = await delete_observer(
-        sqlmodel_session=sqlmodel_session, job=job, employee=employee
-    )
-
-    assert deleted_observer.job_id == job.id
-    assert deleted_observer.employee_id == employee.id
+from src.talentgate.job.service import create, retrieve_by_id, update, delete
 
 
 async def test_create(sqlmodel_session: Session) -> None:

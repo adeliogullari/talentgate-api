@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, Sequence, List
 from sqlmodel import select, Session
 from src.talentgate.company.models import (
     Company,
@@ -7,10 +7,93 @@ from src.talentgate.company.models import (
     UpdateCompany,
 )
 from config import get_settings
+from src.talentgate.job.models import Job
+from src.talentgate.employee import service as employee_service
+from src.talentgate.employee.exceptions import (
+    IdNotFoundException as EmployeeIdNotFoundException,
+)
+from src.talentgate.job.exceptions import (
+    ObserverAlreadyExistsException,
+    ObserverNotFoundException,
+)
 
 settings = get_settings()
 
 
+# JOB Services
+async def retrieve_jobs_by_query_parameters(
+    *,
+    sqlmodel_session: Session,
+    query_parameters: CompanyQueryParameters,
+    company_id: int,
+) -> Sequence[Job]:
+    offset = query_parameters.offset
+    limit = query_parameters.limit
+    filters = {
+        getattr(Job, attr) == value
+        for attr, value in query_parameters.model_dump(
+            exclude={"offset", "limit"}, exclude_unset=True, exclude_none=True
+        )
+    }
+
+    statement: Any = (
+        select(Job)
+        .where(Job.company_id == company_id)
+        .offset(offset)
+        .limit(limit)
+        .where(*filters)
+    )
+
+    retrieved_jobs = sqlmodel_session.exec(statement).all()
+
+    return retrieved_jobs
+
+
+# OBSERVER Services
+async def add_observer(
+    *, sqlmodel_session: Session, retrieved_job: Job, observers: List[Any]
+) -> None:
+    for observer in observers:
+        retrieved_employee = await employee_service.retrieve_by_id(
+            sqlmodel_session=sqlmodel_session, employee_id=observer
+        )
+
+        if not retrieved_employee:
+            raise EmployeeIdNotFoundException
+
+        if retrieved_employee not in retrieved_job.observers:
+            retrieved_job.observers.append(retrieved_employee)
+        else:
+            raise ObserverAlreadyExistsException
+
+        sqlmodel_session.commit()
+        sqlmodel_session.refresh(retrieved_job)
+
+    return
+
+
+async def delete_observer(
+    *, sqlmodel_session: Session, retrieved_job: Job, employee_id: int
+) -> None:
+    retrieved_employee = await employee_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, employee_id=employee_id
+    )
+
+    if not retrieved_employee:
+        raise EmployeeIdNotFoundException
+
+    if retrieved_employee in retrieved_job.observers:
+        retrieved_job.observers.remove(retrieved_employee)
+    else:
+        raise ObserverNotFoundException
+
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(retrieved_job)
+
+    return
+
+
+# COMPANY Services
 async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Company:
     created_company = Company(
         **company.model_dump(exclude_unset=True, exclude_none=True)
@@ -45,9 +128,9 @@ async def retrieve_by_query_parameters(
 
     statement: Any = select(Company).offset(offset).limit(limit).where(*filters)
 
-    retrieved_user = sqlmodel_session.exec(statement).all()
+    retrieved_jobs = sqlmodel_session.exec(statement).all()
 
-    return retrieved_user
+    return retrieved_jobs
 
 
 async def update(
