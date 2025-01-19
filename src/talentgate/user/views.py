@@ -1,6 +1,6 @@
 from sqlmodel import Session
-from typing import List, Sequence, Annotated
 from pytography import JsonWebToken
+from typing import List, Sequence, Annotated
 from fastapi import Depends, APIRouter, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from src.talentgate.auth import service as auth_service
@@ -26,7 +26,7 @@ from src.talentgate.auth.exceptions import (
     InvalidAuthorizationException,
 )
 from src.talentgate.user.exceptions import (
-    IdNotFoundException,
+    UserIdNotFoundException,
     DuplicateUsernameException,
     DuplicateEmailException,
 )
@@ -60,7 +60,7 @@ async def retrieve_current_user(
     )
 
     if not retrieved_user:
-        raise IdNotFoundException
+        raise UserIdNotFoundException
 
     return retrieved_user
 
@@ -146,7 +146,7 @@ async def retrieve_user(
     )
 
     if not retrieved_user:
-        raise IdNotFoundException
+        raise UserIdNotFoundException
 
     return retrieved_user
 
@@ -186,7 +186,7 @@ async def update_user(
     )
 
     if not retrieved_user:
-        raise IdNotFoundException
+        raise UserIdNotFoundException
 
     updated_user = await user_service.update(
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user, user=user
@@ -227,7 +227,7 @@ async def delete_user(
     )
 
     if not retrieved_user:
-        raise IdNotFoundException
+        raise UserIdNotFoundException
 
     deleted_user = await user_service.delete(
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user

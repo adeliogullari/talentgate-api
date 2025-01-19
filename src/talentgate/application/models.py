@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from datetime import datetime, UTC
 
 from typing import List, Optional
@@ -8,7 +8,7 @@ from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job
 
 
-class ApplicationStatus(str, Enum):
+class ApplicationStatus(StrEnum):
     APPLIED = "Applied"
     SCREENING = "Screening"
     REFERENCE_CHECK = "Reference Check"
@@ -31,7 +31,7 @@ class ApplicationEvaluation(SQLModel, table=True):
 
     id: int = Field(primary_key=True)
     comment: str | None = Field(nullable=False)
-    rating: str | None = Field(default=None)
+    rating: int | None = Field(default=None, ge=0, le=5)
     employee_id: int | None = Field(default=None, foreign_key="employee.id")
     employee: Optional["Employee"] = Relationship(
         back_populates="application_evaluations"

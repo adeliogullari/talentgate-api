@@ -7,6 +7,8 @@ from src.talentgate.user.models import (
     UserQueryParameters,
     UpdateUser,
 )
+from src.talentgate.subscription import service as subscription_service
+from src.talentgate.subscription.models import Subscription
 from config import get_settings
 
 settings = get_settings()
@@ -25,11 +27,20 @@ def verify_password(password: str, encoded_password: str):
 async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
     password = encode_password(password=user.password)
 
+    subscription = (
+        await subscription_service.create(
+            sqlmodel_session=sqlmodel_session, subscription=user.subscription
+        )
+        if user.subscription
+        else None
+    )
+
     created_user = User(
         **user.model_dump(
             exclude_unset=True, exclude_none=True, exclude={"password", "subscription"}
         ),
         password=password,
+        subscription=subscription,
     )
 
     sqlmodel_session.add(created_user)
@@ -85,8 +96,19 @@ async def retrieve_by_query_parameters(
 async def update(
     *, sqlmodel_session: Session, retrieved_user: User, user: UpdateUser
 ) -> User:
+    if hasattr(user, "subscription"):
+        retrieved_subscription = await subscription_service.retrieve_by_id(
+            sqlmodel_session=sqlmodel_session,
+            subscription_id=retrieved_user.subscription_id,
+        )
+        await subscription_service.update(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_subscription=retrieved_subscription,
+            subscription=user.subscription,
+        )
+
     retrieved_user.sqlmodel_update(
-        user.model_dump(exclude_none=True, exclude_unset=True)
+        user.model_dump(exclude_none=True, exclude_unset=True, exclude={"subscription"})
     )
 
     sqlmodel_session.add(retrieved_user)

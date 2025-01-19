@@ -33,14 +33,16 @@ def headers(token: str) -> Headers:
     return Headers({"Authorization": f"Bearer {token}"})
 
 
-async def test_create_job(client: TestClient, headers: Headers, company: Company) -> None:
+async def test_create_job(
+    client: TestClient, headers: Headers, company: Company
+) -> None:
     created_job = CreateJob(
         title="created job title",
         description="created job description",
         department="created job department",
         employment_type=EmploymentType.FULL_TIME,
         application_deadline=datetime.now(),
-        company_id=company.id
+        company_id=company.id,
     )
 
     response = client.post(

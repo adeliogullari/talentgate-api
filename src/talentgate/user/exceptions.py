@@ -14,14 +14,9 @@ InvalidVerificationException = HTTPException(
     status_code=HTTP_403_FORBIDDEN, detail="The user verification is invalid."
 )
 
-IdNotFoundException = HTTPException(
+UserIdNotFoundException = HTTPException(
     status_code=HTTP_404_NOT_FOUND,
     detail="User not found for the provided id.",
-)
-
-EmailNotFoundException = HTTPException(
-    status_code=HTTP_404_NOT_FOUND,
-    detail="User not found for the provided email.",
 )
 
 DuplicateUsernameException = HTTPException(

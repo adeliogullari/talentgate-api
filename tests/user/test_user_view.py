@@ -1,12 +1,15 @@
 import json
 import pytest
+from datetime import datetime, timedelta, UTC
 from src.talentgate.user.models import (
     User,
     UserRole,
     CreateUser,
     UpdateUser,
     UpdateCurrentUser,
+    UserSubscription,
 )
+from src.talentgate.subscription.models import SubscriptionPlan
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 
@@ -21,6 +24,11 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
         password="password",
         verified=True,
         role=UserRole.ADMIN,
+        subscription=UserSubscription(
+            plan=SubscriptionPlan.BASIC,
+            start_date=datetime.now(UTC) - timedelta(days=2),
+            end_date=datetime.now(UTC) - timedelta(days=1),
+        ),
     )
 
     response = client.post(
@@ -81,6 +89,11 @@ async def test_update_user(client: TestClient, user: User, headers: Headers) -> 
         email="username@example.com",
         verified=True,
         role=UserRole.ADMIN,
+        subscription=UserSubscription(
+            plan=SubscriptionPlan.BASIC,
+            start_date=datetime.now(UTC) - timedelta(days=2),
+            end_date=datetime.now(UTC) - timedelta(days=1),
+        ),
     )
 
     response = client.patch(
@@ -90,7 +103,8 @@ async def test_update_user(client: TestClient, user: User, headers: Headers) -> 
             updated_user.model_dump_json(exclude_none=True, exclude_unset=True)
         ),
     )
-
+    print("mehmet")
+    print(response.json())
     assert response.status_code == 200
     assert response.json()["email"] == updated_user.email
 

@@ -16,8 +16,8 @@ class CompanyLocationAddress(SQLModel, table=True):
     state: str | None = Field(default=None)
     country: str | None = Field(default=None)
     postal_code: str | None = Field(default=None)
-    company_location: Optional["CompanyLocation"] = Relationship(
-        back_populates="company_location_address",
+    location: Optional["CompanyLocation"] = Relationship(
+        back_populates="address",
         sa_relationship_kwargs={"uselist": False},
     )
 
@@ -29,9 +29,10 @@ class CompanyLocation(SQLModel, table=True):
     type: str | None = Field(default=None)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
-
-    company_location_address_id: int | None = Field(default=None, foreign_key="company_location_address.id")
-    company_location_address: Optional[CompanyLocationAddress] = Relationship(back_populates="company_location")
+    address_id: int | None = Field(
+        default=None, foreign_key="company_location_address.id"
+    )
+    address: Optional[CompanyLocationAddress] = Relationship(back_populates="location")
 
     company_id: int | None = Field(default=None, foreign_key="company.id")
     company: Optional["Company"] = Relationship(back_populates="locations")
@@ -53,20 +54,29 @@ class Company(SQLModel, table=True):
     id: int = Field(primary_key=True)
     name: str | None = Field(default=None)
     overview: str | None = Field(default=None)
-    locations: List[CompanyLocation] = Relationship(back_populates="company")
-    links: List[CompanyLink] = Relationship(back_populates="company")
-    jobs: List["Job"] = Relationship(back_populates="company")
+    locations: List[CompanyLocation] = Relationship(
+        back_populates="company", sa_relationship_kwargs={"cascade": "all"}
+    )
+    links: List[CompanyLink] = Relationship(
+        back_populates="company", sa_relationship_kwargs={"cascade": "all"}
+    )
+    jobs: List["Job"] = Relationship(
+        back_populates="company", sa_relationship_kwargs={"cascade": "all"}
+    )
 
 
 class CompanyRequest(SQLModel):
     name: str
     overview: str | None = None
+    locations: List[CompanyLocation] | None = None
+    jobs: List | None = None
 
 
 class CompanyResponse(SQLModel):
     id: int
     name: str
     overview: str | None = None
+    locations: List[CompanyLocation] | None = None
 
 
 class CreateCompany(CompanyRequest):

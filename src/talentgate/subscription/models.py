@@ -1,8 +1,11 @@
 from enum import StrEnum
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+from datetime import datetime, timedelta, UTC
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.database.models import BaseModel
+
+if TYPE_CHECKING:
+    from src.talentgate.user.models import User
 
 
 class SubscriptionPlan(StrEnum):
@@ -20,9 +23,11 @@ class Subscription(SQLModel, table=True):
 
     id: int = Field(primary_key=True)
     plan: SubscriptionPlan = Field(default=SubscriptionPlan.BASIC)
-    start_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    start_date: datetime = Field(
+        default_factory=lambda: datetime.now(UTC) - timedelta(days=2)
+    )
     end_date: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=1)
+        default_factory=lambda: datetime.now(UTC) - timedelta(days=1)
     )
     user: Optional["User"] = Relationship(
         back_populates="subscription", sa_relationship_kwargs={"uselist": False}
@@ -30,7 +35,7 @@ class Subscription(SQLModel, table=True):
 
     @property
     def status(self) -> SubscriptionStatus:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if self.end_date.astimezone() >= now:
             return SubscriptionStatus.ACTIVE
         return SubscriptionStatus.EXPIRED
@@ -43,19 +48,19 @@ class CreateSubscription(BaseModel):
 
 
 class CreatedSubscription(BaseModel):
-    id: int | None = None
-    plan: SubscriptionPlan | None = None
-    start_date: datetime | None = None
-    end_date: datetime | None = None
-    status: SubscriptionStatus | None = None
+    id: int
+    plan: SubscriptionPlan
+    start_date: datetime
+    end_date: datetime
+    status: SubscriptionStatus
 
 
 class RetrievedSubscription(BaseModel):
-    id: int | None = None
-    plan: SubscriptionPlan | None = None
-    start_date: datetime | None = None
-    end_date: datetime | None = None
-    status: SubscriptionStatus | None = None
+    id: int
+    plan: SubscriptionPlan
+    start_date: datetime
+    end_date: datetime
+    status: SubscriptionStatus
 
 
 class UpdateSubscription(BaseModel):
@@ -65,11 +70,11 @@ class UpdateSubscription(BaseModel):
 
 
 class UpdatedSubscription(BaseModel):
-    id: int | None = None
-    plan: SubscriptionPlan | None = None
-    start_date: datetime | None = None
-    end_date: datetime | None = None
-    status: SubscriptionStatus | None = None
+    id: int
+    plan: SubscriptionPlan
+    start_date: datetime
+    end_date: datetime
+    status: SubscriptionStatus
 
 
 class SubscriptionQueryParameters(BaseModel):

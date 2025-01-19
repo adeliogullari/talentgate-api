@@ -1,13 +1,20 @@
 from enum import StrEnum
 from datetime import datetime, UTC
-from typing import Optional, TYPE_CHECKING, Any
+from typing import Any, Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.database.models import BaseModel
-from src.talentgate.subscription.models import SubscriptionPlan
+from src.talentgate.subscription.models import (
+    Subscription,
+    SubscriptionPlan,
+    CreateSubscription,
+    CreatedSubscription,
+    RetrievedSubscription,
+    UpdateSubscription,
+    UpdatedSubscription,
+)
 
 if TYPE_CHECKING:
     from src.talentgate.employee.models import Employee
-    from src.talentgate.subscription.models import Subscription
 
 
 class UserRole(StrEnum):
@@ -30,7 +37,7 @@ class User(SQLModel, table=True):
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
     )
     subscription_id: int | None = Field(default=None, foreign_key="subscription.id")
-    subscription: Optional["Subscription"] = Relationship(
+    subscription: Optional[Subscription] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
     )
@@ -42,7 +49,7 @@ class User(SQLModel, table=True):
 
 
 class UserSubscription(SQLModel):
-    id: int
+    id: int | None = None
     plan: SubscriptionPlan | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
@@ -56,7 +63,7 @@ class CreateUser(BaseModel):
     password: str
     verified: bool | None = None
     role: UserRole | None = None
-    subscription: UserSubscription | None = None
+    subscription: CreateSubscription | None = None
     subscription_id: int | None = None
 
 
@@ -68,7 +75,7 @@ class CreatedUser(BaseModel):
     email: str
     verified: bool
     role: UserRole | None = None
-    subscription: UserSubscription | None = None
+    subscription: CreatedSubscription | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -81,7 +88,7 @@ class RetrievedUser(BaseModel):
     email: str
     verified: bool
     role: UserRole | None = None
-    subscription: UserSubscription | None = None
+    subscription: RetrievedSubscription | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -118,7 +125,7 @@ class UpdateUser(BaseModel):
     email: str | None = None
     verified: bool | None = None
     role: UserRole | None = None
-    subscription: Any | None = None
+    subscription: UpdateSubscription | None = None
     subscription_id: int | None = None
 
 

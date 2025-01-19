@@ -1,22 +1,48 @@
 import pytest
+import secrets
 from sqlmodel import Session
 
-from src.talentgate.company.models import Company
+from src.talentgate.company.models import (
+    Company,
+    CompanyLocation,
+    CompanyLocationAddress,
+)
 from src.talentgate.job.models import Job
 
 
 @pytest.fixture
-def make_company(sqlmodel_session: Session, job: Job):
-    def make(
-        name="test_company_name",
-        overview="test_company_overview",
-        jobs=None,
-    ):
-        if jobs is None:
-            jobs = [job]
+def address(sqlmodel_session: Session):
+    company_location_address = CompanyLocationAddress(
+        unit=None, street=None, city=None, state=None, country=None, postal_code=None
+    )
 
+    sqlmodel_session.add(company_location_address)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(company_location_address)
+
+    return company_location_address
+
+
+@pytest.fixture
+def location(sqlmodel_session: Session, address: CompanyLocationAddress):
+    company_location = CompanyLocation(
+        type="type", latitude=0, longtitude=0, address=address
+    )
+
+    sqlmodel_session.add(company_location)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(company_location)
+
+    return company_location
+
+
+@pytest.fixture
+def make_company(sqlmodel_session: Session, job: Job, location: CompanyLocation):
+    def make(**kwargs):
         company = Company(
-            name=name, overview=overview, jobs=jobs
+            name=kwargs.get("firstname") or secrets.token_hex(12),
+            overview=kwargs.get("overview") or secrets.token_hex(12),
+            locations=kwargs.get("locations") or [location],
         )
 
         sqlmodel_session.add(company)
@@ -29,5 +55,10 @@ def make_company(sqlmodel_session: Session, job: Job):
 
 
 @pytest.fixture
-def company(make_company):
-    return make_company()
+def company(make_company, request):
+    param = getattr(request, "param", {})
+    name = param.get("name", None)
+    overview = param.get("overview", None)
+    locations = param.get("locations", None)
+
+    return make_company(name=name, overview=overview, locations=locations)

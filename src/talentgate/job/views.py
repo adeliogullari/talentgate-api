@@ -7,7 +7,9 @@ from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.job import service as job_service
 from src.talentgate.company import service as company_service
 from src.talentgate.job.exceptions import IdNotFoundException as JobIdNotFoundException
-from src.talentgate.company.exceptions import IdNotFoundException as CompanyIdNotFoundException
+from src.talentgate.company.exceptions import (
+    IdNotFoundException as CompanyIdNotFoundException,
+)
 
 from src.talentgate.job.models import (
     Job,
@@ -35,7 +37,9 @@ async def create_job(
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
     job: CreateJob,
 ) -> Job:
-    retrieved_company = await company_service.retrieve_by_id(sqlmodel_session=sqlmodel_session, company_id=job.company_id)
+    retrieved_company = await company_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, company_id=job.company_id
+    )
 
     if not retrieved_company:
         raise CompanyIdNotFoundException
