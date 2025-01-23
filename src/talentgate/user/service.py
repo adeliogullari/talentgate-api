@@ -2,13 +2,15 @@ from typing import Any, Sequence
 from sqlmodel import select, Session
 from pytography import PasswordHashLibrary
 from src.talentgate.user.models import (
+    UserSubscription,
     User,
+    CreateSubscription,
     CreateUser,
     UserQueryParameters,
+    UpdateSubscription,
     UpdateUser,
 )
-from src.talentgate.subscription import service as subscription_service
-from src.talentgate.subscription.models import Subscription
+
 from config import get_settings
 
 settings = get_settings()
@@ -24,16 +26,57 @@ def verify_password(password: str, encoded_password: str):
     )
 
 
+async def create_subscription(
+    *, sqlmodel_session: Session, subscription: CreateSubscription
+):
+    created_subscription = UserSubscription(
+        **subscription.model_dump(exclude_unset=True, exclude_none=True)
+    )
+
+    sqlmodel_session.add(created_subscription)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_subscription)
+
+    return created_subscription
+
+
+async def retrieve_subscription_by_id(
+    *, sqlmodel_session: Session, subscription_id: int
+) -> UserSubscription:
+    statement: Any = select(UserSubscription).where(
+        UserSubscription.id == subscription_id
+    )
+
+    retrieved_subscription = sqlmodel_session.exec(statement).one_or_none()
+
+    return retrieved_subscription
+
+
+async def update_subscription(
+    *,
+    sqlmodel_session: Session,
+    retrieved_subscription: UserSubscription,
+    subscription: UpdateSubscription,
+) -> UserSubscription:
+    retrieved_subscription.sqlmodel_update(
+        subscription.model_dump(exclude_none=True, exclude_unset=True)
+    )
+
+    sqlmodel_session.add(retrieved_subscription)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(retrieved_subscription)
+
+    return retrieved_subscription
+
+
 async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
     password = encode_password(password=user.password)
 
-    subscription = (
-        await subscription_service.create(
+    subscription = None
+    if getattr(user, "subscription", None) is not None:
+        subscription = await create_subscription(
             sqlmodel_session=sqlmodel_session, subscription=user.subscription
         )
-        if user.subscription
-        else None
-    )
 
     created_user = User(
         **user.model_dump(
@@ -96,12 +139,12 @@ async def retrieve_by_query_parameters(
 async def update(
     *, sqlmodel_session: Session, retrieved_user: User, user: UpdateUser
 ) -> User:
-    if hasattr(user, "subscription"):
-        retrieved_subscription = await subscription_service.retrieve_by_id(
+    if getattr(user, "subscription", None) is not None:
+        retrieved_subscription = await retrieve_subscription_by_id(
             sqlmodel_session=sqlmodel_session,
             subscription_id=retrieved_user.subscription_id,
         )
-        await subscription_service.update(
+        await update_subscription(
             sqlmodel_session=sqlmodel_session,
             retrieved_subscription=retrieved_subscription,
             subscription=user.subscription,

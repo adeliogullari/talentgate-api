@@ -2,14 +2,14 @@ import json
 import pytest
 from datetime import datetime, timedelta, UTC
 from src.talentgate.user.models import (
+    SubscriptionPlan,
+    UserSubscription,
     User,
     UserRole,
     CreateUser,
     UpdateUser,
     UpdateCurrentUser,
-    UserSubscription,
 )
-from src.talentgate.subscription.models import SubscriptionPlan
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 

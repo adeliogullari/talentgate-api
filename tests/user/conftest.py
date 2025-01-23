@@ -1,13 +1,50 @@
+from datetime import datetime, UTC
+
 import pytest
 import secrets
 from sqlmodel import Session
-from src.talentgate.user.models import User
-from src.talentgate.subscription.models import Subscription
+from src.talentgate.user.models import UserSubscription, User, SubscriptionPlan
 from src.talentgate.user import service as user_service
 
 
 @pytest.fixture
-def make_user(sqlmodel_session: Session, subscription: Subscription):
+def make_subscription(sqlmodel_session: Session):
+    def make(
+        plan: SubscriptionPlan | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ):
+        subscription = UserSubscription(
+            plan=plan or SubscriptionPlan.BASIC,
+            start_date=start_date or datetime.now(UTC),
+            end_date=end_date or datetime.now(UTC),
+        )
+
+        sqlmodel_session.add(subscription)
+        sqlmodel_session.commit()
+        sqlmodel_session.refresh(subscription)
+
+        return subscription
+
+    return make
+
+
+@pytest.fixture
+def subscription(make_subscription, request):
+    param = getattr(request, "param", {})
+    plan = param.get("plan", None)
+    start_date = param.get("start_date", None)
+    end_date = param.get("end_date", None)
+
+    return make_subscription(
+        plan=plan,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
+@pytest.fixture
+def make_user(sqlmodel_session: Session, subscription: UserSubscription):
     def make(**kwargs):
         user = User(
             firstname=kwargs.get("firstname") or secrets.token_hex(12),
