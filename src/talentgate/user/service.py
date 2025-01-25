@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, Union, Sequence
 from sqlmodel import select, Session
 from pytography import PasswordHashLibrary
 from src.talentgate.user.models import (
@@ -9,6 +9,7 @@ from src.talentgate.user.models import (
     UserQueryParameters,
     UpdateSubscription,
     UpdateUser,
+    UpdateCurrentUser
 )
 
 from config import get_settings
@@ -137,7 +138,7 @@ async def retrieve_by_query_parameters(
 
 
 async def update(
-    *, sqlmodel_session: Session, retrieved_user: User, user: UpdateUser
+    *, sqlmodel_session: Session, retrieved_user: User, user: Union[UpdateUser, UpdateCurrentUser]
 ) -> User:
     if getattr(user, "subscription", None) is not None:
         retrieved_subscription = await retrieve_subscription_by_id(

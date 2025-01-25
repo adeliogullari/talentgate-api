@@ -1,6 +1,6 @@
 from enum import StrEnum
-from datetime import datetime, timedelta, UTC
 from typing import Optional, TYPE_CHECKING
+from datetime import datetime, timedelta, UTC
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.database.models import BaseModel
 
@@ -22,7 +22,7 @@ class UserSubscription(SQLModel, table=True):
     __tablename__ = "user_subscription"
 
     id: int = Field(primary_key=True)
-    plan: SubscriptionPlan = Field(default=SubscriptionPlan.BASIC)
+    plan: SubscriptionPlan | None = Field(default=SubscriptionPlan.BASIC)
     start_date: datetime = Field(
         default_factory=lambda: datetime.now(UTC) - timedelta(days=2)
     )
