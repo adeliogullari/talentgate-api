@@ -165,7 +165,7 @@ class CreatedJob(JobResponse):
 
 
 class RetrievedJob(JobResponse):
-    location: JobLocation | None = None
+    location: JobLocationResponse | None = None
 
 
 class UpdateJob(JobRequest):
