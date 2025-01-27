@@ -1,11 +1,41 @@
 from typing import Any, Sequence
 from sqlmodel import select, Session
 
-from src.talentgate.job.models import Job, CreateJob, UpdateJob, JobQueryParameters
+from src.talentgate.job.models import (
+    Job,
+    CreateJob,
+    UpdateJob,
+    JobQueryParameters,
+    JobLocation,
+    CreateJobLocation,
+)
+
+
+async def create_job_location(
+    *, sqlmodel_session: Session, job_location: CreateJobLocation
+):
+    created_job_location = JobLocation(
+        **job_location.model_dump(exclude_unset=True, exclude_none=True)
+    )
+
+    sqlmodel_session.add(created_job_location)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_job_location)
+
+    return created_job_location
 
 
 async def create(*, sqlmodel_session: Session, job: CreateJob) -> Job:
-    created_job = Job(**job.model_dump(exclude_unset=True, exclude_none=True))
+    job_location = None
+    if getattr(job, "location", None) is not None:
+        job_location = await create_job_location(
+            sqlmodel_session=sqlmodel_session, job_location=job.location
+        )
+
+    created_job = Job(
+        **job.model_dump(exclude_unset=True, exclude_none=True, exclude={"location"}),
+        location=job_location,
+    )
 
     sqlmodel_session.add(created_job)
     sqlmodel_session.commit()

@@ -5,8 +5,7 @@ from typing import List, Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 
 from src.talentgate.company.models import Company
-from src.talentgate.database.models import Observer
-
+from src.talentgate.database.models import Observer, BaseModel
 
 if TYPE_CHECKING:
     from src.talentgate.employee.models import Employee
@@ -60,9 +59,14 @@ class Job(SQLModel, table=True):
         back_populates="observed_jobs", link_model=Observer
     )
     applications: List["Application"] = Relationship(back_populates="job")
-    location_id: int | None = Field(foreign_key="job_location.id")
+    location_id: int | None = Field(foreign_key="job_location.id", ondelete="CASCADE")
     location: JobLocation | None = Relationship(
-        back_populates="job", sa_relationship_kwargs={"uselist": False}
+        back_populates="job",
+        sa_relationship_kwargs={
+            "uselist": False,
+            "single_parent": True,
+            "cascade": "all, delete-orphan",
+        },
     )
     salary_id: int | None = Field(foreign_key="job_salary.id")
     salary: JobSalary | None = Relationship(
@@ -79,6 +83,49 @@ class Job(SQLModel, table=True):
     )
 
 
+class JobLocationRequest(BaseModel):
+    type: LocationType | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+
+
+class JobLocationResponse(BaseModel):
+    id: int | None = None
+    type: LocationType | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+
+
+class CreateJobLocation(JobLocationRequest):
+    pass
+
+
+class CreatedJobLocation(JobLocationResponse):
+    pass
+
+
+class RetrievedJobLocation(JobLocationResponse):
+    pass
+
+
+class UpdateJobLocation(JobLocationRequest):
+    pass
+
+
+class UpdatedJobLocation(JobLocationResponse):
+    pass
+
+
+class DeleteJobLocation(JobLocationRequest):
+    pass
+
+
+class DeletedJobLocation(JobLocationResponse):
+    pass
+
+
 class JobRequest(SQLModel):
     title: str | None = None
     description: str | None = None
@@ -86,6 +133,7 @@ class JobRequest(SQLModel):
     employment_type: EmploymentType | None = None
     job_post_deadline: datetime | None = None
     company_id: int | None = None
+    location: CreateJobLocation | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -117,7 +165,7 @@ class CreatedJob(JobResponse):
 
 
 class RetrievedJob(JobResponse):
-    pass
+    location: JobLocation | None = None
 
 
 class UpdateJob(JobRequest):

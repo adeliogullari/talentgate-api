@@ -9,7 +9,7 @@ from tests.auth.conftest import headers, access_token, refresh_token
 from tests.user.conftest import make_subscription, subscription, make_user, user
 from tests.employee.conftest import make_employee, employee
 from tests.job.conftest import make_job, job
-from tests.company.conftest import make_company, company
+from tests.company.conftest import make_company, company, location, address
 
 from src.talentgate.user.views import router as user_router
 from src.talentgate.employee.views import router as employee_router
