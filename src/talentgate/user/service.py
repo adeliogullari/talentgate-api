@@ -7,9 +7,9 @@ from src.talentgate.user.models import (
     CreateSubscription,
     CreateUser,
     UserQueryParameters,
-    UpdateSubscription,
     UpdateUser,
-    UpdateCurrentUser
+    UpdateCurrentUser,
+    UpdateSubscription,
 )
 
 from config import get_settings
@@ -29,7 +29,7 @@ def verify_password(password: str, encoded_password: str):
 
 async def create_subscription(
     *, sqlmodel_session: Session, subscription: CreateSubscription
-):
+) -> UserSubscription:
     created_subscription = UserSubscription(
         **subscription.model_dump(exclude_unset=True, exclude_none=True)
     )
@@ -68,6 +68,25 @@ async def update_subscription(
     sqlmodel_session.refresh(retrieved_subscription)
 
     return retrieved_subscription
+
+
+async def upsert_subscription(
+    *,
+    sqlmodel_session: Session,
+    subscription: Union[CreateSubscription, UpdateSubscription],
+) -> UserSubscription:
+    retrieved_subscription = await retrieve_subscription_by_id(
+        sqlmodel_session=sqlmodel_session, subscription_id=subscription.id
+    )
+    if retrieved_subscription:
+        return await update_subscription(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_subscription=retrieved_subscription,
+            subscription=subscription,
+        )
+    return await create_subscription(
+        sqlmodel_session=sqlmodel_session, subscription=subscription
+    )
 
 
 async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
@@ -138,17 +157,14 @@ async def retrieve_by_query_parameters(
 
 
 async def update(
-    *, sqlmodel_session: Session, retrieved_user: User, user: Union[UpdateUser, UpdateCurrentUser]
+    *,
+    sqlmodel_session: Session,
+    retrieved_user: User,
+    user: Union[UpdateUser, UpdateCurrentUser],
 ) -> User:
     if getattr(user, "subscription", None) is not None:
-        retrieved_subscription = await retrieve_subscription_by_id(
-            sqlmodel_session=sqlmodel_session,
-            subscription_id=retrieved_user.subscription_id,
-        )
-        await update_subscription(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_subscription=retrieved_subscription,
-            subscription=user.subscription,
+        await upsert_subscription(
+            sqlmodel_session=sqlmodel_session, subscription=user.subscription
         )
 
     retrieved_user.sqlmodel_update(

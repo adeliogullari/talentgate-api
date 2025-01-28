@@ -75,6 +75,7 @@ class User(SQLModel, table=True):
 
 
 class CreateSubscription(BaseModel):
+    id: int | None = None
     plan: SubscriptionPlan | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
@@ -97,6 +98,7 @@ class RetrievedSubscription(BaseModel):
 
 
 class UpdateSubscription(BaseModel):
+    id: int | None = None
     plan: SubscriptionPlan | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
@@ -111,6 +113,7 @@ class UpdatedSubscription(BaseModel):
 
 
 class CreateUser(BaseModel):
+    id: int | None = None
     firstname: str
     lastname: str
     username: str
@@ -174,30 +177,31 @@ class UserQueryParameters(BaseModel):
 
 
 class UpdateUser(BaseModel):
+    id: int | None = None
     firstname: str | None = None
     lastname: str | None = None
     username: str | None = None
     email: str | None = None
     verified: bool | None = None
     role: UserRole | None = None
-    subscription: UpdateSubscription | None = None
-    subscription_id: int | None = None
+    subscription: CreateSubscription | None = None
 
 
 class UpdatedUser(BaseModel):
-    id: int
+    id: int | None = None
     firstname: str
     lastname: str
     username: str
     email: str
     verified: bool
     role: UserRole | None = None
-    subscription: UpdatedSubscription | None = None
+    subscription: CreatedSubscription | None = None
     created_at: datetime
     updated_at: datetime
 
 
 class UpdateCurrentUser(BaseModel):
+    id: int | None = None
     firstname: str | None = None
     lastname: str | None = None
     username: str | None = None

@@ -1,13 +1,12 @@
 from typing import List, Optional, TYPE_CHECKING
-
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
     from src.talentgate.job.models import Job
 
 
-class CompanyLocationAddress(SQLModel, table=True):
-    __tablename__ = "company_location_address"
+class CompanyAddress(SQLModel, table=True):
+    __tablename__ = "company_address"
 
     id: int = Field(primary_key=True)
     unit: str | None = Field(default=None)
@@ -29,10 +28,8 @@ class CompanyLocation(SQLModel, table=True):
     type: str | None = Field(default=None)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
-    address_id: int | None = Field(
-        default=None, foreign_key="company_location_address.id"
-    )
-    address: Optional[CompanyLocationAddress] = Relationship(back_populates="location")
+    address_id: int | None = Field(default=None, foreign_key="company_address.id")
+    address: Optional[CompanyAddress] = Relationship(back_populates="location")
 
     company_id: int | None = Field(default=None, foreign_key="company.id")
     company: Optional["Company"] = Relationship(back_populates="locations")
@@ -45,7 +42,9 @@ class CompanyLink(SQLModel, table=True):
     type: str | None = Field(default=None)
     url: str | None = Field(default=None, max_length=2048)
     company_id: int | None = Field(default=None, foreign_key="company.id")
-    company: Optional["Company"] = Relationship(back_populates="links")
+    company: Optional["Company"] = Relationship(
+        back_populates="links", sa_relationship_kwargs={"cascade": "all"}
+    )
 
 
 class Company(SQLModel, table=True):
@@ -63,6 +62,51 @@ class Company(SQLModel, table=True):
     jobs: List["Job"] = Relationship(
         back_populates="company", sa_relationship_kwargs={"cascade": "all"}
     )
+
+
+class CreateAddress(SQLModel):
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class CreatedAddress(SQLModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class CreateLocation(SQLModel):
+    type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    address: CreateAddress | None = None
+
+
+class CreatedLocation(SQLModel):
+    id: int
+    type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    address: CreateAddress | None = None
+
+
+class CreateLink(SQLModel):
+    type: str | None = Field(default=None)
+    url: str | None = Field(default=None, max_length=2048)
+
+
+class CreatedLink(SQLModel):
+    id: int
+    type: str | None = Field(default=None)
+    url: str | None = Field(default=None, max_length=2048)
 
 
 class CompanyRequest(SQLModel):

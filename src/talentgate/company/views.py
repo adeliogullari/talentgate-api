@@ -165,7 +165,6 @@ async def delete_company_job_observers(
     return retrieved_job.observers
 
 
-# COMPANIES Views
 @router.post(
     path="/api/v1/companies",
     response_model=CreatedCompany,

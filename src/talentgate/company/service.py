@@ -1,13 +1,20 @@
 from typing import Any, Sequence, List
 from sqlmodel import select, Session
 from src.talentgate.company.models import (
+    CompanyAddress,
+    CompanyLocation,
+    CompanyLink,
     Company,
+    CreateAddress,
+    CreateLocation,
+    CreateLink,
     CreateCompany,
     CompanyQueryParameters,
     UpdateCompany,
 )
 from config import get_settings
 from src.talentgate.job.models import Job
+from src.talentgate.job import service as job_service
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.exceptions import (
     IdNotFoundException as EmployeeIdNotFoundException,
@@ -93,10 +100,72 @@ async def delete_observer(
     return
 
 
-# COMPANY Services
+async def create_address(
+    *, sqlmodel_session: Session, address: CreateAddress
+) -> CompanyAddress:
+    created_address = CompanyAddress(
+        **address.model_dump(exclude_unset=True, exclude_none=True)
+    )
+
+    sqlmodel_session.add(created_address)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_address)
+
+    return created_address
+
+
+async def create_location(
+    *, sqlmodel_session: Session, location: CreateLocation
+) -> CompanyLocation:
+    address = None
+    if getattr(location, "address", None) is not None:
+        address = await create_address(
+            sqlmodel_session=sqlmodel_session, address=location.address
+        )
+
+    created_location = CompanyLocation(
+        **location.model_dump(
+            exclude_unset=True, exclude_none=True, exclude={"address"}
+        ),
+        address=address,
+    )
+
+    sqlmodel_session.add(created_location)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_location)
+
+    return created_location
+
+
+async def create_link(*, sqlmodel_session: Session, link: CreateLink) -> CompanyLink:
+    created_link = CompanyLink(**link.model_dump(exclude_unset=True, exclude_none=True))
+
+    sqlmodel_session.add(created_link)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_link)
+
+    return created_link
+
+
 async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Company:
+    locations = None
+    if getattr(company, "locations", None) is not None:
+        locations = [
+            await create_location(sqlmodel_session=sqlmodel_session, location=location)
+            for location in company.locations
+        ]
+
+    links = None
+    if getattr(company, "links", None) is not None:
+        links = [
+            await create_link(sqlmodel_session=sqlmodel_session, link=link)
+            for link in company.links
+        ]
+
     created_company = Company(
-        **company.model_dump(exclude_unset=True, exclude_none=True)
+        **company.model_dump(exclude_unset=True, exclude_none=True),
+        locations=locations,
+        links=links,
     )
 
     sqlmodel_session.add(created_company)
@@ -136,7 +205,9 @@ async def retrieve_by_query_parameters(
 async def update(
     *, sqlmodel_session: Session, retrieved_company: Company, company: UpdateCompany
 ) -> Company:
-    retrieved_company.sqlmodel_update(company)
+    retrieved_company.sqlmodel_update(
+        company.model_dump(exclude_none=True, exclude_unset=True)
+    )
 
     sqlmodel_session.add(retrieved_company)
     sqlmodel_session.commit()
