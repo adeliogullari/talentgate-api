@@ -13,7 +13,7 @@ from src.talentgate.company.models import (
     UpdateCompany,
 )
 from config import get_settings
-from src.talentgate.job.models import Job
+from src.talentgate.job.models import Job, JobQueryParameters
 from src.talentgate.job import service as job_service
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.exceptions import (
@@ -31,7 +31,7 @@ settings = get_settings()
 async def retrieve_jobs_by_query_parameters(
     *,
     sqlmodel_session: Session,
-    query_parameters: CompanyQueryParameters,
+    query_parameters: JobQueryParameters,
     company_id: int,
 ) -> Sequence[Job]:
     offset = query_parameters.offset
@@ -54,6 +54,21 @@ async def retrieve_jobs_by_query_parameters(
     retrieved_jobs = sqlmodel_session.exec(statement).all()
 
     return retrieved_jobs
+
+
+async def retrieve_company_job(
+    *,
+    sqlmodel_session: Session,
+    company_id: int,
+    job_id: int,
+) -> Sequence[Job]:
+    statement: Any = (
+        select(Job).where(Job.company_id == company_id).where(Job.id == job_id)
+    )
+
+    retrieved_job = sqlmodel_session.exec(statement).one()
+
+    return retrieved_job
 
 
 # OBSERVER Services
