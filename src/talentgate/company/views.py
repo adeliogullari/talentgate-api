@@ -19,7 +19,13 @@ from src.talentgate.company.models import (
 from src.talentgate.company.exceptions import IdNotFoundException
 from src.talentgate.job.exceptions import IdNotFoundException as JobIdNotFoundException
 
-from src.talentgate.job.models import RetrievedJob, JobQueryParameters, Job
+from src.talentgate.job.models import (
+    RetrievedJob,
+    JobQueryParameters,
+    Job,
+    RetrievedCompanyJob,
+    RetrievedCompanyJobs,
+)
 
 router = APIRouter(tags=["company"])
 
@@ -27,7 +33,7 @@ router = APIRouter(tags=["company"])
 # CAREER COMPANY JOBS Views
 @router.get(
     path="/api/v1/careers/companies/{company_id}/jobs",
-    response_model=List[RetrievedJob],
+    response_model=List[RetrievedCompanyJobs],
     status_code=200,
 )
 async def retrieved_career_jobs(
@@ -43,6 +49,24 @@ async def retrieved_career_jobs(
     )
 
     return retrieved_jobs
+
+
+@router.get(
+    path="/api/v1/careers/companies/{company_id}/jobs/{job_id}",
+    response_model=RetrievedCompanyJob,
+    status_code=200,
+)
+async def retrieved_careers_job(
+    *,
+    company_id: int,
+    job_id: int,
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+) -> Sequence[Job]:
+    retrieved_job = await company_service.retrieve_company_job(
+        sqlmodel_session=sqlmodel_session, company_id=company_id, job_id=job_id
+    )
+
+    return retrieved_job
 
 
 # COMPANY JOBS Views
