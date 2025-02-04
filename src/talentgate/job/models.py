@@ -141,6 +141,7 @@ class JobRequest(SQLModel):
 class JobResponse(SQLModel):
     id: int | None = None
     title: str | None = None
+    description: str | None = None
     department: str | None = None
     employment_type: EmploymentType | None = None
     job_post_deadline: datetime | None = None
