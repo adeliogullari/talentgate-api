@@ -1,7 +1,9 @@
 from typing import List, Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
+from src.talentgate.database.models import BaseModel
 
 if TYPE_CHECKING:
+    from src.talentgate.employee.models import Employee
     from src.talentgate.job.models import Job
 
 
@@ -51,8 +53,11 @@ class Company(SQLModel, table=True):
     __tablename__ = "company"
 
     id: int = Field(primary_key=True)
-    name: str | None = Field(default=None)
+    name: str = Field(unique=True)
     overview: str | None = Field(default=None)
+    employees: List["Employee"] = Relationship(
+        back_populates="company", sa_relationship_kwargs={"cascade": "all"}
+    )
     locations: List[CompanyLocation] = Relationship(
         back_populates="company", sa_relationship_kwargs={"cascade": "all"}
     )
@@ -62,6 +67,11 @@ class Company(SQLModel, table=True):
     jobs: List["Job"] = Relationship(
         back_populates="company", sa_relationship_kwargs={"cascade": "all"}
     )
+
+
+class CompanyEmployee(BaseModel):
+    id: int | None = None
+    title: str | None = None
 
 
 class CreateAddress(SQLModel):
@@ -109,44 +119,48 @@ class CreatedLink(SQLModel):
     url: str | None = Field(default=None, max_length=2048)
 
 
-class CompanyRequest(SQLModel):
+class CreateCompany(BaseModel):
     name: str
     overview: str | None = None
     locations: List[CompanyLocation] | None = None
     jobs: List | None = None
 
 
-class CompanyResponse(SQLModel):
+class CreatedCompany(BaseModel):
     id: int
     name: str
     overview: str | None = None
+    employees: List[CompanyEmployee] | None = None
     locations: List[CompanyLocation] | None = None
 
 
-class CreateCompany(CompanyRequest):
-    pass
+class RetrievedCompany(BaseModel):
+    id: int
+    name: str
+    overview: str | None = None
+    employees: List[CompanyEmployee] | None = None
+    locations: List[CompanyLocation] | None = None
 
 
-class CreatedCompany(CompanyResponse):
-    pass
-
-
-class RetrievedCompany(CompanyResponse):
-    pass
-
-
-class CompanyQueryParameters(SQLModel):
+class CompanyQueryParameters(BaseModel):
     offset: int | None = None
     limit: int | None = None
     name: str | None = None
 
 
-class UpdateCompany(CompanyRequest):
-    pass
+class UpdateCompany(BaseModel):
+    name: str
+    overview: str | None = None
+    locations: List[CompanyLocation] | None = None
+    jobs: List | None = None
 
 
-class UpdatedCompany(CompanyResponse):
-    pass
+class UpdatedCompany(BaseModel):
+    id: int
+    name: str
+    overview: str | None = None
+    employees: List[CompanyEmployee] | None = None
+    locations: List[CompanyLocation] | None = None
 
 
 class DeletedCompany(SQLModel):

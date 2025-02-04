@@ -56,7 +56,7 @@ class Job(SQLModel, table=True):
     employment_type: EmploymentType | None = Field(default=None)
     job_post_deadline: datetime | None = Field(default=None)
     observers: List["Employee"] = Relationship(
-        back_populates="observed_jobs", link_model=Observer
+        back_populates="observations", link_model=Observer
     )
     applications: List["Application"] = Relationship(back_populates="job")
     location_id: int | None = Field(foreign_key="job_location.id", ondelete="CASCADE")

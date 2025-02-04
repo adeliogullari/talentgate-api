@@ -17,7 +17,7 @@ from src.talentgate.job.models import Job
 from src.talentgate.job import service as job_service
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.exceptions import (
-    IdNotFoundException as EmployeeIdNotFoundException,
+    EmployeeIdNotFoundException as EmployeeIdNotFoundException,
 )
 from src.talentgate.job.exceptions import (
     ObserverAlreadyExistsException,

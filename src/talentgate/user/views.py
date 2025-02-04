@@ -1,14 +1,13 @@
 from sqlmodel import Session
-from pytography import JsonWebToken
 from typing import List, Sequence, Annotated
 from fastapi import Depends, APIRouter, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user import service as user_service
-from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.user.models import (
-    User,
     UserRole,
+    User,
     CreateUser,
     CreatedUser,
     RetrievedUser,
@@ -53,7 +52,7 @@ async def retrieve_current_user(
     if not is_verified:
         raise InvalidAccessTokenException
 
-    _, payload, _ = JsonWebToken.decode(token=http_authorization.credentials)
+    _, payload, _ = auth_service.decode_token(token=http_authorization.credentials)
 
     retrieved_user = await user_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session, user_id=payload["user_id"]

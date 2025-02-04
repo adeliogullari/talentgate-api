@@ -9,5 +9,9 @@ def encode_token(user_id: str, key: str, seconds: float) -> str:
     return JsonWebToken.encode(payload=payload, key=key)
 
 
+def decode_token(token: str) -> tuple[dict, dict, str]:
+    return JsonWebToken.decode(token=token)
+
+
 def verify_token(token: str, key: str) -> bool:
     return JsonWebToken.verify(token=token, key=key)

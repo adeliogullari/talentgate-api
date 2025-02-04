@@ -33,9 +33,7 @@ class ApplicationEvaluation(SQLModel, table=True):
     comment: str | None = Field(nullable=False)
     rating: int | None = Field(default=None, ge=0, le=5)
     employee_id: int | None = Field(default=None, foreign_key="employee.id")
-    employee: Optional["Employee"] = Relationship(
-        back_populates="application_evaluations"
-    )
+    employee: Optional["Employee"] = Relationship(back_populates="evaluations")
     application_id: int | None = Field(default=None, foreign_key="application.id")
     application: Optional["Application"] = Relationship(back_populates="evaluations")
 

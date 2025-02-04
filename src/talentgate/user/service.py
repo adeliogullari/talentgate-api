@@ -162,13 +162,20 @@ async def update(
     retrieved_user: User,
     user: Union[UpdateUser, UpdateCurrentUser],
 ) -> User:
+    if getattr(user, "password", None) is not None:
+        retrieved_user.password = encode_password(password=user.password)
+
     if getattr(user, "subscription", None) is not None:
-        await upsert_subscription(
+        retrieved_user.subscription = await upsert_subscription(
             sqlmodel_session=sqlmodel_session, subscription=user.subscription
         )
 
     retrieved_user.sqlmodel_update(
-        user.model_dump(exclude_none=True, exclude_unset=True, exclude={"subscription"})
+        user.model_dump(
+            exclude_none=True,
+            exclude_unset=True,
+            exclude={"password", "subscription"},
+        )
     )
 
     sqlmodel_session.add(retrieved_user)
@@ -176,6 +183,25 @@ async def update(
     sqlmodel_session.refresh(retrieved_user)
 
     return retrieved_user
+
+
+async def upsert(
+    *,
+    sqlmodel_session: Session,
+    user: Union[CreateUser, UpdateUser],
+) -> User:
+    retrieved_user = await retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, user_id=user.id
+    )
+
+    if retrieved_user:
+        return await update(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_user=retrieved_user,
+            user=user,
+        )
+
+    return await create(sqlmodel_session=sqlmodel_session, user=user)
 
 
 async def delete(*, sqlmodel_session: Session, retrieved_user: User) -> User:

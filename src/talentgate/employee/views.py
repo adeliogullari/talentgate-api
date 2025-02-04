@@ -4,7 +4,7 @@ from sqlmodel import Session
 from fastapi import Depends, APIRouter, Query
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.employee import service as employee_service
-from src.talentgate.employee.exceptions import IdNotFoundException
+from src.talentgate.employee.exceptions import EmployeeIdNotFoundException
 from src.talentgate.employee.models import (
     Employee,
     CreateEmployee,
@@ -49,7 +49,7 @@ async def retrieve_employee(
     )
 
     if not retrieved_employee:
-        raise IdNotFoundException
+        raise EmployeeIdNotFoundException
 
     return retrieved_employee
 
@@ -87,7 +87,7 @@ async def update_employee(
     )
 
     if not retrieved_employee:
-        raise IdNotFoundException
+        raise EmployeeIdNotFoundException
 
     updated_employee = await employee_service.update(
         sqlmodel_session=sqlmodel_session,
@@ -113,7 +113,7 @@ async def delete_employee(
     )
 
     if not retrieved_employee:
-        raise IdNotFoundException
+        raise EmployeeIdNotFoundException
 
     deleted_employee = await employee_service.delete(
         sqlmodel_session=sqlmodel_session, retrieved_employee=retrieved_employee
