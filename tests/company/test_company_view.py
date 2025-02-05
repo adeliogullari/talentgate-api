@@ -43,6 +43,18 @@ async def test_retrieved_career_jobs(
     assert response.json()[0]["id"] == job.id
 
 
+async def test_retrieved_career_job(
+    client: TestClient, headers: Headers, company: Company, job: Job
+) -> None:
+    response = client.get(
+        url=f"/api/v1/careers/companies/{company.id}/jobs/{job.id}",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == job.id
+
+
 async def test_retrieved_company_jobs(
     client: TestClient, headers: Headers, company: Company, job: Job
 ) -> None:

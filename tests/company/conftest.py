@@ -43,6 +43,7 @@ def make_company(sqlmodel_session: Session, job: Job, location: CompanyLocation)
             name=kwargs.get("firstname") or secrets.token_hex(12),
             overview=kwargs.get("overview") or secrets.token_hex(12),
             locations=kwargs.get("locations") or [location],
+            jobs=[job],
         )
 
         sqlmodel_session.add(company)

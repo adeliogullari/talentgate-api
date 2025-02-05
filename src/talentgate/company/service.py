@@ -14,7 +14,6 @@ from src.talentgate.company.models import (
 )
 from config import get_settings
 from src.talentgate.job.models import Job, JobQueryParameters
-from src.talentgate.job import service as job_service
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.exceptions import (
     EmployeeIdNotFoundException as EmployeeIdNotFoundException,
@@ -61,7 +60,7 @@ async def retrieve_company_job(
     sqlmodel_session: Session,
     company_id: int,
     job_id: int,
-) -> Sequence[Job]:
+) -> Job:
     statement: Any = (
         select(Job).where(Job.company_id == company_id).where(Job.id == job_id)
     )

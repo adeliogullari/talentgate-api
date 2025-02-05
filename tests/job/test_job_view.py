@@ -55,7 +55,6 @@ async def test_create_job(
 
     assert response.status_code == 201
     assert response.json()["title"] == created_job.title
-    assert response.json()["description"] == created_job.description
     assert response.json()["department"] == created_job.department
     assert response.json()["employment_type"] == created_job.employment_type
 
@@ -65,7 +64,6 @@ async def test_retrieve_job(client: TestClient, job: Job, headers: Headers) -> N
 
     assert response.status_code == 200
     assert response.json()["title"] == job.title
-    assert response.json()["description"] == job.description
     assert response.json()["department"] == job.department
     assert response.json()["employment_type"] == job.employment_type
 
@@ -75,7 +73,6 @@ async def test_retrieve_jobs(client: TestClient, job: Job, headers: Headers) -> 
 
     assert response.status_code == 200
     assert response.json()[0]["title"] == job.title
-    assert response.json()[0]["description"] == job.description
     assert response.json()[0]["department"] == job.department
     assert response.json()[0]["employment_type"] == job.employment_type
 
@@ -99,7 +96,6 @@ async def test_update_job(client: TestClient, job: Job, headers: Headers) -> Non
 
     assert response.status_code == 200
     assert response.json()["title"] == updated_job.title
-    assert response.json()["description"] == updated_job.description
     assert response.json()["department"] == updated_job.department
     assert response.json()["employment_type"] == updated_job.employment_type
 

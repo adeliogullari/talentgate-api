@@ -8,10 +8,28 @@ from src.talentgate.company.service import (
     delete,
     add_observer,
     delete_observer,
+    retrieve_company_job,
+    retrieve_jobs_by_query_parameters,
 )
 from src.talentgate.employee.models import Employee
-from src.talentgate.job.models import Job
+from src.talentgate.job.models import Job, JobQueryParameters
 from tests.employee.conftest import make_employee
+
+
+async def test_retrieve_company_job(
+    sqlmodel_session: Session, company: Company, job: Job
+) -> None:
+    retrieved_company_job = await retrieve_company_job(
+        sqlmodel_session=sqlmodel_session,
+        company_id=company.id,
+        job_id=job.id,
+    )
+
+    assert retrieved_company_job.id == job.id
+    assert retrieved_company_job.company_id == company.id
+    assert retrieved_company_job.title == job.title
+    assert retrieved_company_job.description == job.description
+    assert retrieved_company_job.department == job.department
 
 
 async def test_add_observer(

@@ -61,7 +61,7 @@ async def retrieved_careers_job(
     company_id: int,
     job_id: int,
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
-) -> Sequence[Job]:
+) -> Job:
     retrieved_job = await company_service.retrieve_company_job(
         sqlmodel_session=sqlmodel_session, company_id=company_id, job_id=job_id
     )
