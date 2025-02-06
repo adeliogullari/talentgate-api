@@ -90,7 +90,6 @@ class Application(SQLModel, table=True):
     )
     job_id: int | None = Field(default=None, foreign_key="job.id")
     job: Optional["Job"] = Relationship(back_populates="applications")
-
     created_at: datetime | None = Field(default=datetime.now(UTC))
     updated_at: datetime | None = Field(
         default=datetime.now(UTC),

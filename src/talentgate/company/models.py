@@ -1,3 +1,5 @@
+from enum import StrEnum
+from datetime import datetime, UTC
 from typing import List, Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.database.models import BaseModel
@@ -23,25 +25,35 @@ class CompanyAddress(SQLModel, table=True):
     )
 
 
+class LocationType(StrEnum):
+    HEADQUARTERS = "Headquarters"
+    OFFICE = "Office"
+
+
 class CompanyLocation(SQLModel, table=True):
     __tablename__ = "company_location"
 
     id: int = Field(primary_key=True)
-    type: str | None = Field(default=None)
+    type: LocationType | None = Field(default=LocationType.OFFICE)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
     address_id: int | None = Field(default=None, foreign_key="company_address.id")
     address: Optional[CompanyAddress] = Relationship(back_populates="location")
-
     company_id: int | None = Field(default=None, foreign_key="company.id")
     company: Optional["Company"] = Relationship(back_populates="locations")
+
+
+class LinkType(StrEnum):
+    WEBSITE = "Website"
+    LINKEDIN = "Linkedin"
+    GITHUB = "Github"
 
 
 class CompanyLink(SQLModel, table=True):
     __tablename__ = "company_link"
 
     id: int = Field(primary_key=True)
-    type: str | None = Field(default=None)
+    type: LinkType | None = Field(default=LinkType.WEBSITE)
     url: str | None = Field(default=None, max_length=2048)
     company_id: int | None = Field(default=None, foreign_key="company.id")
     company: Optional["Company"] = Relationship(
@@ -67,6 +79,13 @@ class Company(SQLModel, table=True):
     jobs: List["Job"] = Relationship(
         back_populates="company", sa_relationship_kwargs={"cascade": "all"}
     )
+    created_at: float | None = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp()
+    )
+    updated_at: float | None = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp(),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
+    )
 
 
 class CompanyEmployee(BaseModel):
@@ -74,7 +93,7 @@ class CompanyEmployee(BaseModel):
     title: str | None = None
 
 
-class CreateAddress(SQLModel):
+class CreateAddress(BaseModel):
     unit: str | None = None
     street: str | None = None
     city: str | None = None
@@ -83,7 +102,7 @@ class CreateAddress(SQLModel):
     postal_code: str | None = None
 
 
-class CreatedAddress(SQLModel):
+class CreatedAddress(BaseModel):
     id: int
     unit: str | None = None
     street: str | None = None
@@ -93,30 +112,105 @@ class CreatedAddress(SQLModel):
     postal_code: str | None = None
 
 
-class CreateLocation(SQLModel):
+class RetrievedAddress(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class UpdateAddress(BaseModel):
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class UpdatedAddress(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class CreateLocation(BaseModel):
     type: str | None = None
     latitude: float | None = None
     longitude: float | None = None
     address: CreateAddress | None = None
 
 
-class CreatedLocation(SQLModel):
+class CreatedLocation(BaseModel):
     id: int
     type: str | None = None
     latitude: float | None = None
     longitude: float | None = None
     address: CreateAddress | None = None
+
+
+class RetrievedLocation(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class UpdateLocation(BaseModel):
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class UpdatedLocation(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
 class CreateLink(SQLModel):
-    type: str | None = Field(default=None)
-    url: str | None = Field(default=None, max_length=2048)
+    type: str | None = None
+    url: str | None = None
 
 
 class CreatedLink(SQLModel):
     id: int
-    type: str | None = Field(default=None)
-    url: str | None = Field(default=None, max_length=2048)
+    type: str | None = None
+    url: str | None = None
+
+
+class RetrievedLink(BaseModel):
+    id: int
+    type: str | None = None
+    url: str | None = None
+
+
+class UpdateLink(BaseModel):
+    type: str | None = None
+    url: str | None = None
+
+
+class UpdatedLink(BaseModel):
+    id: int
+    type: str | None = None
+    url: str | None = None
 
 
 class CreateCompany(BaseModel):
@@ -132,6 +226,8 @@ class CreatedCompany(BaseModel):
     overview: str | None = None
     employees: List[CompanyEmployee] | None = None
     locations: List[CompanyLocation] | None = None
+    created_at: float
+    updated_at: float
 
 
 class RetrievedCompany(BaseModel):
@@ -140,6 +236,8 @@ class RetrievedCompany(BaseModel):
     overview: str | None = None
     employees: List[CompanyEmployee] | None = None
     locations: List[CompanyLocation] | None = None
+    created_at: float
+    updated_at: float
 
 
 class CompanyQueryParameters(BaseModel):
@@ -161,6 +259,8 @@ class UpdatedCompany(BaseModel):
     overview: str | None = None
     employees: List[CompanyEmployee] | None = None
     locations: List[CompanyLocation] | None = None
+    created_at: float
+    updated_at: float
 
 
 class DeletedCompany(SQLModel):
