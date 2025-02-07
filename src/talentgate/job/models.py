@@ -25,14 +25,31 @@ class EmploymentType(str, Enum):
     INTERNSHIP = "Internship"
 
 
+class JobAddress(SQLModel, table=True):
+    __tablename__ = "job_address"
+
+    id: int = Field(primary_key=True)
+    unit: str | None = Field(default=None)
+    street: str | None = Field(default=None)
+    city: str | None = Field(default=None)
+    state: str | None = Field(default=None)
+    country: str | None = Field(default=None)
+    postal_code: str | None = Field(default=None)
+    location: Optional["JobLocation"] = Relationship(
+        back_populates="address",
+        sa_relationship_kwargs={"uselist": False},
+    )
+
+
 class JobLocation(SQLModel, table=True):
     __tablename__ = "job_location"
 
     id: int = Field(primary_key=True)
-    type: LocationType | None = Field(default=None)
-    city: str | None = Field(default=None)
-    state: str | None = Field(default=None)
-    country: str | None = Field(default=None)
+    type: LocationType | None = Field(default=LocationType.ONSITE)
+    latitude: float | None = Field(default=None)
+    longitude: float | None = Field(default=None)
+    address_id: int | None = Field(default=None, foreign_key="job_address.id")
+    address: Optional[JobAddress] = Relationship(back_populates="location")
     job: Optional["Job"] = Relationship(back_populates="location")
 
 
@@ -64,8 +81,6 @@ class Job(SQLModel, table=True):
         back_populates="job",
         sa_relationship_kwargs={
             "uselist": False,
-            "single_parent": True,
-            "cascade": "all, delete-orphan",
         },
     )
     salary_id: int | None = Field(foreign_key="job_salary.id")
@@ -83,47 +98,96 @@ class Job(SQLModel, table=True):
     )
 
 
-class JobLocationRequest(BaseModel):
-    type: LocationType | None = None
+class CreateAddress(BaseModel):
+    unit: str | None = None
+    street: str | None = None
     city: str | None = None
     state: str | None = None
     country: str | None = None
+    postal_code: str | None = None
 
 
-class JobLocationResponse(BaseModel):
-    id: int | None = None
-    type: LocationType | None = None
+class CreatedAddress(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
     city: str | None = None
     state: str | None = None
     country: str | None = None
+    postal_code: str | None = None
 
 
-class CreateJobLocation(JobLocationRequest):
-    pass
+class RetrievedAddress(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class CreatedJobLocation(JobLocationResponse):
-    pass
+class UpdateAddress(BaseModel):
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class RetrievedJobLocation(JobLocationResponse):
-    pass
+class UpdatedAddress(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class UpdateJobLocation(JobLocationRequest):
-    pass
+class CreateLocation(BaseModel):
+    type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    address: CreateAddress | None = None
 
 
-class UpdatedJobLocation(JobLocationResponse):
-    pass
+class CreatedLocation(BaseModel):
+    id: int
+    type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    address: CreateAddress | None = None
 
 
-class DeleteJobLocation(JobLocationRequest):
-    pass
+class RetrievedLocation(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class DeletedJobLocation(JobLocationResponse):
-    pass
+class UpdateLocation(BaseModel):
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class UpdatedLocation(BaseModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
 class JobRequest(SQLModel):
@@ -133,7 +197,7 @@ class JobRequest(SQLModel):
     employment_type: EmploymentType | None = None
     job_post_deadline: datetime | None = None
     company_id: int | None = None
-    location: CreateJobLocation | None = None
+    location: CreateLocation | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -165,7 +229,7 @@ class CreatedJob(JobResponse):
 
 class RetrievedJob(JobResponse):
     description: str | None = None
-    location: JobLocationResponse | None = None
+    location: RetrievedLocation | None = None
 
 
 class RetrievedCompanyJob(RetrievedJob):
@@ -173,7 +237,7 @@ class RetrievedCompanyJob(RetrievedJob):
 
 
 class RetrievedCompanyJobs(JobResponse):
-    location: JobLocationResponse | None = None
+    location: RetrievedLocation | None = None
 
 
 class UpdateJob(JobRequest):

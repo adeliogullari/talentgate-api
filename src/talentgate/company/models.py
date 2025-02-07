@@ -45,7 +45,7 @@ class CompanyLocation(SQLModel, table=True):
 
 class LinkType(StrEnum):
     WEBSITE = "Website"
-    LINKEDIN = "Linkedin"
+    LINKEDIN = "LinkedIn"
     GITHUB = "Github"
 
 
@@ -216,7 +216,8 @@ class UpdatedLink(BaseModel):
 class CreateCompany(BaseModel):
     name: str
     overview: str | None = None
-    locations: List[CompanyLocation] | None = None
+    locations: List[CreateLocation] | None = None
+    links: List[CreateLink] | None = None
     jobs: List | None = None
 
 
@@ -226,6 +227,7 @@ class CreatedCompany(BaseModel):
     overview: str | None = None
     employees: List[CompanyEmployee] | None = None
     locations: List[CompanyLocation] | None = None
+    links: List[CreatedLink] | None = None
     created_at: float
     updated_at: float
 
@@ -250,6 +252,8 @@ class UpdateCompany(BaseModel):
     name: str
     overview: str | None = None
     locations: List[CompanyLocation] | None = None
+    links: List[CompanyLink] | None = None
+    employees: List[CompanyEmployee] | None = None
     jobs: List | None = None
 
 
@@ -259,6 +263,7 @@ class UpdatedCompany(BaseModel):
     overview: str | None = None
     employees: List[CompanyEmployee] | None = None
     locations: List[CompanyLocation] | None = None
+    links: List[CompanyLink] | None = None
     created_at: float
     updated_at: float
 

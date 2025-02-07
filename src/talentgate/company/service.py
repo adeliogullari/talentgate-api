@@ -18,6 +18,7 @@ from src.talentgate.company.models import (
 from config import get_settings
 from src.talentgate.job.models import Job, JobQueryParameters
 from src.talentgate.employee import service as employee_service
+from src.talentgate.job import service as job_service
 from src.talentgate.employee.exceptions import (
     EmployeeIdNotFoundException as EmployeeIdNotFoundException,
 )
@@ -308,24 +309,36 @@ async def delete_observer(
 
 
 async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Company:
-    locations = None
+    locations = []
     if getattr(company, "locations", None) is not None:
         locations = [
-            await create_location(sqlmodel_session=sqlmodel_session, location=location)
+            await upsert_location(sqlmodel_session=sqlmodel_session, location=location)
             for location in company.locations
         ]
 
-    links = None
-    if getattr(company, "links", None) is not None:
+    links = []
+    if getattr(company, "links") is not None:
         links = [
-            await create_link(sqlmodel_session=sqlmodel_session, link=link)
+            await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
             for link in company.links
         ]
 
+    employees = []
+    if getattr(company, "employees", None) is not None:
+        employees = [
+            await employee_service.upsert(
+                sqlmodel_session=sqlmodel_session, employee=employee
+            )
+            for employee in company.employees
+        ]
+
     created_company = Company(
-        **company.model_dump(exclude_unset=True, exclude_none=True),
+        **company.model_dump(
+            exclude_unset=True, exclude_none=True, exclude={"locations", "links"}
+        ),
         locations=locations,
         links=links,
+        employees=employees,
     )
 
     sqlmodel_session.add(created_company)
@@ -365,8 +378,30 @@ async def retrieve_by_query_parameters(
 async def update(
     *, sqlmodel_session: Session, retrieved_company: Company, company: UpdateCompany
 ) -> Company:
+    if getattr(company, "locations", None) is not None:
+        retrieved_company.locations = [
+            await upsert_location(sqlmodel_session=sqlmodel_session, location=location)
+            for location in company.locations
+        ]
+
+    if getattr(company, "links", None) is not None:
+        retrieved_company.links = [
+            await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
+            for link in company.links
+        ]
+
+    if getattr(company, "employees", None) is not None:
+        retrieved_company.employees = [
+            await employee_service.upsert(
+                sqlmodel_session=sqlmodel_session, employee=employee
+            )
+            for employee in company.employees
+        ]
+
     retrieved_company.sqlmodel_update(
-        company.model_dump(exclude_none=True, exclude_unset=True)
+        company.model_dump(
+            exclude_none=True, exclude_unset=True, exclude={"locations", "links"}
+        )
     )
 
     sqlmodel_session.add(retrieved_company)
