@@ -78,6 +78,8 @@ class CreatedEmployee(BaseModel):
     title: EmployeeTitle | None = None
     user: CreatedUser | None = None
     company: EmployeeCompany | None = None
+    created_at: float
+    updated_at: float
 
 
 class RetrievedEmployee(BaseModel):
@@ -85,6 +87,8 @@ class RetrievedEmployee(BaseModel):
     title: EmployeeTitle | None = None
     user: RetrievedUser | None = None
     company: EmployeeCompany | None = None
+    created_at: float
+    updated_at: float
 
 
 class EmployeeQueryParameters(BaseModel):
@@ -105,6 +109,8 @@ class UpdatedEmployee(BaseModel):
     title: EmployeeTitle | None = None
     user: UpdatedUser | None = None
     company: EmployeeCompany | None = None
+    created_at: float
+    updated_at: float
 
 
 class DeletedEmployee(BaseModel):
