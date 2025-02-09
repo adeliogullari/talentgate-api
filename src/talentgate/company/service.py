@@ -1,5 +1,7 @@
 from typing import Any, Sequence, List, Union
-from sqlmodel import select, Session
+
+from sqlalchemy import func
+from sqlmodel import select, Session, and_, or_
 from src.talentgate.company.models import (
     CompanyAddress,
     CompanyLocation,
