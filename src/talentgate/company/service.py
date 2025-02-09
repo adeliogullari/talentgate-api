@@ -1,5 +1,7 @@
 from typing import Any, Sequence, List
-from sqlmodel import select, Session
+
+from sqlalchemy import func
+from sqlmodel import select, Session, or_, and_
 from src.talentgate.company.models import (
     CompanyAddress,
     CompanyLocation,
@@ -13,7 +15,7 @@ from src.talentgate.company.models import (
     UpdateCompany,
 )
 from config import get_settings
-from src.talentgate.job.models import Job, JobQueryParameters
+from src.talentgate.job.models import Job, JobQueryParameters, JobLocation
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.exceptions import (
     EmployeeIdNotFoundException as EmployeeIdNotFoundException,
@@ -33,25 +35,40 @@ async def retrieve_jobs_by_query_parameters(
     query_parameters: JobQueryParameters,
     company_id: int,
 ) -> Sequence[Job]:
-    offset = query_parameters.offset
-    limit = query_parameters.limit
-    filters = {
-        getattr(Job, attr) == value
-        for attr, value in query_parameters.model_dump(
-            exclude={"offset", "limit"}, exclude_unset=True, exclude_none=True
-        )
-    }
+    filters = [Job.company_id == company_id]
 
-    statement: Any = (
+    if query_parameters.employment_type:
+        employment_filter = or_(
+            *[Job.employment_type == et for et in query_parameters.employment_type]
+        )
+        filters.append(employment_filter)
+
+    if query_parameters.location_type:
+        location_filter = or_(
+            *[JobLocation.type == lt for lt in query_parameters.location_type]
+        )
+        filters.append(location_filter)
+
+    if query_parameters.department:
+        department_filter = or_(
+            *[Job.department == dept for dept in query_parameters.department]
+        )
+        filters.append(department_filter)
+
+    if query_parameters.title:
+        filters.append(
+            func.lower(Job.title).ilike(f"%{query_parameters.title.lower()}%")
+        )
+
+    statement = (
         select(Job)
-        .where(Job.company_id == company_id)
-        .offset(offset)
-        .limit(limit)
-        .where(*filters)
+        .join(JobLocation)
+        .where(and_(*filters))
+        .offset(query_parameters.offset)
+        .limit(query_parameters.limit)
     )
 
     retrieved_jobs = sqlmodel_session.exec(statement).all()
-
     return retrieved_jobs
 
 

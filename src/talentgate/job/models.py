@@ -153,6 +153,9 @@ class JobQueryParameters(SQLModel):
     offset: int | None = None
     limit: int | None = None
     title: str | None = None
+    employment_type: List[EmploymentType] | None = None
+    location_type: List[LocationType] | None = None
+    department: List[str] | None = None
 
 
 class CreateJob(JobRequest):
