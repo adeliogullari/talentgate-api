@@ -1,21 +1,29 @@
 import json
 import pytest
 from datetime import datetime, timedelta, UTC
+from fastapi.testclient import TestClient
+from starlette.datastructures import Headers
 from src.talentgate.user.models import (
     SubscriptionPlan,
     UserSubscription,
-    User,
+    CreateSubscription,
+    UpdateSubscription,
     UserRole,
+    User,
     CreateUser,
     UpdateUser,
     UpdateCurrentUser,
 )
-from starlette.datastructures import Headers
-from fastapi.testclient import TestClient
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_user(client: TestClient, headers: Headers) -> None:
+    subscription = CreateSubscription(
+        plan=SubscriptionPlan.STANDARD,
+        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
+        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
+    )
+
     created_user = CreateUser(
         firstname="firstname",
         lastname="lastname",
@@ -24,7 +32,7 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
         password="password",
         verified=True,
         role=UserRole.ADMIN,
-        subscription=UserSubscription(),
+        subscription=subscription,
     )
 
     response = client.post(
@@ -37,6 +45,7 @@ async def test_create_user(client: TestClient, headers: Headers) -> None:
 
     assert response.status_code == 201
     assert response.json()["email"] == created_user.email
+    assert response.json()["subscription"]["plan"] == subscription.plan
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
@@ -78,14 +87,21 @@ async def test_retrieve_users(client: TestClient, user: User, headers: Headers) 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_update_user(client: TestClient, user: User, headers: Headers) -> None:
+    subscription = UpdateSubscription(
+        plan=SubscriptionPlan.STANDARD,
+        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
+        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
+    )
+
     updated_user = UpdateUser(
         firstname="firstname",
         lastname="lastname",
         username="username",
         email="username@example.com",
+        password="password",
         verified=True,
         role=UserRole.ADMIN,
-        subscription=UserSubscription(),
+        subscription=subscription,
     )
 
     response = client.patch(
@@ -98,6 +114,7 @@ async def test_update_user(client: TestClient, user: User, headers: Headers) -> 
 
     assert response.status_code == 200
     assert response.json()["email"] == updated_user.email
+    assert response.json()["subscription"]["plan"] == subscription.plan
 
 
 async def test_update_current_user(
@@ -108,6 +125,7 @@ async def test_update_current_user(
         lastname="lastname",
         username="username",
         email="username@example.com",
+        password="password",
     )
 
     response = client.patch(
@@ -127,9 +145,13 @@ async def test_delete_user(client: TestClient, user: User, headers: Headers) -> 
     response = client.delete(url=f"/api/v1/users/{user.id}", headers=headers)
 
     assert response.status_code == 200
+    assert response.json()["id"] == user.id
 
 
-async def test_delete_current_user(client: TestClient, headers: Headers) -> None:
+async def test_delete_current_user(
+    client: TestClient, user: User, headers: Headers
+) -> None:
     response = client.delete(url="/api/v1/me", headers=headers)
 
     assert response.status_code == 200
+    assert response.json()["id"] == user.id

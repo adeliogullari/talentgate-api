@@ -1,17 +1,16 @@
-from typing import Any, Union, Sequence
 from sqlmodel import select, Session
+from typing import Any, Union, Sequence
 from pytography import PasswordHashLibrary
 from src.talentgate.user.models import (
     UserSubscription,
     User,
     CreateSubscription,
+    UpdateSubscription,
     CreateUser,
     UserQueryParameters,
     UpdateUser,
     UpdateCurrentUser,
-    UpdateSubscription,
 )
-
 from config import get_settings
 
 settings = get_settings()
@@ -76,7 +75,8 @@ async def upsert_subscription(
     subscription: Union[CreateSubscription, UpdateSubscription],
 ) -> UserSubscription:
     retrieved_subscription = await retrieve_subscription_by_id(
-        sqlmodel_session=sqlmodel_session, subscription_id=subscription.id
+        sqlmodel_session=sqlmodel_session,
+        subscription_id=getattr(subscription, "id", None),
     )
     if retrieved_subscription:
         return await update_subscription(
@@ -191,7 +191,7 @@ async def upsert(
     user: Union[CreateUser, UpdateUser],
 ) -> User:
     retrieved_user = await retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, user_id=user.id
+        sqlmodel_session=sqlmodel_session, user_id=getattr(user, "id", None)
     )
 
     if retrieved_user:

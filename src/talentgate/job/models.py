@@ -25,6 +25,14 @@ class EmploymentType(str, Enum):
     INTERNSHIP = "Internship"
 
 
+class SalaryFrequency(str, Enum):
+    HOURLY = "Hourly"
+    DAILY = "Daily"
+    WEEKLY = "Weekly"
+    MONTHLY = "Monthly"
+    YEARLY = "Yearly"
+
+
 class JobAddress(SQLModel, table=True):
     __tablename__ = "job_address"
 
@@ -57,9 +65,9 @@ class JobSalary(SQLModel, table=True):
     __tablename__ = "job_salary"
 
     id: int = Field(primary_key=True)
-    min: str | None = Field(default=None)
-    max: str | None = Field(default=None)
-    frequency: str | None = Field(default=None)
+    min: float | None = Field(default=None, ge=0)
+    max: float | None = Field(default=None, ge=0)
+    frequency: SalaryFrequency | None = Field(default=SalaryFrequency.MONTHLY)
     job: Optional["Job"] = Relationship(back_populates="salary")
 
 
@@ -91,10 +99,12 @@ class Job(SQLModel, table=True):
     company: Company | None = Relationship(
         back_populates="jobs", sa_relationship_kwargs={"uselist": False}
     )
-    created_at: datetime | None = Field(default=datetime.now(UTC))
-    updated_at: datetime | None = Field(
-        default=datetime.now(UTC),
-        sa_column_kwargs={"onupdate": datetime.now(UTC)},
+    created_at: float | None = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp()
+    )
+    updated_at: float | None = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp(),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
     )
 
 
@@ -180,14 +190,37 @@ class UpdateLocation(BaseModel):
     postal_code: str | None = None
 
 
-class UpdatedLocation(BaseModel):
+class CreateSalary(BaseModel):
+    min: float | None = None
+    max: float | None = None
+    frequency: SalaryFrequency | None = None
+
+
+class CreatedSalary(BaseModel):
     id: int
-    unit: str | None = None
-    street: str | None = None
-    city: str | None = None
-    state: str | None = None
-    country: str | None = None
-    postal_code: str | None = None
+    min: float | None = None
+    max: float | None = None
+    frequency: SalaryFrequency | None = None
+
+
+class RetrievedSalary(BaseModel):
+    id: int
+    min: float | None = None
+    max: float | None = None
+    frequency: SalaryFrequency | None = None
+
+
+class UpdateSalary(BaseModel):
+    min: float | None = None
+    max: float | None = None
+    frequency: SalaryFrequency | None = None
+
+
+class UpdatedSalary(BaseModel):
+    id: int
+    min: float | None = None
+    max: float | None = None
+    frequency: SalaryFrequency | None = None
 
 
 class JobRequest(SQLModel):
@@ -198,8 +231,9 @@ class JobRequest(SQLModel):
     job_post_deadline: datetime | None = None
     company_id: int | None = None
     location: CreateLocation | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+    salary: CreateSalary | None = None
+    created_at: float | None = None
+    updated_at: float | None = None
 
 
 class JobResponse(SQLModel):
@@ -209,8 +243,8 @@ class JobResponse(SQLModel):
     employment_type: EmploymentType | None = None
     job_post_deadline: datetime | None = None
     company_id: int | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+    created_at: float | None = None
+    updated_at: float | None = None
 
 
 class JobQueryParameters(SQLModel):

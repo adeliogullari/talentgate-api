@@ -8,7 +8,7 @@ from src.talentgate.user import service as user_service
 @pytest.fixture
 def make_subscription(sqlmodel_session: Session):
     def make(
-        plan: SubscriptionPlan | None = None,
+        plan: str | None = None,
         start_date: float | None = None,
         end_date: float | None = None,
     ):

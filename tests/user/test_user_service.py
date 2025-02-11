@@ -18,7 +18,7 @@ from src.talentgate.user import service as user_service
 
 async def test_create_subscription(sqlmodel_session: Session) -> None:
     subscription = CreateSubscription(
-        plan=SubscriptionPlan.BASIC,
+        plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
@@ -89,8 +89,8 @@ async def test_update_subscription(
 
     subscription = UpdateSubscription(
         plan=SubscriptionPlan.STANDARD,
-        start_date=datetime.now(UTC).timestamp(),
-        end_date=datetime.now(UTC).timestamp(),
+        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
+        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
 
     updated_subscription = await user_service.update_subscription(
@@ -104,7 +104,7 @@ async def test_update_subscription(
 
 async def test_upsert_create_subscription(sqlmodel_session: Session) -> None:
     subscription = CreateSubscription(
-        plan=SubscriptionPlan.BASIC,
+        plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
@@ -134,10 +134,16 @@ async def test_upsert_update_subscription(
     )
 
     assert updated_subscription.id == subscription.id
-    assert updated_subscription.plan == SubscriptionPlan.STANDARD
+    assert updated_subscription.plan == subscription.plan
 
 
 async def test_create(sqlmodel_session: Session) -> None:
+    subscription = CreateSubscription(
+        plan=SubscriptionPlan.STANDARD,
+        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
+        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
+    )
+
     user = CreateUser(
         firstname="firstname",
         lastname="lastname",
@@ -146,6 +152,7 @@ async def test_create(sqlmodel_session: Session) -> None:
         password="password",
         verified=True,
         role=UserRole.ADMIN,
+        subscription=subscription,
     )
 
     created_user = await user_service.create(
@@ -153,6 +160,7 @@ async def test_create(sqlmodel_session: Session) -> None:
     )
 
     assert created_user.email == user.email
+    assert created_user.subscription.plan == subscription.plan
 
 
 async def test_retrieve_by_id(sqlmodel_session: Session, user: User) -> None:
@@ -201,8 +209,41 @@ async def test_retrieve_by_query_parameters(
     assert retrieved_users[0].id == user.id
 
 
+async def test_upsert_create(sqlmodel_session: Session) -> None:
+    subscription = CreateSubscription(
+        plan=SubscriptionPlan.STANDARD,
+        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
+        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
+    )
+
+    user = CreateUser(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="username@example.com",
+        password="password",
+        verified=True,
+        role=UserRole.ADMIN,
+        subscription=subscription,
+    )
+
+    created_user = await user_service.upsert(
+        sqlmodel_session=sqlmodel_session, user=user
+    )
+
+    assert created_user.email == user.email
+    assert created_user.subscription.plan == subscription.plan
+
+
 async def test_update(sqlmodel_session: Session, make_user, subscription) -> None:
     retrieved_user = make_user()
+
+    subscription = UpdateSubscription(
+        id=retrieved_user.subscription_id,
+        plan=SubscriptionPlan.STANDARD,
+        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
+        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
+    )
 
     user = UpdateUser(
         firstname="firstname",
@@ -219,29 +260,19 @@ async def test_update(sqlmodel_session: Session, make_user, subscription) -> Non
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user, user=user
     )
 
-    assert updated_user.email == user.email
-
-
-async def test_upsert_create(sqlmodel_session: Session) -> None:
-    user = CreateUser(
-        firstname="firstname",
-        lastname="lastname",
-        username="username",
-        email="username@example.com",
-        password="password",
-        verified=True,
-        role=UserRole.ADMIN,
-    )
-
-    created_user = await user_service.upsert(
-        sqlmodel_session=sqlmodel_session, user=user
-    )
-
-    assert created_user.email == user.email
+    assert updated_user.subscription_id == subscription.id
+    assert updated_user.subscription.plan == subscription.plan
 
 
 async def test_upsert_update(sqlmodel_session: Session, make_user) -> None:
     retrieved_user = make_user()
+
+    subscription = UpdateSubscription(
+        id=retrieved_user.subscription_id,
+        plan=SubscriptionPlan.STANDARD,
+        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
+        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
+    )
 
     user = UpdateUser(
         id=retrieved_user.id,
@@ -252,6 +283,7 @@ async def test_upsert_update(sqlmodel_session: Session, make_user) -> None:
         password="password",
         verified=True,
         role=UserRole.ADMIN,
+        subscription=subscription,
     )
 
     updated_user = await user_service.upsert(
@@ -259,6 +291,7 @@ async def test_upsert_update(sqlmodel_session: Session, make_user) -> None:
     )
 
     assert updated_user.id == user.id
+    assert updated_user.subscription.id == subscription.id
 
 
 async def test_delete(sqlmodel_session, make_user) -> None:
@@ -268,4 +301,4 @@ async def test_delete(sqlmodel_session, make_user) -> None:
         sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user
     )
 
-    assert deleted_user.email == retrieved_user.email
+    assert deleted_user.id == retrieved_user.id

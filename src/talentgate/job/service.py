@@ -12,6 +12,9 @@ from src.talentgate.job.models import (
     JobAddress,
     CreateLocation,
     UpdateLocation,
+    CreateSalary,
+    UpdateSalary,
+    JobSalary,
 )
 
 
@@ -151,6 +154,64 @@ async def upsert_location(
     return await create_location(sqlmodel_session=sqlmodel_session, location=location)
 
 
+async def create_salary(
+    *, sqlmodel_session: Session, salary: CreateSalary
+) -> JobSalary:
+    created_salary = JobSalary(
+        **salary.model_dump(exclude_unset=True, exclude_none=True)
+    )
+
+    sqlmodel_session.add(created_salary)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_salary)
+
+    return created_salary
+
+
+async def retrieve_salary_by_id(
+    *, sqlmodel_session: Session, salary_id: int
+) -> JobSalary:
+    statement: Any = select(JobSalary).where(JobSalary.id == salary_id)
+
+    retrieved_salary = sqlmodel_session.exec(statement).one_or_none()
+
+    return retrieved_salary
+
+
+async def update_salary(
+    *,
+    sqlmodel_session: Session,
+    retrieved_salary: JobSalary,
+    salary: UpdateSalary,
+) -> JobSalary:
+    retrieved_salary.sqlmodel_update(
+        salary.model_dump(exclude_none=True, exclude_unset=True)
+    )
+
+    sqlmodel_session.add(retrieved_salary)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(retrieved_salary)
+
+    return retrieved_salary
+
+
+async def upsert_salary(
+    *,
+    sqlmodel_session: Session,
+    salary: Union[CreateSalary, UpdateSalary],
+) -> JobSalary:
+    retrieved_salary = await retrieve_salary_by_id(
+        sqlmodel_session=sqlmodel_session, salary_id=salary.id
+    )
+    if retrieved_salary:
+        return await update_salary(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_salary=retrieved_salary,
+            salary=salary,
+        )
+    return await create_salary(sqlmodel_session=sqlmodel_session, salary=salary)
+
+
 async def create(*, sqlmodel_session: Session, job: CreateJob) -> Job:
     location = None
     if getattr(job, "location", None) is not None:
@@ -158,9 +219,18 @@ async def create(*, sqlmodel_session: Session, job: CreateJob) -> Job:
             sqlmodel_session=sqlmodel_session, location=job.location
         )
 
+    salary = None
+    if getattr(job, "salary", None) is not None:
+        salary = await create_salary(
+            sqlmodel_session=sqlmodel_session, salary=job.salary
+        )
+
     created_job = Job(
-        **job.model_dump(exclude_unset=True, exclude_none=True, exclude={"location"}),
+        **job.model_dump(
+            exclude_unset=True, exclude_none=True, exclude={"location", "salary"}
+        ),
         location=location,
+        salary=salary,
     )
 
     sqlmodel_session.add(created_job)
@@ -205,11 +275,16 @@ async def update(
             sqlmodel_session=sqlmodel_session, location=job.location
         )
 
+    if getattr(job, "salary", None) is not None:
+        retrieved_job.salary = await upsert_salary(
+            sqlmodel_session=sqlmodel_session, salary=job.salary
+        )
+
     retrieved_job.sqlmodel_update(
         job.model_dump(
             exclude_none=True,
             exclude_unset=True,
-            exclude={"location"},
+            exclude={"location", "salary"},
         )
     )
 
@@ -218,6 +293,25 @@ async def update(
     sqlmodel_session.refresh(retrieved_job)
 
     return retrieved_job
+
+
+async def upsert(
+    *,
+    sqlmodel_session: Session,
+    job: Union[CreateJob, UpdateJob],
+) -> Job:
+    retrieved_job = await retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, job_id=job.id
+    )
+
+    if retrieved_job:
+        return await update(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_job=retrieved_job,
+            job=job,
+        )
+
+    return await create(sqlmodel_session=sqlmodel_session, job=job)
 
 
 async def delete(*, sqlmodel_session: Session, retrieved_job: Job) -> Job:

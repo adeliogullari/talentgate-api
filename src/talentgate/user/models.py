@@ -22,16 +22,14 @@ class UserSubscription(SQLModel, table=True):
     __tablename__ = "user_subscription"
 
     id: int = Field(primary_key=True)
-    plan: SubscriptionPlan = Field(default=SubscriptionPlan.BASIC)
+    plan: str = Field(default=SubscriptionPlan.BASIC)
     start_date: float = Field(
         default_factory=lambda: (datetime.now(UTC) - timedelta(days=2)).timestamp()
     )
     end_date: float = Field(
         default_factory=lambda: (datetime.now(UTC) - timedelta(days=1)).timestamp()
     )
-    user: Optional["User"] = Relationship(
-        back_populates="subscription", sa_relationship_kwargs={"uselist": False}
-    )
+    user: Optional["User"] = Relationship(back_populates="subscription")
 
     @property
     def status(self) -> SubscriptionStatus:
@@ -56,7 +54,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True)
     password: str = Field(nullable=False)
     verified: bool = Field(default=False)
-    role: UserRole = Field(default=UserRole.OWNER)
+    role: str = Field(default=UserRole.OWNER)
     employee: Optional["Employee"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
@@ -64,7 +62,7 @@ class User(SQLModel, table=True):
     subscription_id: int | None = Field(
         default=None, foreign_key="user_subscription.id"
     )
-    subscription: Optional[UserSubscription] = Relationship(
+    subscription: UserSubscription | None = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
     )
@@ -78,52 +76,50 @@ class User(SQLModel, table=True):
 
 
 class CreateSubscription(BaseModel):
-    id: int | None = None
-    plan: SubscriptionPlan | None = None
+    plan: str | None = None
     start_date: float | None = None
     end_date: float | None = None
 
 
 class CreatedSubscription(BaseModel):
     id: int
-    plan: SubscriptionPlan
+    plan: str
     start_date: float
     end_date: float
-    status: SubscriptionStatus
+    status: str
 
 
 class RetrievedSubscription(BaseModel):
     id: int
-    plan: SubscriptionPlan
+    plan: str
     start_date: float
     end_date: float
-    status: SubscriptionStatus
+    status: str
 
 
 class UpdateSubscription(BaseModel):
     id: int | None = None
-    plan: SubscriptionPlan | None = None
+    plan: str | None = None
     start_date: float | None = None
     end_date: float | None = None
 
 
 class UpdatedSubscription(BaseModel):
     id: int
-    plan: SubscriptionPlan
+    plan: str
     start_date: float
     end_date: float
-    status: SubscriptionStatus
+    status: str
 
 
 class CreateUser(BaseModel):
-    id: int | None = None
     firstname: str
     lastname: str
     username: str
     email: str
     password: str
     verified: bool | None = None
-    role: UserRole | None = None
+    role: str | None = None
     subscription: CreateSubscription | None = None
 
 
@@ -134,7 +130,7 @@ class CreatedUser(BaseModel):
     username: str
     email: str
     verified: bool
-    role: UserRole
+    role: str
     subscription: CreatedSubscription | None = None
     created_at: float
     updated_at: float
@@ -147,7 +143,7 @@ class RetrievedUser(BaseModel):
     username: str
     email: str
     verified: bool
-    role: UserRole
+    role: str
     subscription: RetrievedSubscription | None = None
     created_at: float
     updated_at: float
@@ -160,7 +156,7 @@ class RetrievedCurrentUser(BaseModel):
     username: str
     email: str
     verified: bool
-    role: UserRole
+    role: str
     subscription: RetrievedSubscription | None = None
     created_at: float
     updated_at: float
@@ -175,7 +171,7 @@ class UserQueryParameters(BaseModel):
     username: str | None = None
     email: str | None = None
     verified: bool | None = None
-    role: UserRole | None = None
+    role: str | None = None
 
 
 class UpdateUser(BaseModel):
@@ -186,8 +182,8 @@ class UpdateUser(BaseModel):
     email: str | None = None
     password: str | None = None
     verified: bool | None = None
-    role: UserRole | None = None
-    subscription: CreateSubscription | None = None
+    role: str | None = None
+    subscription: UpdateSubscription | None = None
 
 
 class UpdatedUser(BaseModel):
@@ -197,7 +193,7 @@ class UpdatedUser(BaseModel):
     username: str
     email: str
     verified: bool
-    role: UserRole
+    role: str
     subscription: CreatedSubscription | None = None
     created_at: float
     updated_at: float
@@ -219,7 +215,7 @@ class UpdatedCurrentUser(BaseModel):
     username: str
     email: str
     verified: bool
-    role: UserRole
+    role: str
     created_at: float
     updated_at: float
 
