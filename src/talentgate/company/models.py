@@ -25,7 +25,7 @@ class CompanyAddress(SQLModel, table=True):
     )
 
 
-class LocationType(StrEnum):
+class CompanyLocationType(StrEnum):
     HEADQUARTERS = "Headquarters"
     OFFICE = "Office"
 
@@ -34,7 +34,7 @@ class CompanyLocation(SQLModel, table=True):
     __tablename__ = "company_location"
 
     id: int = Field(primary_key=True)
-    type: LocationType | None = Field(default=LocationType.OFFICE)
+    type: CompanyLocationType | None = Field(default=CompanyLocationType.OFFICE)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
     address_id: int | None = Field(default=None, foreign_key="company_address.id")

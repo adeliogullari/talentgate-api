@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from src.talentgate.application.models import Application
 
 
-class LocationType(str, Enum):
+class JobLocationType(str, Enum):
     REMOTE = "Remote"
     HYBRID = "Hybrid"
     ONSITE = "Onsite"
@@ -45,7 +45,7 @@ class JobLocation(SQLModel, table=True):
     __tablename__ = "job_location"
 
     id: int = Field(primary_key=True)
-    type: LocationType | None = Field(default=LocationType.ONSITE)
+    type: JobLocationType | None = Field(default=JobLocationType.ONSITE)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
     address_id: int | None = Field(default=None, foreign_key="job_address.id")
@@ -147,7 +147,7 @@ class UpdatedAddress(BaseModel):
 
 
 class CreateLocation(BaseModel):
-    type: str | None = None
+    type: JobLocationType | None = None
     latitude: float | None = None
     longitude: float | None = None
     address: CreateAddress | None = None
@@ -155,7 +155,7 @@ class CreateLocation(BaseModel):
 
 class CreatedLocation(BaseModel):
     id: int
-    type: str | None = None
+    type: JobLocationType | None = None
     latitude: float | None = None
     longitude: float | None = None
     address: CreateAddress | None = None
@@ -218,7 +218,7 @@ class JobQueryParameters(SQLModel):
     limit: int | None = None
     title: str | None = None
     employment_type: List[EmploymentType] | None = None
-    location_type: List[LocationType] | None = None
+    location_type: List[JobLocationType] | None = None
     department: List[str] | None = None
 
 

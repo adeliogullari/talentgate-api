@@ -5,7 +5,7 @@ from sqlmodel import Session
 from src.talentgate.company.models import (
     Company,
     CompanyAddress,
-    LocationType,
+    CompanyLocationType,
     CompanyLocation,
 )
 from src.talentgate.job.models import Job
@@ -27,7 +27,7 @@ def address(sqlmodel_session: Session):
 @pytest.fixture
 def location(sqlmodel_session: Session, address: CompanyAddress):
     company_location = CompanyLocation(
-        type=LocationType.OFFICE, latitude=0, longtitude=0, address=address
+        type=CompanyLocationType.OFFICE, latitude=0, longtitude=0, address=address
     )
 
     sqlmodel_session.add(company_location)
