@@ -9,26 +9,11 @@ from src.talentgate.company.models import Company, CreateCompany, UpdateCompany
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 
-from src.talentgate.employee.models import Employee
+from src.talentgate.employee.models import Employee, EmployeeTitle
 from src.talentgate.job.models import Job
+from src.talentgate.user.models import UserRole, SubscriptionPlan
 
 settings = Settings()
-
-
-@pytest.fixture
-def token(company: Company) -> str:
-    now = datetime.now(UTC)
-    exp = (now + timedelta(minutes=60)).timestamp()
-    payload = {"exp": exp, "company_id": company.id}
-    return JsonWebToken.encode(
-        payload=payload,
-        key=settings.access_token_key,
-    )
-
-
-@pytest.fixture
-def headers(token: str) -> Headers:
-    return Headers({"Authorization": f"Bearer {token}"})
 
 
 async def test_retrieved_career_jobs(
@@ -106,6 +91,21 @@ async def test_delete_company_job_observers(
     assert len(response.json()) == 0
 
 
+@pytest.mark.parametrize(
+    "user, subscription",
+    [
+        ({"role": UserRole.ADMIN}, {}),
+        (
+            {},
+            {
+                "plan": SubscriptionPlan.STANDARD,
+                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
+            },
+        ),
+    ],
+    indirect=True,
+)
 async def test_create_company(client: TestClient, headers: Headers) -> None:
     created_company = CreateCompany(
         name="new_company_name", overview="new_company_overview"
@@ -124,6 +124,31 @@ async def test_create_company(client: TestClient, headers: Headers) -> None:
     assert response.json()["overview"] == created_company.overview
 
 
+@pytest.mark.parametrize(
+    "user, subscription, employee",
+    [
+        ({"role": UserRole.ADMIN}, {}, {}),
+        (
+            {"role": UserRole.OWNER},
+            {
+                "plan": SubscriptionPlan.STANDARD,
+                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
+            },
+            {"title": EmployeeTitle.FOUNDER},
+        ),
+        (
+            {"role": UserRole.OWNER},
+            {
+                "plan": SubscriptionPlan.STANDARD,
+                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
+            },
+            {"title": EmployeeTitle.RECRUITER},
+        ),
+    ],
+    indirect=True,
+)
 async def test_retrieve_company(
     client: TestClient, company: Company, headers: Headers
 ) -> None:
@@ -133,6 +158,7 @@ async def test_retrieve_company(
     assert response.json()["id"] == company.id
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_companies(
     client: TestClient, company: Company, headers: Headers
 ) -> None:
@@ -142,6 +168,31 @@ async def test_retrieve_companies(
     assert response.json()[0]["id"] == company.id
 
 
+@pytest.mark.parametrize(
+    "user, subscription, employee",
+    [
+        ({"role": UserRole.ADMIN}, {}, {}),
+        (
+            {"role": UserRole.OWNER},
+            {
+                "plan": SubscriptionPlan.STANDARD,
+                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
+            },
+            {"title": EmployeeTitle.FOUNDER},
+        ),
+        (
+            {"role": UserRole.OWNER},
+            {
+                "plan": SubscriptionPlan.STANDARD,
+                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
+            },
+            {"title": EmployeeTitle.RECRUITER},
+        ),
+    ],
+    indirect=True,
+)
 async def test_update_company(
     client: TestClient, company: Company, headers: Headers
 ) -> None:
@@ -161,6 +212,22 @@ async def test_update_company(
     assert response.json()["id"] == company.id
 
 
+@pytest.mark.parametrize(
+    "user, subscription, employee",
+    [
+        ({"role": UserRole.ADMIN}, {}, {}),
+        (
+            {"role": UserRole.OWNER},
+            {
+                "plan": SubscriptionPlan.STANDARD,
+                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
+            },
+            {"title": EmployeeTitle.FOUNDER},
+        ),
+    ],
+    indirect=True,
+)
 async def test_delete_company(
     client: TestClient, company: Company, headers: Headers
 ) -> None:

@@ -2,6 +2,7 @@ import pytest
 import secrets
 from sqlmodel import Session
 from src.talentgate.user.models import SubscriptionPlan, UserSubscription, User
+from src.talentgate.auth import service as auth_service
 from src.talentgate.user import service as user_service
 
 
@@ -50,7 +51,7 @@ def make_user(sqlmodel_session: Session, subscription: UserSubscription):
             username=kwargs.get("username") or secrets.token_hex(16),
             email=kwargs.get("email") or f"{secrets.token_hex(16)}@example.com",
             password=kwargs.get("password")
-            or user_service.encode_password(password=secrets.token_hex(16)),
+            or auth_service.encode_password(password=secrets.token_hex(16)),
             verified=kwargs.get("verified") or True,
             role=kwargs.get("role"),
             subscription=kwargs.get("subscription") or subscription,

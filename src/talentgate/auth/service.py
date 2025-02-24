@@ -1,5 +1,15 @@
 from datetime import datetime, timedelta, UTC
-from pytography import JsonWebToken
+from pytography import PasswordHashLibrary, JsonWebToken
+
+
+def encode_password(password: str):
+    return PasswordHashLibrary.encode(password=password)
+
+
+def verify_password(password: str, encoded_password: str):
+    return PasswordHashLibrary.verify(
+        password=password, encoded_password=encoded_password
+    )
 
 
 def encode_token(user_id: str, key: str, seconds: float) -> str:

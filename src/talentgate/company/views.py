@@ -2,9 +2,11 @@ from sqlmodel import Session
 from typing import List, Sequence, Any
 from fastapi import Depends, APIRouter, Query
 
+from src.talentgate.auth.exceptions import InvalidAuthorizationException
 from src.talentgate.company.service import add_observer, delete_observer
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.company import service as company_service
+from src.talentgate.employee.models import EmployeeTitle
 from src.talentgate.job import service as job_service
 from src.talentgate.company.models import (
     Company,
@@ -26,11 +28,70 @@ from src.talentgate.job.models import (
     RetrievedCompanyJob,
     RetrievedCompanyJobs,
 )
+from src.talentgate.user.models import (
+    UserRole,
+    User,
+    SubscriptionPlan,
+    SubscriptionStatus,
+)
+from src.talentgate.user.views import retrieve_current_user
 
 router = APIRouter(tags=["company"])
 
 
-# CAREER COMPANY JOBS Views
+class CreateCompanyDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)):
+        if (user.role == UserRole.ADMIN) or (
+            user.subscription.plan == SubscriptionPlan.STANDARD
+            and user.subscription.status == SubscriptionStatus.ACTIVE
+        ):
+            return True
+        raise InvalidAuthorizationException
+
+
+class RetrieveCompanyDependency:
+    def __call__(self, company_id: int, user: User = Depends(retrieve_current_user)):
+        if (user.role == UserRole.ADMIN) or (
+            user.subscription.plan == SubscriptionPlan.STANDARD
+            and user.subscription.status == SubscriptionStatus.ACTIVE
+            and user.employee.title in [EmployeeTitle.FOUNDER, EmployeeTitle.RECRUITER]
+            and user.employee.company_id == company_id
+        ):
+            return True
+        raise InvalidAuthorizationException
+
+
+class RetrieveCompaniesDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)):
+        if user.role == UserRole.ADMIN:
+            return True
+        raise InvalidAuthorizationException
+
+
+class UpdateCompanyDependency:
+    def __call__(self, company_id: int, user: User = Depends(retrieve_current_user)):
+        if (user.role == UserRole.ADMIN) or (
+            user.subscription.plan == SubscriptionPlan.STANDARD
+            and user.subscription.status == SubscriptionStatus.ACTIVE
+            and user.employee.title in [EmployeeTitle.FOUNDER, EmployeeTitle.RECRUITER]
+            and user.employee.company_id == company_id
+        ):
+            return True
+        raise InvalidAuthorizationException
+
+
+class DeleteCompanyDependency:
+    def __call__(self, company_id: int, user: User = Depends(retrieve_current_user)):
+        if (user.role == UserRole.ADMIN) or (
+            user.subscription.plan == SubscriptionPlan.STANDARD
+            and user.subscription.status == SubscriptionStatus.ACTIVE
+            and user.employee.title == EmployeeTitle.FOUNDER
+            and user.employee.company_id == company_id
+        ):
+            return True
+        raise InvalidAuthorizationException
+
+
 @router.get(
     path="/api/v1/careers/companies/{company_id}/jobs",
     response_model=List[RetrievedCompanyJobs],
@@ -69,7 +130,6 @@ async def retrieved_careers_job(
     return retrieved_job
 
 
-# COMPANY JOBS Views
 @router.get(
     path="/api/v1/companies/{company_id}/jobs",
     response_model=List[RetrievedJob],
@@ -193,6 +253,7 @@ async def delete_company_job_observers(
     path="/api/v1/companies",
     response_model=CreatedCompany,
     status_code=201,
+    dependencies=[Depends(CreateCompanyDependency())],
 )
 async def create_company(
     *,
@@ -210,6 +271,7 @@ async def create_company(
     path="/api/v1/companies/{company_id}",
     response_model=RetrievedCompany,
     status_code=200,
+    dependencies=[Depends(RetrieveCompanyDependency())],
 )
 async def retrieve_company(
     *, sqlmodel_session: Session = Depends(get_sqlmodel_session), company_id: int
@@ -225,6 +287,7 @@ async def retrieve_company(
     path="/api/v1/companies",
     response_model=List[RetrievedCompany],
     status_code=200,
+    dependencies=[Depends(RetrieveCompaniesDependency())],
 )
 async def retrieve_companies(
     *,
@@ -242,6 +305,7 @@ async def retrieve_companies(
     path="/api/v1/companies/{company_id}",
     response_model=UpdatedCompany,
     status_code=200,
+    dependencies=[Depends(UpdateCompanyDependency())],
 )
 async def update_company(
     *,
@@ -269,6 +333,7 @@ async def update_company(
     path="/api/v1/companies/{company_id}",
     response_model=DeletedCompany,
     status_code=200,
+    dependencies=[Depends(DeleteCompanyDependency())],
 )
 async def delete_company(
     *, company_id: int, sqlmodel_session: Session = Depends(get_sqlmodel_session)

@@ -351,7 +351,9 @@ async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Compan
 
     created_company = Company(
         **company.model_dump(
-            exclude_unset=True, exclude_none=True, exclude={"locations", "links"}
+            exclude_unset=True,
+            exclude_none=True,
+            exclude={"locations", "links", "employees"},
         ),
         locations=locations,
         links=links,

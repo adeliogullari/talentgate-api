@@ -11,19 +11,10 @@ from src.talentgate.user.models import (
     UpdateUser,
     UpdateCurrentUser,
 )
+from src.talentgate.auth import service as auth_service
 from config import get_settings
 
 settings = get_settings()
-
-
-def encode_password(password: str):
-    return PasswordHashLibrary.encode(password=password)
-
-
-def verify_password(password: str, encoded_password: str):
-    return PasswordHashLibrary.verify(
-        password=password, encoded_password=encoded_password
-    )
 
 
 async def create_subscription(
@@ -90,7 +81,7 @@ async def upsert_subscription(
 
 
 async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
-    password = encode_password(password=user.password)
+    password = auth_service.encode_password(password=user.password)
 
     subscription = None
     if getattr(user, "subscription", None) is not None:
@@ -113,7 +104,7 @@ async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
     return created_user
 
 
-async def retrieve_by_id(*, sqlmodel_session: Session, user_id: int) -> User:
+async def retrieve_by_id(*, sqlmodel_session: Session, user_id: int | None) -> User:
     statement: Any = select(User).where(User.id == user_id)
 
     retrieved_user = sqlmodel_session.exec(statement).one_or_none()
@@ -163,7 +154,7 @@ async def update(
     user: Union[UpdateUser, UpdateCurrentUser],
 ) -> User:
     if getattr(user, "password", None) is not None:
-        retrieved_user.password = encode_password(password=user.password)
+        retrieved_user.password = auth_service.encode_password(password=user.password)
 
     if getattr(user, "subscription", None) is not None:
         retrieved_user.subscription = await upsert_subscription(

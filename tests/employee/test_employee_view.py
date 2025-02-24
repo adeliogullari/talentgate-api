@@ -1,5 +1,7 @@
 import json
-from config import Settings
+import pytest
+from config import get_settings
+from src.talentgate.user.models import UserRole
 from src.talentgate.employee.models import (
     Employee,
     CreateEmployee,
@@ -9,9 +11,10 @@ from src.talentgate.employee.models import (
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 
-settings = Settings()
+settings = get_settings()
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_employee(client: TestClient, headers: Headers) -> None:
     created_employee = CreateEmployee(title=EmployeeTitle.FOUNDER)
 
@@ -27,6 +30,7 @@ async def test_create_employee(client: TestClient, headers: Headers) -> None:
     assert response.json()["title"] == created_employee.title
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_employee(
     client: TestClient, employee: Employee, headers: Headers
 ) -> None:
@@ -36,6 +40,7 @@ async def test_retrieve_employee(
     assert response.json()["id"] == employee.id
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_employees(
     client: TestClient, employee: Employee, headers: Headers
 ) -> None:
@@ -45,6 +50,7 @@ async def test_retrieve_employees(
     assert response.json()[0]["id"] == employee.id
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_update_employee(
     client: TestClient, employee: Employee, headers: Headers
 ) -> None:
@@ -62,6 +68,7 @@ async def test_update_employee(
     assert response.json()["id"] == employee.id
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_delete_employee(
     client: TestClient, employee: Employee, headers: Headers
 ) -> None:

@@ -2,8 +2,9 @@ from enum import StrEnum
 from datetime import datetime, UTC
 from typing import TYPE_CHECKING, List
 from sqlmodel import SQLModel, Field, Relationship
-from src.talentgate.job.models import Job
 from src.talentgate.database.models import BaseModel, Observer
+from src.talentgate.job.models import Job
+from src.talentgate.company.models import Company
 from src.talentgate.user.models import (
     UserSubscription,
     UserRole,
@@ -14,7 +15,6 @@ from src.talentgate.user.models import (
     UpdateUser,
     UpdatedUser,
 )
-from src.talentgate.company.models import Company
 
 
 if TYPE_CHECKING:

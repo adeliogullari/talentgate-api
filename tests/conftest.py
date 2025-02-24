@@ -42,7 +42,7 @@ async def start_application() -> FastAPI | None:
 
 
 @pytest.fixture
-async def app() -> AsyncGenerator[FastAPI, Any] | None:
+async def app() -> AsyncGenerator[FastAPI | None, Any]:
     SQLModel.metadata.create_all(bind=engine)
     _app = await start_application()
     yield _app

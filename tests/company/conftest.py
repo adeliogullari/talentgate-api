@@ -8,6 +8,7 @@ from src.talentgate.company.models import (
     CompanyLocationType,
     CompanyLocation,
 )
+from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job
 
 
@@ -38,11 +39,14 @@ def location(sqlmodel_session: Session, address: CompanyAddress):
 
 
 @pytest.fixture
-def make_company(sqlmodel_session: Session, job: Job, location: CompanyLocation):
+def make_company(
+    sqlmodel_session: Session, job: Job, employee: Employee, location: CompanyLocation
+):
     def make(**kwargs):
         company = Company(
             name=kwargs.get("firstname") or secrets.token_hex(12),
             overview=kwargs.get("overview") or secrets.token_hex(12),
+            employees=kwargs.get("employees") or [employee],
             locations=kwargs.get("locations") or [location],
             jobs=[job],
         )
@@ -61,6 +65,9 @@ def company(make_company, request):
     param = getattr(request, "param", {})
     name = param.get("name", None)
     overview = param.get("overview", None)
+    employees = param.get("employees", None)
     locations = param.get("locations", None)
 
-    return make_company(name=name, overview=overview, locations=locations)
+    return make_company(
+        name=name, overview=overview, employees=employees, locations=locations
+    )

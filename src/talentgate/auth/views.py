@@ -51,7 +51,7 @@ async def login(
     if not retrieved_user.verified:
         raise InvalidVerificationException
 
-    if not user_service.verify_password(
+    if not auth_service.verify_password(
         password=credentials.password, encoded_password=retrieved_user.password
     ):
         raise InvalidCredentialsException
@@ -97,7 +97,7 @@ async def google(
         firstname = id_info["given_name"].lower()
         lastname = id_info["family_name"].lower()
         username = f"{firstname}{lastname}{random.randint(1000, 9999)}"
-        password = user_service.encode_password(
+        password = auth_service.encode_password(
             password="".join(random.choices(string.ascii_letters + string.digits, k=16))
         )
 
@@ -161,7 +161,7 @@ async def linkedin(
         firstname = response_body["localizedFirstName"].lower()
         lastname = response_body["localizedLastName"].lower()
         username = f"{firstname}{lastname}{random.randint(1000, 9999)}"
-        password = user_service.encode_password(
+        password = auth_service.encode_password(
             password="".join(random.choices(string.ascii_letters + string.digits, k=16))
         )
 

@@ -3,6 +3,7 @@ import pytest
 from datetime import timedelta, datetime, UTC
 from config import Settings
 from src.talentgate.company.models import Company
+from src.talentgate.user.models import UserRole
 from src.talentgate.job.models import (
     Job,
     CreateJob,
@@ -17,22 +18,7 @@ from fastapi.testclient import TestClient
 settings = Settings()
 
 
-@pytest.fixture
-def token(job: Job) -> str:
-    now = datetime.now(UTC)
-    exp = (now + timedelta(minutes=60)).timestamp()
-    payload = {"exp": exp, "job_id": job.id}
-    return JsonWebToken.encode(
-        payload=payload,
-        key=settings.access_token_key,
-    )
-
-
-@pytest.fixture
-def headers(token: str) -> Headers:
-    return Headers({"Authorization": f"Bearer {token}"})
-
-
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_job(
     client: TestClient, headers: Headers, company: Company
 ) -> None:
@@ -59,6 +45,7 @@ async def test_create_job(
     assert response.json()["employment_type"] == created_job.employment_type
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_job(client: TestClient, job: Job, headers: Headers) -> None:
     response = client.get(url=f"/api/v1/jobs/{job.id}", headers=headers)
 
@@ -68,6 +55,7 @@ async def test_retrieve_job(client: TestClient, job: Job, headers: Headers) -> N
     assert response.json()["employment_type"] == job.employment_type
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_jobs(client: TestClient, job: Job, headers: Headers) -> None:
     response = client.get(url="/api/v1/jobs", headers=headers)
 
@@ -77,6 +65,7 @@ async def test_retrieve_jobs(client: TestClient, job: Job, headers: Headers) -> 
     assert response.json()[0]["employment_type"] == job.employment_type
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_update_job(client: TestClient, job: Job, headers: Headers) -> None:
     updated_job = UpdateJob(
         title="updated job title",
@@ -100,6 +89,7 @@ async def test_update_job(client: TestClient, job: Job, headers: Headers) -> Non
     assert response.json()["employment_type"] == updated_job.employment_type
 
 
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_delete_job(client: TestClient, job: Job, headers: Headers) -> None:
     response = client.delete(url=f"/api/v1/jobs/{job.id}", headers=headers)
 

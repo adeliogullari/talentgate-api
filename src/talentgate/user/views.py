@@ -55,7 +55,7 @@ async def retrieve_current_user(
     _, payload, _ = auth_service.decode_token(token=http_authorization.credentials)
 
     retrieved_user = await user_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, user_id=payload["user_id"]
+        sqlmodel_session=sqlmodel_session, user_id=payload.get("user_id", None)
     )
 
     if not retrieved_user:
@@ -72,7 +72,7 @@ class CreateUserDependency:
 
 
 class RetrieveUserDependency:
-    def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)):
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
@@ -86,14 +86,14 @@ class RetrieveUsersDependency:
 
 
 class UpdateUserDependency:
-    def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)):
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class DeleteUserDependency:
-    def __call__(self, user_id: int, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)):
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
