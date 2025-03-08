@@ -87,6 +87,12 @@ class Company(SQLModel, table=True):
         sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
     )
 
+    @property
+    def subscription(self):
+        return next(
+            filter(lambda employee: employee.title == "Founder", self.employees), None
+        ).user.subscription
+
 
 class CompanyEmployee(BaseModel):
     id: int | None = None

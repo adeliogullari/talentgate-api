@@ -53,7 +53,7 @@ class RetrieveCompanyDependency:
     def __call__(self, company_id: int, user: User = Depends(retrieve_current_user)):
         if (user.role == UserRole.ADMIN) or (
             user.subscription.plan == SubscriptionPlan.STANDARD
-            and user.subscription.status == SubscriptionStatus.ACTIVE
+            and user.employee.company.subscription.status == SubscriptionStatus.ACTIVE
             and user.employee.title in [EmployeeTitle.FOUNDER, EmployeeTitle.RECRUITER]
             and user.employee.company_id == company_id
         ):
@@ -72,7 +72,7 @@ class UpdateCompanyDependency:
     def __call__(self, company_id: int, user: User = Depends(retrieve_current_user)):
         if (user.role == UserRole.ADMIN) or (
             user.subscription.plan == SubscriptionPlan.STANDARD
-            and user.subscription.status == SubscriptionStatus.ACTIVE
+            and user.employee.company.subscription.status == SubscriptionStatus.ACTIVE
             and user.employee.title in [EmployeeTitle.FOUNDER, EmployeeTitle.RECRUITER]
             and user.employee.company_id == company_id
         ):

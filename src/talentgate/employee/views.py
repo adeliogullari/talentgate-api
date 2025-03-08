@@ -5,7 +5,6 @@ from fastapi import Depends, APIRouter, Query
 from src.talentgate.user.views import retrieve_current_user
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.employee import service as employee_service
-from src.talentgate.employee.exceptions import EmployeeIdNotFoundException
 from src.talentgate.user.models import UserRole, User
 from src.talentgate.employee.models import (
     Employee,
@@ -17,9 +16,8 @@ from src.talentgate.employee.models import (
     UpdateEmployee,
     DeletedEmployee,
 )
-from src.talentgate.auth.exceptions import (
-    InvalidAuthorizationException,
-)
+from src.talentgate.auth.exceptions import InvalidAuthorizationException
+from src.talentgate.employee.exceptions import EmployeeIdNotFoundException
 
 router = APIRouter(tags=["employee"])
 

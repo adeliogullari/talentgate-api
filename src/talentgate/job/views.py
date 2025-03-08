@@ -74,13 +74,6 @@ async def create_job(
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
     job: CreateJob,
 ) -> Job:
-    retrieved_company = await company_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, company_id=job.company_id
-    )
-
-    if not retrieved_company:
-        raise CompanyIdNotFoundException
-
     created_job = await job_service.create(sqlmodel_session=sqlmodel_session, job=job)
 
     return created_job
@@ -116,11 +109,11 @@ async def retrieve_jobs(
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
     query_parameters: JobQueryParameters = Query(),
 ) -> Sequence[Job]:
-    retrieved_job = await job_service.retrieve_by_query_parameters(
+    retrieved_jobs = await job_service.retrieve_by_query_parameters(
         sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
     )
 
-    return retrieved_job
+    return retrieved_jobs
 
 
 @router.put(

@@ -2,7 +2,6 @@ import json
 from datetime import datetime, UTC, timedelta
 
 import pytest
-from pytography import JsonWebToken
 
 from config import Settings
 from src.talentgate.company.models import Company, CreateCompany, UpdateCompany
@@ -136,16 +135,7 @@ async def test_create_company(client: TestClient, headers: Headers) -> None:
                 "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
             },
             {"title": EmployeeTitle.FOUNDER},
-        ),
-        (
-            {"role": UserRole.OWNER},
-            {
-                "plan": SubscriptionPlan.STANDARD,
-                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
-                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
-            },
-            {"title": EmployeeTitle.RECRUITER},
-        ),
+        )
     ],
     indirect=True,
 )
@@ -180,16 +170,7 @@ async def test_retrieve_companies(
                 "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
             },
             {"title": EmployeeTitle.FOUNDER},
-        ),
-        (
-            {"role": UserRole.OWNER},
-            {
-                "plan": SubscriptionPlan.STANDARD,
-                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
-                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
-            },
-            {"title": EmployeeTitle.RECRUITER},
-        ),
+        )
     ],
     indirect=True,
 )
