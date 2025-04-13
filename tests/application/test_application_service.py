@@ -5,126 +5,20 @@ from minio import Minio
 from sqlmodel import Session
 from src.talentgate.application.models import (
     Application,
-    ApplicationEvaluation,
-    ApplicationEvaluationRequest,
     CreateApplication,
     UpdateApplication,
     CreateResume,
 )
 from src.talentgate.application.service import (
     create,
-    create_application_evaluation,
-    retrieve_application_evaluation_by_id,
-    retrieve_application_evaluation_by_employee_and_application,
-    retrieve_application_evaluations_by_application,
     retrieve_by_id,
-    retrieve_by_firstname,
-    retrieve_by_lastname,
     retrieve_by_email,
     retrieve_by_phone,
     update,
     delete,
-    update_application_evaluation,
-    delete_application_evaluation,
     create_resume,
     retrieve_resume,
 )
-from src.talentgate.employee.models import Employee
-
-
-async def test_create_application_evaluation(
-    sqlmodel_session: Session, application: Application, employee: Employee
-) -> None:
-    evaluation = ApplicationEvaluationRequest(
-        comment="comment",
-        rating=5,
-        application_id=application.id,
-        employee_id=employee.id,
-    )
-
-    created_evaluation = await create_application_evaluation(
-        sqlmodel_session=sqlmodel_session, application_evaluation=evaluation
-    )
-
-    assert created_evaluation.comment == evaluation.comment
-    assert created_evaluation.application.id == application.id
-    assert created_evaluation.employee.id == employee.id
-
-
-async def test_retrieve_application_evaluation_by_employee_and_application(
-    sqlmodel_session: Session,
-    application: Application,
-    employee: Employee,
-    application_evaluation: ApplicationEvaluation,
-) -> None:
-    retrieved_application_evaluation = (
-        await retrieve_application_evaluation_by_employee_and_application(
-            sqlmodel_session=sqlmodel_session,
-            employee_id=employee.id,
-            application_id=application.id,
-        )
-    )
-
-    assert retrieved_application_evaluation.comment == application_evaluation.comment
-    assert retrieved_application_evaluation.application.id == application.id
-    assert retrieved_application_evaluation.employee.id == employee.id
-
-
-async def test_retrieve_application_evaluation_by_id(
-    sqlmodel_session: Session, application_evaluation: ApplicationEvaluation
-) -> None:
-    retrieved_application_evaluation = await retrieve_application_evaluation_by_id(
-        sqlmodel_session=sqlmodel_session,
-        application_evaluation_id=application_evaluation.id,
-    )
-
-    assert retrieved_application_evaluation.comment == application_evaluation.comment
-
-
-async def test_retrieve_application_evaluations(
-    sqlmodel_session: Session, application: Application
-) -> None:
-    retrieved_application_evaluations = (
-        await retrieve_application_evaluations_by_application(
-            sqlmodel_session=sqlmodel_session, application_id=application.id
-        )
-    )
-
-    assert retrieved_application_evaluations == application.evaluations
-
-
-async def test_update_application_evaluation(
-    sqlmodel_session: Session, make_application_evaluation
-) -> None:
-    retrieved_application_evaluation = make_application_evaluation()
-
-    application_evaluation = ApplicationEvaluationRequest(
-        comment="updated_comment", rating="1"
-    )
-
-    updated_application_evaluation = await update_application_evaluation(
-        sqlmodel_session=sqlmodel_session,
-        retrieved_application_evaluation=retrieved_application_evaluation,
-        application_evaluation=application_evaluation,
-    )
-
-    assert application_evaluation.comment == updated_application_evaluation.comment
-
-
-async def test_delete_application_evaluation(
-    sqlmodel_session: Session, make_application_evaluation
-) -> None:
-    retrieved_application_evaluation = make_application_evaluation()
-
-    deleted_application_evaluation = await delete_application_evaluation(
-        sqlmodel_session=sqlmodel_session,
-        retrieved_application_evaluation=retrieved_application_evaluation,
-    )
-
-    assert (
-        retrieved_application_evaluation.comment
-        == deleted_application_evaluation.comment
-    )
 
 
 async def test_create_resume(minio_client: Minio) -> None:
@@ -173,31 +67,11 @@ async def test_retrieve_by_id(
     assert retrieved_application.id == application.id
 
 
-async def test_retrieve_by_firstname(
-    sqlmodel_session: Session, application: Application
-) -> None:
-    retrieved_application = await retrieve_by_firstname(
-        sqlmodel_session=sqlmodel_session, application_firstname=application.firstname
-    )
-
-    assert retrieved_application.firstname == application.firstname
-
-
-async def test_retrieve_by_lastname(
-    sqlmodel_session: Session, application: Application
-) -> None:
-    retrieved_application = await retrieve_by_lastname(
-        sqlmodel_session=sqlmodel_session, application_lastname=application.lastname
-    )
-
-    assert retrieved_application.lastname == application.lastname
-
-
 async def test_retrieve_by_email(
     sqlmodel_session: Session, application: Application
 ) -> None:
     retrieved_application = await retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, application_email=application.email
+        sqlmodel_session=sqlmodel_session, email=application.email
     )
 
     assert retrieved_application.email == application.email
@@ -207,7 +81,7 @@ async def test_retrieve_by_phone(
     sqlmodel_session: Session, application: Application
 ) -> None:
     retrieved_application = await retrieve_by_phone(
-        sqlmodel_session=sqlmodel_session, application_phone=application.phone
+        sqlmodel_session=sqlmodel_session, phone=application.phone
     )
 
     assert retrieved_application.phone == application.phone

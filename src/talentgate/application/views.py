@@ -1,6 +1,6 @@
 import uuid
-from typing import List, Sequence
-from sqlmodel import Session
+from typing import List, Sequence, Any
+from sqlmodel import Session, select
 from minio import Minio
 from fastapi import Depends, APIRouter, Query
 from src.talentgate.database.service import get_sqlmodel_session
@@ -94,13 +94,32 @@ async def retrieve_application(
 async def retrieve_applications(
     *,
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    minio_client: Minio = Depends(get_minio_client),
     query_parameters: ApplicationQueryParameters = Query(),
-) -> Sequence[Application]:
-    retrieved_application = await application_service.retrieve_by_query_parameters(
-        sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
-    )
+) -> Sequence[RetrievedApplication]:
+    offset = query_parameters.offset
+    limit = query_parameters.limit
+    filters = [
+        getattr(Application, attr) == value
+        for attr, value in query_parameters.model_dump(
+            exclude={"offset", "limit"}, exclude_unset=True, exclude_none=True
+        ).items()
+    ]
 
-    return retrieved_application
+    statement: Any = select(Application).offset(offset).limit(limit).where(*filters)
+
+    retrieved_applications = []
+    for retrieved_application in sqlmodel_session.exec(statement).all():
+        resume = await application_service.retrieve_resume(
+            minio_client=minio_client, object_name=retrieved_application.resume
+        )
+        retrieved_applications.append(
+            RetrievedApplication(
+                **retrieved_application.model_dump(exclude={"resume"}), resume=resume
+            )
+        )
+
+    return retrieved_applications
 
 
 @router.put(
