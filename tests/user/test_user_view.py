@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 from starlette.datastructures import Headers
 from src.talentgate.user.models import (
     SubscriptionPlan,
-    UserSubscription,
     CreateSubscription,
     UpdateSubscription,
     UserRole,

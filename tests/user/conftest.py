@@ -1,9 +1,10 @@
 import pytest
 import secrets
 from sqlmodel import Session
-from src.talentgate.user.models import SubscriptionPlan, UserSubscription, User
+from datetime import datetime, timedelta, UTC
+from src.talentgate.user.enums import SubscriptionPlan, UserRole
+from src.talentgate.user.models import UserSubscription, User
 from src.talentgate.auth import service as auth_service
-from src.talentgate.user import service as user_service
 
 
 @pytest.fixture
@@ -14,9 +15,10 @@ def make_subscription(sqlmodel_session: Session):
         end_date: float | None = None,
     ):
         subscription = UserSubscription(
-            plan=plan,
-            start_date=start_date,
-            end_date=end_date,
+            plan=plan or SubscriptionPlan.BASIC,
+            start_date=start_date
+            or (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+            end_date=end_date or (datetime.now(UTC) - timedelta(days=1)).timestamp(),
         )
 
         sqlmodel_session.add(subscription)
@@ -53,7 +55,7 @@ def make_user(sqlmodel_session: Session, subscription: UserSubscription):
             password=kwargs.get("password")
             or auth_service.encode_password(password=secrets.token_hex(16)),
             verified=kwargs.get("verified") or True,
-            role=kwargs.get("role"),
+            role=kwargs.get("role") or UserRole.OWNER.value,
             subscription=kwargs.get("subscription") or subscription,
         )
 

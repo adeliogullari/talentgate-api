@@ -9,9 +9,14 @@ class Settings(BaseSettings):
     postgresql_host: str
     postgresql_port: str
     postgresql_database: str
+    minio_schema: str
+    minio_host: str
+    minio_port: str
+    minio_root_user: str
+    minio_root_password: str
     google_client_id: str
     password_hash_algorithm: str
-    message_digest_algorithm: str | None
+    message_digest_algorithm: str
     access_token_expiration: float
     access_token_key: str
     access_token_algorithm: str
@@ -21,7 +26,9 @@ class Settings(BaseSettings):
     refresh_token_algorithm: str
     refresh_token_type: str
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        extra="allow", env_file=".env", env_file_encoding="utf-8"
+    )
 
 
 @lru_cache()

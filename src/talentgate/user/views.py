@@ -31,7 +31,7 @@ from src.talentgate.user.exceptions import (
 )
 from config import Settings, get_settings
 
-router = APIRouter(tags=["user"])
+router = APIRouter(tags=["users"])
 
 
 @router.get(

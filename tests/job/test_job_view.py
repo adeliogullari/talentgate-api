@@ -1,6 +1,6 @@
 import json
 import pytest
-from datetime import timedelta, datetime, UTC
+from datetime import timedelta, datetime
 from config import Settings
 from src.talentgate.company.models import Company
 from src.talentgate.user.models import UserRole
@@ -10,7 +10,6 @@ from src.talentgate.job.models import (
     UpdateJob,
     EmploymentType,
 )
-from pytography import JsonWebToken
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
 

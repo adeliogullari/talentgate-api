@@ -1,4 +1,6 @@
+from typing import Any
 from enum import StrEnum
+from fastapi import UploadFile
 from datetime import datetime, UTC
 
 from typing import List, Optional
@@ -81,8 +83,8 @@ class Application(SQLModel, table=True):
     state: str | None = Field(default=None)
     country: str | None = Field(default=None)
     postal_code: str | None = Field(default=None)
-    resume: str = Field(default=None)
-    earliest_start_date: Optional[datetime] = None
+    resume: str | None = Field(default=None)
+    earliest_start_date: datetime | None = Field(default=None)
     links: List[ApplicationLink] = Relationship(back_populates="application")
     status: ApplicationStatus | None = Field(default=ApplicationStatus.APPLIED)
     evaluations: List[ApplicationEvaluation] = Relationship(
@@ -97,7 +99,57 @@ class Application(SQLModel, table=True):
     )
 
 
-class ApplicationRequest(SQLModel):
+class CreateResume(SQLModel):
+    name: str | None = None
+    data: bytes | None = None
+
+
+class RetrievedResume(SQLModel):
+    name: str | None = None
+    data: bytes | None = None
+
+
+class CreateEvaluation(SQLModel):
+    pass
+
+
+class CreatedEvaluation(SQLModel):
+    pass
+
+
+class RetrievedEvaluation(SQLModel):
+    pass
+
+
+class UpdateEvaluation(SQLModel):
+    pass
+
+
+class UpdatedEvaluation(SQLModel):
+    pass
+
+
+class CreateLink(SQLModel):
+    pass
+
+
+class CreatedLink(SQLModel):
+    pass
+
+
+class RetrievedLink(SQLModel):
+    pass
+
+
+class UpdateLink(SQLModel):
+    pass
+
+
+class UpdatedLink(SQLModel):
+    pass
+
+
+class CreateApplication(SQLModel):
     firstname: str | None = None
     lastname: str | None = None
     email: str | None = None
@@ -107,14 +159,14 @@ class ApplicationRequest(SQLModel):
     state: str | None = None
     country: str | None = None
     postal_code: str | None = None
-    resume: str | None = None
+    resume: CreateResume | None = None
     earliest_start_date: datetime | None = None
     status: ApplicationStatus | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
 
-class ApplicationResponse(SQLModel):
+class CreatedApplication(SQLModel):
     id: int | None = None
     firstname: str | None = None
     lastname: str | None = None
@@ -134,16 +186,24 @@ class ApplicationResponse(SQLModel):
     updated_at: datetime | None = None
 
 
-class CreateApplication(ApplicationRequest):
-    pass
-
-
-class CreatedApplication(ApplicationResponse):
-    pass
-
-
-class RetrievedApplication(ApplicationResponse):
-    pass
+class RetrievedApplication(SQLModel):
+    id: int | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+    resume: RetrievedResume | None = None
+    earliest_start_date: datetime | None = None
+    status: ApplicationStatus | None = None
+    links: List[ApplicationLink] = None
+    evaluations: List[ApplicationEvaluation] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class ApplicationQueryParameters(SQLModel):
@@ -155,12 +215,41 @@ class ApplicationQueryParameters(SQLModel):
     phone: str | None = None
 
 
-class UpdateApplication(ApplicationRequest):
-    pass
+class UpdateApplication(SQLModel):
+    firstname: str | None = None
+    lastname: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+    resume: Any | None = None
+    earliest_start_date: datetime | None = None
+    status: ApplicationStatus | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
-class UpdatedApplication(ApplicationResponse):
-    pass
+class UpdatedApplication(SQLModel):
+    id: int | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+    resume: Any | None = None
+    earliest_start_date: datetime | None = None
+    status: ApplicationStatus | None = None
+    links: List[ApplicationLink] = None
+    evaluations: List[ApplicationEvaluation] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class DeleteApplication(SQLModel):

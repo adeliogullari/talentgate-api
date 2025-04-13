@@ -1,28 +1,18 @@
-from enum import StrEnum
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timedelta, UTC
 from sqlmodel import SQLModel, Field, Relationship
 from src.talentgate.database.models import BaseModel
+from src.talentgate.user.enums import SubscriptionPlan, SubscriptionStatus, UserRole
 
 if TYPE_CHECKING:
     from src.talentgate.employee.models import Employee
-
-
-class SubscriptionPlan(StrEnum):
-    BASIC = "Basic"
-    STANDARD = "Standard"
-
-
-class SubscriptionStatus(StrEnum):
-    ACTIVE = "Active"
-    EXPIRED = "Expired"
 
 
 class UserSubscription(SQLModel, table=True):
     __tablename__ = "user_subscription"
 
     id: int = Field(primary_key=True)
-    plan: str = Field(default=SubscriptionPlan.BASIC)
+    plan: str = Field(default=SubscriptionPlan.BASIC.value)
     start_date: float = Field(
         default_factory=lambda: (datetime.now(UTC) - timedelta(days=2)).timestamp()
     )
@@ -39,11 +29,6 @@ class UserSubscription(SQLModel, table=True):
         return SubscriptionStatus.EXPIRED
 
 
-class UserRole(StrEnum):
-    OWNER = "Owner"
-    ADMIN = "Admin"
-
-
 class User(SQLModel, table=True):
     __tablename__ = "user"
 
@@ -54,7 +39,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True)
     password: str = Field(nullable=False)
     verified: bool = Field(default=False)
-    role: str = Field(default=UserRole.OWNER)
+    role: str = Field(default=UserRole.OWNER.value)
     employee: Optional["Employee"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},

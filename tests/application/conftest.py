@@ -1,4 +1,8 @@
+from typing import BinaryIO
+
 import pytest
+from minio import Minio
+
 from config import get_settings
 from sqlmodel import Session
 from src.talentgate.application.models import Application, ApplicationEvaluation
@@ -39,13 +43,33 @@ def application_evaluation(make_application_evaluation):
 
 
 @pytest.fixture
+def make_resume(minio_client: Minio):
+    def make(
+        bucket_name: str = "resume",
+        object_name: str = "resume",
+        data: BinaryIO = b"resume",
+        length: int = 0,
+    ):
+        return minio_client.put_object(
+            bucket_name=bucket_name, object_name=object_name, data=data, length=length
+        )
+
+    return make
+
+
+@pytest.fixture
+def resume(make_resume):
+    return make_resume()
+
+
+@pytest.fixture
 def make_application(sqlmodel_session: Session):
     def make(
         firstname: str = "firstname",
         lastname: str = "lastname",
         email: str = "applicant_email@gmail.com",
         phone: str = "+905123456789",
-        resume: str = "resume.pdf",
+        resume: str = "resume",
         employee_id: int = None,
         application_id: int = None,
     ):

@@ -9,7 +9,9 @@ from src.talentgate.application.models import (
     Application,
     ApplicationEvaluation,
     ApplicationEvaluationRequest,
-    ApplicationRequest,
+    CreateApplication,
+    UpdateApplication,
+    CreateResume,
 )
 from pytography import JsonWebToken
 from starlette.datastructures import Headers
@@ -111,12 +113,12 @@ async def test_delete_application_evaluation(
 
 
 async def test_create_application(client: TestClient, headers: Headers) -> None:
-    created_application = ApplicationRequest(
+    created_application = CreateApplication(
         firstname="created firstname",
         lastname="created lastname",
         email="created_applicant_email@gmail.com",
         phone="+90532556345",
-        resume="created_resume.pdf",
+        resume=CreateResume(name="resume", data=b"data"),
     )
 
     response = client.post(
@@ -132,7 +134,7 @@ async def test_create_application(client: TestClient, headers: Headers) -> None:
 
 
 async def test_retrieve_application(
-    client: TestClient, application: Application, headers: Headers
+    client: TestClient, application: Application, resume, headers: Headers
 ) -> None:
     response = client.get(url=f"/api/v1/applications/{application.id}", headers=headers)
 
@@ -153,7 +155,7 @@ async def test_retrieve_applications(
 async def test_update_application(
     client: TestClient, application: Application, headers: Headers
 ) -> None:
-    updated_application = ApplicationRequest(
+    updated_application = UpdateApplication(
         firstname="updated firstname",
         lastname="updated lastname",
         email="updated_email@gmail.com",

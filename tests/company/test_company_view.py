@@ -3,7 +3,7 @@ from datetime import datetime, UTC, timedelta
 
 import pytest
 
-from config import Settings
+from config import Settings, get_settings
 from src.talentgate.company.models import Company, CreateCompany, UpdateCompany
 from starlette.datastructures import Headers
 from fastapi.testclient import TestClient
@@ -12,7 +12,7 @@ from src.talentgate.employee.models import Employee, EmployeeTitle
 from src.talentgate.job.models import Job
 from src.talentgate.user.models import UserRole, SubscriptionPlan
 
-settings = Settings()
+settings = get_settings()
 
 
 async def test_retrieved_career_jobs(
@@ -135,7 +135,7 @@ async def test_create_company(client: TestClient, headers: Headers) -> None:
                 "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
             },
             {"title": EmployeeTitle.FOUNDER},
-        )
+        ),
     ],
     indirect=True,
 )
@@ -170,7 +170,7 @@ async def test_retrieve_companies(
                 "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
             },
             {"title": EmployeeTitle.FOUNDER},
-        )
+        ),
     ],
     indirect=True,
 )
