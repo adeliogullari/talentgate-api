@@ -1,15 +1,15 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 from src.talentgate.company.models import Company
-from src.talentgate.database.models import Observer, BaseModel
+from src.talentgate.database.models import BaseModel, Observer
 
 if TYPE_CHECKING:
-    from src.talentgate.employee.models import Employee
     from src.talentgate.application.models import Application
+    from src.talentgate.employee.models import Employee
 
 
 class JobLocationType(str, Enum):
@@ -57,7 +57,7 @@ class JobLocation(SQLModel, table=True):
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
     address_id: int | None = Field(default=None, foreign_key="job_address.id")
-    address: Optional[JobAddress] = Relationship(back_populates="location")
+    address: JobAddress | None = Relationship(back_populates="location")
     job: Optional["Job"] = Relationship(back_populates="location")
 
 
@@ -80,10 +80,11 @@ class Job(SQLModel, table=True):
     department: str | None = Field(default=None)
     employment_type: EmploymentType | None = Field(default=None)
     job_post_deadline: datetime | None = Field(default=None)
-    observers: List["Employee"] = Relationship(
-        back_populates="observations", link_model=Observer
+    observers: list["Employee"] = Relationship(
+        back_populates="observations",
+        link_model=Observer,
     )
-    applications: List["Application"] = Relationship(back_populates="job")
+    applications: list["Application"] = Relationship(back_populates="job")
     location_id: int | None = Field(foreign_key="job_location.id", ondelete="CASCADE")
     location: JobLocation | None = Relationship(
         back_populates="job",
@@ -93,14 +94,16 @@ class Job(SQLModel, table=True):
     )
     salary_id: int | None = Field(foreign_key="job_salary.id")
     salary: JobSalary | None = Relationship(
-        back_populates="job", sa_relationship_kwargs={"uselist": False}
+        back_populates="job",
+        sa_relationship_kwargs={"uselist": False},
     )
     company_id: int | None = Field(foreign_key="company.id")
     company: Company | None = Relationship(
-        back_populates="jobs", sa_relationship_kwargs={"uselist": False}
+        back_populates="jobs",
+        sa_relationship_kwargs={"uselist": False},
     )
     created_at: float | None = Field(
-        default_factory=lambda: datetime.now(UTC).timestamp()
+        default_factory=lambda: datetime.now(UTC).timestamp(),
     )
     updated_at: float | None = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
@@ -251,9 +254,9 @@ class JobQueryParameters(SQLModel):
     offset: int | None = None
     limit: int | None = None
     title: str | None = None
-    employment_type: List[EmploymentType] | None = None
-    location_type: List[JobLocationType] | None = None
-    department: List[str] | None = None
+    employment_type: list[EmploymentType] | None = None
+    location_type: list[JobLocationType] | None = None
+    department: list[str] | None = None
 
 
 class CreateJob(JobRequest):

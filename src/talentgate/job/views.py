@@ -1,63 +1,61 @@
-from typing import List, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
-from fastapi import Depends, APIRouter, Query
-from src.talentgate.user.views import retrieve_current_user
-from src.talentgate.database.service import get_sqlmodel_session
-from src.talentgate.job import service as job_service
-from src.talentgate.company import service as company_service
-from src.talentgate.job.exceptions import IdNotFoundException as JobIdNotFoundException
-from src.talentgate.company.exceptions import (
-    IdNotFoundException as CompanyIdNotFoundException,
-)
-from src.talentgate.user.models import UserRole, User
-from src.talentgate.job.models import (
-    Job,
-    CreateJob,
-    CreatedJob,
-    RetrievedJob,
-    JobQueryParameters,
-    UpdatedJob,
-    UpdateJob,
-    DeletedJob,
-)
+
 from src.talentgate.auth.exceptions import (
     InvalidAuthorizationException,
 )
+from src.talentgate.database.service import get_sqlmodel_session
+from src.talentgate.job import service as job_service
+from src.talentgate.job.exceptions import IdNotFoundException as JobIdNotFoundException
+from src.talentgate.job.models import (
+    CreatedJob,
+    CreateJob,
+    DeletedJob,
+    Job,
+    JobQueryParameters,
+    RetrievedJob,
+    UpdatedJob,
+    UpdateJob,
+)
+from src.talentgate.user.models import User, UserRole
+from src.talentgate.user.views import retrieve_current_user
 
 router = APIRouter(tags=["job"])
 
 
 class CreateJobDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class RetrieveJobDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class RetrieveJobsDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class UpdateJobDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class DeleteJobDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
@@ -71,12 +69,10 @@ class DeleteJobDependency:
 )
 async def create_job(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     job: CreateJob,
 ) -> Job:
-    created_job = await job_service.create(sqlmodel_session=sqlmodel_session, job=job)
-
-    return created_job
+    return await job_service.create(sqlmodel_session=sqlmodel_session, job=job)
 
 
 @router.get(
@@ -86,10 +82,13 @@ async def create_job(
     dependencies=[Depends(RetrieveJobDependency())],
 )
 async def retrieve_job(
-    *, job_id: int, sqlmodel_session: Session = Depends(get_sqlmodel_session)
+    *,
+    job_id: int,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
 ) -> Job:
     retrieved_job = await job_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, job_id=job_id
+        sqlmodel_session=sqlmodel_session,
+        job_id=job_id,
     )
 
     if not retrieved_job:
@@ -100,20 +99,19 @@ async def retrieve_job(
 
 @router.get(
     path="/api/v1/jobs",
-    response_model=List[RetrievedJob],
+    response_model=list[RetrievedJob],
     status_code=200,
     dependencies=[Depends(RetrieveJobsDependency())],
 )
 async def retrieve_jobs(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    query_parameters: JobQueryParameters = Query(),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    query_parameters: Annotated[JobQueryParameters, Query()],
 ) -> Sequence[Job]:
-    retrieved_jobs = await job_service.retrieve_by_query_parameters(
-        sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
+    return await job_service.retrieve_by_query_parameters(
+        sqlmodel_session=sqlmodel_session,
+        query_parameters=query_parameters,
     )
-
-    return retrieved_jobs
 
 
 @router.put(
@@ -126,20 +124,21 @@ async def update_job(
     *,
     job_id: int,
     job: UpdateJob,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
 ) -> Job:
     retrieved_job = await job_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, job_id=job_id
+        sqlmodel_session=sqlmodel_session,
+        job_id=job_id,
     )
 
     if not retrieved_job:
         raise JobIdNotFoundException
 
-    updated_job = await job_service.update(
-        sqlmodel_session=sqlmodel_session, retrieved_job=retrieved_job, job=job
+    return await job_service.update(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_job=retrieved_job,
+        job=job,
     )
-
-    return updated_job
 
 
 @router.delete(
@@ -151,17 +150,17 @@ async def update_job(
 async def delete_job(
     *,
     job_id: int,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
 ) -> Job:
     retrieved_job = await job_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, job_id=job_id
+        sqlmodel_session=sqlmodel_session,
+        job_id=job_id,
     )
 
     if not retrieved_job:
         raise JobIdNotFoundException
 
-    deleted_job = await job_service.delete(
-        sqlmodel_session=sqlmodel_session, retrieved_job=retrieved_job
+    return await job_service.delete(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_job=retrieved_job,
     )
-
-    return deleted_job

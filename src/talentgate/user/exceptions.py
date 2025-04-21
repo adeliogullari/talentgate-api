@@ -7,11 +7,13 @@ from starlette.status import (
 )
 
 InvalidCredentialsException = HTTPException(
-    status_code=HTTP_401_UNAUTHORIZED, detail="Invalid email or password."
+    status_code=HTTP_401_UNAUTHORIZED,
+    detail="Invalid email or password.",
 )
 
 InvalidVerificationException = HTTPException(
-    status_code=HTTP_403_FORBIDDEN, detail="The user verification is invalid."
+    status_code=HTTP_403_FORBIDDEN,
+    detail="The user verification is invalid.",
 )
 
 UserIdNotFoundException = HTTPException(
@@ -20,9 +22,11 @@ UserIdNotFoundException = HTTPException(
 )
 
 DuplicateUsernameException = HTTPException(
-    status_code=HTTP_409_CONFLICT, detail="A user with this username already exists."
+    status_code=HTTP_409_CONFLICT,
+    detail="A user with this username already exists.",
 )
 
 DuplicateEmailException = HTTPException(
-    status_code=HTTP_409_CONFLICT, detail="A user with this email already exists."
+    status_code=HTTP_409_CONFLICT,
+    detail="A user with this email already exists.",
 )

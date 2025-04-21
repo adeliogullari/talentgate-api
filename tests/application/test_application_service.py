@@ -3,21 +3,22 @@ from io import BytesIO
 
 from minio import Minio
 from sqlmodel import Session
+
 from src.talentgate.application.models import (
     Application,
     CreateApplication,
-    UpdateApplication,
     CreateResume,
+    UpdateApplication,
 )
 from src.talentgate.application.service import (
     create,
-    retrieve_by_id,
-    retrieve_by_email,
-    retrieve_by_phone,
-    update,
-    delete,
     create_resume,
+    delete,
+    retrieve_by_email,
+    retrieve_by_id,
+    retrieve_by_phone,
     retrieve_resume,
+    update,
 )
 
 
@@ -58,30 +59,36 @@ async def test_create(sqlmodel_session: Session, minio_client: Minio) -> None:
 
 
 async def test_retrieve_by_id(
-    sqlmodel_session: Session, application: Application
+    sqlmodel_session: Session,
+    application: Application,
 ) -> None:
     retrieved_application = await retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, application_id=application.id
+        sqlmodel_session=sqlmodel_session,
+        application_id=application.id,
     )
 
     assert retrieved_application.id == application.id
 
 
 async def test_retrieve_by_email(
-    sqlmodel_session: Session, application: Application
+    sqlmodel_session: Session,
+    application: Application,
 ) -> None:
     retrieved_application = await retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=application.email
+        sqlmodel_session=sqlmodel_session,
+        email=application.email,
     )
 
     assert retrieved_application.email == application.email
 
 
 async def test_retrieve_by_phone(
-    sqlmodel_session: Session, application: Application
+    sqlmodel_session: Session,
+    application: Application,
 ) -> None:
     retrieved_application = await retrieve_by_phone(
-        sqlmodel_session=sqlmodel_session, phone=application.phone
+        sqlmodel_session=sqlmodel_session,
+        phone=application.phone,
     )
 
     assert retrieved_application.phone == application.phone
@@ -111,7 +118,8 @@ async def test_delete(sqlmodel_session, make_application) -> None:
     retrieved_application = make_application()
 
     deleted_application = await delete(
-        sqlmodel_session=sqlmodel_session, retrieved_application=retrieved_application
+        sqlmodel_session=sqlmodel_session,
+        retrieved_application=retrieved_application,
     )
 
     assert retrieved_application.firstname == deleted_application.firstname

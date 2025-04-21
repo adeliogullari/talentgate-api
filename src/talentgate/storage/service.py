@@ -1,4 +1,5 @@
 from minio import Minio
+
 from config import get_settings
 
 settings = get_settings()

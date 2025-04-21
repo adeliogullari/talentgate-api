@@ -1,7 +1,7 @@
 from sqlmodel import Session
 
-from src.talentgate.job.models import Job, CreateJob, UpdateJob, EmploymentType
-from src.talentgate.job.service import create, retrieve_by_id, update, delete
+from src.talentgate.job.models import CreateJob, EmploymentType, Job, UpdateJob
+from src.talentgate.job.service import create, delete, retrieve_by_id, update
 
 
 async def test_create(sqlmodel_session: Session) -> None:
@@ -21,7 +21,8 @@ async def test_create(sqlmodel_session: Session) -> None:
 
 async def test_retrieve_by_id(sqlmodel_session: Session, job: Job) -> None:
     retrieved_job = await retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, job_id=job.id
+        sqlmodel_session=sqlmodel_session,
+        job_id=job.id,
     )
 
     assert retrieved_job.id == job.id

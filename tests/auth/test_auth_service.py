@@ -1,6 +1,6 @@
-from src.talentgate.user.models import User
-from src.talentgate.auth import service as auth_service
 from config import get_settings
+from src.talentgate.auth import service as auth_service
+from src.talentgate.user.models import User
 
 settings = get_settings()
 

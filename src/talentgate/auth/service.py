@@ -1,14 +1,16 @@
-from datetime import datetime, timedelta, UTC
-from pytography import PasswordHashLibrary, JsonWebToken
+from datetime import UTC, datetime, timedelta
+
+from pytography import JsonWebToken, PasswordHashLibrary
 
 
-def encode_password(password: str):
+def encode_password(password: str) -> str:
     return PasswordHashLibrary.encode(password=password)
 
 
-def verify_password(password: str, encoded_password: str):
+def verify_password(password: str, encoded_password: str) -> bool:
     return PasswordHashLibrary.verify(
-        password=password, encoded_password=encoded_password
+        password=password,
+        encoded_password=encoded_password,
     )
 
 

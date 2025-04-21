@@ -4,7 +4,7 @@ import pytest
 from sqlmodel import Session
 
 from src.talentgate.employee.models import Employee
-from src.talentgate.job.models import Job, EmploymentType
+from src.talentgate.job.models import EmploymentType, Job
 
 
 @pytest.fixture

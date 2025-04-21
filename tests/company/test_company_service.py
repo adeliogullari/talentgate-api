@@ -2,22 +2,24 @@ from sqlmodel import Session
 
 from src.talentgate.company.models import Company, CreateCompany, UpdateCompany
 from src.talentgate.company.service import (
-    create,
-    retrieve_by_id,
-    update,
-    delete,
     add_observer,
+    create,
+    delete,
     delete_observer,
+    retrieve_by_id,
     retrieve_company_job,
     retrieve_jobs_by_query_parameters,
+    update,
 )
+
 from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job, JobQueryParameters
-from tests.employee.conftest import make_employee
 
 
 async def test_retrieve_company_job(
-    sqlmodel_session: Session, company: Company, job: Job
+    sqlmodel_session: Session,
+    company: Company,
+    job: Job,
 ) -> None:
     retrieved_company_job = await retrieve_company_job(
         sqlmodel_session=sqlmodel_session,
@@ -33,7 +35,10 @@ async def test_retrieve_company_job(
 
 
 async def test_add_observer(
-    sqlmodel_session: Session, job: Job, employee: Employee, make_employee
+    sqlmodel_session: Session,
+    job: Job,
+    employee: Employee,
+    make_employee,
 ) -> None:
     created_observer = make_employee()
 
@@ -47,10 +52,14 @@ async def test_add_observer(
 
 
 async def test_delete_observer(
-    sqlmodel_session: Session, job: Job, employee: Employee
+    sqlmodel_session: Session,
+    job: Job,
+    employee: Employee,
 ) -> None:
     await delete_observer(
-        sqlmodel_session=sqlmodel_session, retrieved_job=job, employee_id=employee.id
+        sqlmodel_session=sqlmodel_session,
+        retrieved_job=job,
+        employee_id=employee.id,
     )
 
     assert len(job.observers) == 0
@@ -60,7 +69,8 @@ async def test_create(sqlmodel_session: Session) -> None:
     new_company = CreateCompany(name="new_company", overview="new_company_overview")
 
     created_company = await create(
-        sqlmodel_session=sqlmodel_session, company=new_company
+        sqlmodel_session=sqlmodel_session,
+        company=new_company,
     )
 
     assert created_company.name == new_company.name
@@ -69,7 +79,8 @@ async def test_create(sqlmodel_session: Session) -> None:
 
 async def test_retrieve_by_id(sqlmodel_session: Session, company: Company) -> None:
     retrieved_company = await retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, company_id=company.id
+        sqlmodel_session=sqlmodel_session,
+        company_id=company.id,
     )
 
     assert retrieved_company.id == company.id
@@ -79,7 +90,8 @@ async def test_retrieve_by_id(sqlmodel_session: Session, company: Company) -> No
 
 async def test_update(sqlmodel_session: Session, company: Company) -> None:
     modified_company = UpdateCompany(
-        name="updated_company", overview="updated_company_overview"
+        name="updated_company",
+        overview="updated_company_overview",
     )
 
     updated_company = await update(
@@ -94,7 +106,8 @@ async def test_update(sqlmodel_session: Session, company: Company) -> None:
 
 async def test_delete(sqlmodel_session: Session, company: Company) -> None:
     deleted_company = await delete(
-        sqlmodel_session=sqlmodel_session, retrieved_company=company
+        sqlmodel_session=sqlmodel_session,
+        retrieved_company=company,
     )
 
     assert deleted_company.name == company.name

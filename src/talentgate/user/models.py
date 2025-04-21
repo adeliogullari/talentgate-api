@@ -1,6 +1,8 @@
-from typing import Optional, TYPE_CHECKING
-from datetime import datetime, timedelta, UTC
-from sqlmodel import SQLModel, Field, Relationship
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Optional
+
+from sqlmodel import Field, Relationship, SQLModel
+
 from src.talentgate.database.models import BaseModel
 from src.talentgate.user.enums import SubscriptionPlan, SubscriptionStatus, UserRole
 
@@ -14,10 +16,10 @@ class UserSubscription(SQLModel, table=True):
     id: int = Field(primary_key=True)
     plan: str = Field(default=SubscriptionPlan.BASIC.value)
     start_date: float = Field(
-        default_factory=lambda: (datetime.now(UTC) - timedelta(days=2)).timestamp()
+        default_factory=lambda: (datetime.now(UTC) - timedelta(days=2)).timestamp(),
     )
     end_date: float = Field(
-        default_factory=lambda: (datetime.now(UTC) - timedelta(days=1)).timestamp()
+        default_factory=lambda: (datetime.now(UTC) - timedelta(days=1)).timestamp(),
     )
     user: Optional["User"] = Relationship(back_populates="subscription")
 
@@ -45,14 +47,15 @@ class User(SQLModel, table=True):
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
     )
     subscription_id: int | None = Field(
-        default=None, foreign_key="user_subscription.id"
+        default=None,
+        foreign_key="user_subscription.id",
     )
     subscription: UserSubscription | None = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
     )
     created_at: float | None = Field(
-        default_factory=lambda: datetime.now(UTC).timestamp()
+        default_factory=lambda: datetime.now(UTC).timestamp(),
     )
     updated_at: float | None = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),

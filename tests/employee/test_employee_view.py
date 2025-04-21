@@ -1,15 +1,17 @@
 import json
+
 import pytest
+from fastapi.testclient import TestClient
+from starlette.datastructures import Headers
+
 from config import get_settings
-from src.talentgate.user.models import UserRole
+from src.talentgate.employee.enums import EmployeeTitle
 from src.talentgate.employee.models import (
-    Employee,
     CreateEmployee,
-    EmployeeTitle,
+    Employee,
     UpdateEmployee,
 )
-from starlette.datastructures import Headers
-from fastapi.testclient import TestClient
+from src.talentgate.user.models import UserRole
 
 settings = get_settings()
 
@@ -22,7 +24,7 @@ async def test_create_employee(client: TestClient, headers: Headers) -> None:
         url="/api/v1/employees",
         headers=headers,
         json=json.loads(
-            created_employee.model_dump_json(exclude_none=True, exclude_unset=True)
+            created_employee.model_dump_json(exclude_none=True, exclude_unset=True),
         ),
     )
 
@@ -32,7 +34,9 @@ async def test_create_employee(client: TestClient, headers: Headers) -> None:
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_employee(
-    client: TestClient, employee: Employee, headers: Headers
+    client: TestClient,
+    employee: Employee,
+    headers: Headers,
 ) -> None:
     response = client.get(url=f"/api/v1/employees/{employee.id}", headers=headers)
 
@@ -42,7 +46,9 @@ async def test_retrieve_employee(
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_employees(
-    client: TestClient, employee: Employee, headers: Headers
+    client: TestClient,
+    employee: Employee,
+    headers: Headers,
 ) -> None:
     response = client.get(url="/api/v1/employees", headers=headers)
 
@@ -52,7 +58,9 @@ async def test_retrieve_employees(
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_update_employee(
-    client: TestClient, employee: Employee, headers: Headers
+    client: TestClient,
+    employee: Employee,
+    headers: Headers,
 ) -> None:
     updated_employee = UpdateEmployee(title=EmployeeTitle.FOUNDER)
 
@@ -60,7 +68,7 @@ async def test_update_employee(
         url=f"/api/v1/employees/{employee.id}",
         headers=headers,
         json=json.loads(
-            updated_employee.model_dump_json(exclude_none=True, exclude_unset=True)
+            updated_employee.model_dump_json(exclude_none=True, exclude_unset=True),
         ),
     )
 
@@ -70,7 +78,9 @@ async def test_update_employee(
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_delete_employee(
-    client: TestClient, employee: Employee, headers: Headers
+    client: TestClient,
+    employee: Employee,
+    headers: Headers,
 ) -> None:
     response = client.delete(url=f"/api/v1/employees/{employee.id}", headers=headers)
 

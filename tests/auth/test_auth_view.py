@@ -1,11 +1,14 @@
 import pytest
 from fastapi.testclient import TestClient
-from src.talentgate.user.models import User
+
 from src.talentgate.auth import service as auth_service
+from src.talentgate.user.models import User
 
 
 @pytest.mark.parametrize(
-    "user", [{"password": auth_service.encode_password("password")}], indirect=True
+    "user",
+    [{"password": auth_service.encode_password("password")}],
+    indirect=True,
 )
 async def test_login(client: TestClient, user: User) -> None:
     response = client.post(
@@ -38,7 +41,10 @@ async def test_login_with_invalid_verification(client: TestClient, user: User) -
     ],
 )
 async def test_login_with_invalid_credentials(
-    client: TestClient, user: User, email: str, password: str
+    client: TestClient,
+    user: User,
+    email: str,
+    password: str,
 ) -> None:
     response = client.post(
         url="/api/v1/auth/login",

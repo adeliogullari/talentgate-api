@@ -1,6 +1,8 @@
 import pytest
 from sqlmodel import Session
-from src.talentgate.employee.models import Employee, EmployeeTitle
+
+from src.talentgate.employee.enums import EmployeeTitle
+from src.talentgate.employee.models import Employee
 from src.talentgate.user.models import User
 
 

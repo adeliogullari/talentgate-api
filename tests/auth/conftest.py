@@ -1,5 +1,6 @@
 import pytest
 from starlette.datastructures import Headers
+
 from config import get_settings
 from src.talentgate.auth import service as auth_service
 

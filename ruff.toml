@@ -1,0 +1,7 @@
+line-length = 88
+target-version = "py312"
+
+lint.select = ["ALL"]
+lint.ignore = ["ASYNC210", "B008", "COM812", "D100", "D101", "D102", "D103", "D104", "D203", "D212", "S311"]
+
+lint.per-file-ignores = {"tests/*.py" = ["ALL"], "main.py" = ["ARG001"]}

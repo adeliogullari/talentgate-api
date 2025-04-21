@@ -1,48 +1,55 @@
 import random
 import string
+from typing import Annotated
+
 import requests
-from sqlmodel import Session
+from fastapi import APIRouter, Depends
 from google.oauth2 import id_token
-from fastapi import Depends, APIRouter
-from src.talentgate.database.service import get_sqlmodel_session
+from sqlmodel import Session
+from starlette.status import (
+    HTTP_200_OK,
+)
+
+from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
+from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.user import service as user_service
-from src.talentgate.user.models import CreateUser
 from src.talentgate.user.exceptions import (
+    DuplicateEmailException,
+    DuplicateUsernameException,
     InvalidCredentialsException,
     InvalidVerificationException,
-    DuplicateUsernameException,
-    DuplicateEmailException,
 )
-from .models import (
-    LoginCredentials,
-    LoginTokens,
-    GoogleCredentials,
-    GoogleTokens,
-    LinkedInCredentials,
-    LinkedInTokens,
-    RegisterCredentials,
-    RegisteredUser,
-)
+from src.talentgate.user.models import CreateUser
+
 from .exceptions import (
     InvalidGoogleIDTokenException,
     InvalidLinkedInAccessTokenException,
 )
-
-from config import Settings, get_settings
+from .models import (
+    GoogleCredentials,
+    GoogleTokens,
+    LinkedInCredentials,
+    LinkedInTokens,
+    LoginCredentials,
+    LoginTokens,
+    RegisterCredentials,
+    RegisteredUser,
+)
 
 router = APIRouter(tags=["auth"])
 
 
-@router.post(path="/api/v1/auth/login", response_model=LoginTokens, status_code=200)
+@router.post(path="/api/v1/auth/login", status_code=200)
 async def login(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    settings: Settings = Depends(get_settings),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
     credentials: LoginCredentials,
 ) -> LoginTokens:
     retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=credentials.email
+        sqlmodel_session=sqlmodel_session,
+        email=credentials.email,
     )
 
     if not retrieved_user:
@@ -52,7 +59,8 @@ async def login(
         raise InvalidVerificationException
 
     if not auth_service.verify_password(
-        password=credentials.password, encoded_password=retrieved_user.password
+        password=credentials.password,
+        encoded_password=retrieved_user.password,
     ):
         raise InvalidCredentialsException
 
@@ -71,24 +79,27 @@ async def login(
     return LoginTokens(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post(path="/api/v1/auth/google", response_model=GoogleTokens, status_code=200)
+@router.post(path="/api/v1/auth/google", status_code=200)
 async def google(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    settings: Settings = Depends(get_settings),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
     credentials: GoogleCredentials,
 ) -> GoogleTokens:
     request = google.auth.transport.requests.Request()
 
     id_info = id_token.verify_oauth2_token(
-        id_token=credentials.token, request=request, audience=settings.google_client_id
+        id_token=credentials.token,
+        request=request,
+        audience=settings.google_client_id,
     )
 
     if not id_info:
         raise InvalidGoogleIDTokenException
 
     retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=id_info["email"]
+        sqlmodel_session=sqlmodel_session,
+        email=id_info["email"],
     )
 
     email = id_info["email"]
@@ -98,7 +109,9 @@ async def google(
         lastname = id_info["family_name"].lower()
         username = f"{firstname}{lastname}{random.randint(1000, 9999)}"
         password = auth_service.encode_password(
-            password="".join(random.choices(string.ascii_letters + string.digits, k=16))
+            password="".join(
+                random.choices(string.ascii_letters + string.digits, k=16),
+            ),
         )
 
         await user_service.create(
@@ -112,7 +125,8 @@ async def google(
         )
 
     retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=email
+        sqlmodel_session=sqlmodel_session,
+        email=email,
     )
 
     access_token = auth_service.encode_token(
@@ -131,12 +145,13 @@ async def google(
 
 
 @router.post(
-    path="/api/v1/auth/linkedin", response_model=LinkedInTokens, status_code=200
+    path="/api/v1/auth/linkedin",
+    status_code=200,
 )
 async def linkedin(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    settings: Settings = Depends(get_settings),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
     credentials: LinkedInCredentials,
 ) -> LinkedInTokens:
     response = requests.get(
@@ -144,9 +159,10 @@ async def linkedin(
         headers={
             "Authorization": f"Bearer {credentials.token}",
         },
+        timeout=10,
     )
 
-    if response.status_code != 200:
+    if response.status_code != HTTP_200_OK:
         raise InvalidLinkedInAccessTokenException
 
     response_body = response.json()
@@ -154,7 +170,8 @@ async def linkedin(
     email = response_body["emailAddress"]
 
     retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=email
+        sqlmodel_session=sqlmodel_session,
+        email=email,
     )
 
     if not retrieved_user:
@@ -162,7 +179,9 @@ async def linkedin(
         lastname = response_body["localizedLastName"].lower()
         username = f"{firstname}{lastname}{random.randint(1000, 9999)}"
         password = auth_service.encode_password(
-            password="".join(random.choices(string.ascii_letters + string.digits, k=16))
+            password="".join(
+                random.choices(string.ascii_letters + string.digits, k=16),
+            ),
         )
 
         await user_service.create(
@@ -176,7 +195,8 @@ async def linkedin(
         )
 
     retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=email
+        sqlmodel_session=sqlmodel_session,
+        email=email,
     )
 
     access_token = auth_service.encode_token(
@@ -195,31 +215,31 @@ async def linkedin(
 
 
 @router.post(
-    path="/api/v1/auth/register", response_model=RegisteredUser, status_code=200
+    path="/api/v1/auth/register",
+    status_code=200,
 )
 async def register(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    settings: Settings = Depends(get_settings),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     credentials: RegisterCredentials,
 ) -> RegisteredUser:
     retrieved_user = await user_service.retrieve_by_username(
-        sqlmodel_session=sqlmodel_session, username=credentials.username
+        sqlmodel_session=sqlmodel_session,
+        username=credentials.username,
     )
 
     if retrieved_user:
         raise DuplicateUsernameException
 
     retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=credentials.email
+        sqlmodel_session=sqlmodel_session,
+        email=credentials.email,
     )
 
     if retrieved_user:
         raise DuplicateEmailException
 
-    created_user = await user_service.create(
+    return await user_service.create(
         sqlmodel_session=sqlmodel_session,
         user=CreateUser(**credentials.model_dump()),
     )
-
-    return created_user

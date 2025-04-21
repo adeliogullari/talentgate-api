@@ -1,25 +1,28 @@
 import json
+from datetime import datetime, timedelta
+
 import pytest
-from datetime import timedelta, datetime
+from fastapi.testclient import TestClient
+from starlette.datastructures import Headers
+
 from config import Settings
 from src.talentgate.company.models import Company
-from src.talentgate.user.models import UserRole
 from src.talentgate.job.models import (
-    Job,
     CreateJob,
-    UpdateJob,
     EmploymentType,
+    Job,
+    UpdateJob,
 )
-from starlette.datastructures import Headers
-from fastapi.testclient import TestClient
-
+from src.talentgate.user.models import UserRole
 
 settings = Settings()
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_job(
-    client: TestClient, headers: Headers, company: Company
+    client: TestClient,
+    headers: Headers,
+    company: Company,
 ) -> None:
     created_job = CreateJob(
         title="created job title",
@@ -34,7 +37,7 @@ async def test_create_job(
         url="/api/v1/jobs",
         headers=headers,
         json=json.loads(
-            created_job.model_dump_json(exclude_none=True, exclude_unset=True)
+            created_job.model_dump_json(exclude_none=True, exclude_unset=True),
         ),
     )
 
@@ -78,7 +81,7 @@ async def test_update_job(client: TestClient, job: Job, headers: Headers) -> Non
         url=f"/api/v1/jobs/{job.id}",
         headers=headers,
         json=json.loads(
-            updated_job.model_dump_json(exclude_none=True, exclude_unset=True)
+            updated_job.model_dump_json(exclude_none=True, exclude_unset=True),
         ),
     )
 

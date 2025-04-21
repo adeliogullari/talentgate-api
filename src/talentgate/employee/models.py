@@ -1,46 +1,42 @@
-from enum import StrEnum
-from datetime import datetime, UTC
-from typing import TYPE_CHECKING, List
-from sqlmodel import SQLModel, Field, Relationship
-from src.talentgate.database.models import BaseModel, Observer
-from src.talentgate.job.models import Job
-from src.talentgate.company.models import Company
-from src.talentgate.user.models import (
-    UserSubscription,
-    UserRole,
-    User,
-    CreateUser,
-    CreatedUser,
-    RetrievedUser,
-    UpdateUser,
-    UpdatedUser,
-)
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
+from sqlmodel import Field, Relationship, SQLModel
+
+from src.talentgate.company.models import Company
+from src.talentgate.database.models import BaseModel, Observer
+from src.talentgate.user.models import (
+    CreatedUser,
+    CreateUser,
+    RetrievedUser,
+    UpdatedUser,
+    UpdateUser,
+    User,
+    UserRole,
+    UserSubscription,
+)
 
 if TYPE_CHECKING:
     from src.talentgate.application.models import ApplicationEvaluation
-
-
-class EmployeeTitle(StrEnum):
-    FOUNDER = "Founder"
-    RECRUITER = "Recruiter"
+    from src.talentgate.job.models import Job
 
 
 class Employee(SQLModel, table=True):
     __tablename__ = "employee"
 
     id: int = Field(primary_key=True)
-    title: EmployeeTitle | None = Field(default=None)
+    title: str | None = Field(default=None)
     user_id: int | None = Field(default=None, foreign_key="user.id")
     user: User | None = Relationship(back_populates="employee")
     company_id: int | None = Field(default=None, foreign_key="company.id")
     company: Company | None = Relationship(back_populates="employees")
-    evaluations: List["ApplicationEvaluation"] = Relationship(back_populates="employee")
-    observations: List["Job"] = Relationship(
-        back_populates="observers", link_model=Observer
+    evaluations: list["ApplicationEvaluation"] = Relationship(back_populates="employee")
+    observations: list["Job"] = Relationship(
+        back_populates="observers",
+        link_model=Observer,
     )
     created_at: float | None = Field(
-        default_factory=lambda: datetime.now(UTC).timestamp()
+        default_factory=lambda: datetime.now(UTC).timestamp(),
     )
     updated_at: float | None = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
@@ -69,13 +65,13 @@ class EmployeeCompany(BaseModel):
 
 class CreateEmployee(BaseModel):
     id: int | None = None
-    title: EmployeeTitle | None = None
+    title: str | None = None
     user: CreateUser | None = None
 
 
 class CreatedEmployee(BaseModel):
     id: int
-    title: EmployeeTitle | None = None
+    title: str | None = None
     user: CreatedUser | None = None
     company: EmployeeCompany | None = None
     created_at: float
@@ -84,7 +80,7 @@ class CreatedEmployee(BaseModel):
 
 class RetrievedEmployee(BaseModel):
     id: int
-    title: EmployeeTitle | None = None
+    title: str | None = None
     user: RetrievedUser | None = None
     company: EmployeeCompany | None = None
     created_at: float
@@ -95,18 +91,18 @@ class EmployeeQueryParameters(BaseModel):
     offset: int | None = None
     limit: int | None = None
     id: int | None = None
-    title: EmployeeTitle | None = None
+    title: str | None = None
 
 
 class UpdateEmployee(BaseModel):
     id: int | None = None
-    title: EmployeeTitle | None = None
+    title: str | None = None
     user: UpdateUser | None = None
 
 
 class UpdatedEmployee(BaseModel):
     id: int
-    title: EmployeeTitle | None = None
+    title: str | None = None
     user: UpdatedUser | None = None
     company: EmployeeCompany | None = None
     created_at: float

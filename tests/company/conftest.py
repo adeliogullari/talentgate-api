@@ -1,12 +1,13 @@
-import pytest
 import secrets
+
+import pytest
 from sqlmodel import Session
 
 from src.talentgate.company.models import (
     Company,
     CompanyAddress,
-    CompanyLocationType,
     CompanyLocation,
+    CompanyLocationType,
 )
 from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job
@@ -15,7 +16,12 @@ from src.talentgate.job.models import Job
 @pytest.fixture
 def address(sqlmodel_session: Session):
     company_location_address = CompanyAddress(
-        unit=None, street=None, city=None, state=None, country=None, postal_code=None
+        unit=None,
+        street=None,
+        city=None,
+        state=None,
+        country=None,
+        postal_code=None,
     )
 
     sqlmodel_session.add(company_location_address)
@@ -28,7 +34,10 @@ def address(sqlmodel_session: Session):
 @pytest.fixture
 def location(sqlmodel_session: Session, address: CompanyAddress):
     company_location = CompanyLocation(
-        type=CompanyLocationType.OFFICE, latitude=0, longtitude=0, address=address
+        type=CompanyLocationType.OFFICE,
+        latitude=0,
+        longtitude=0,
+        address=address,
     )
 
     sqlmodel_session.add(company_location)
@@ -40,7 +49,10 @@ def location(sqlmodel_session: Session, address: CompanyAddress):
 
 @pytest.fixture
 def make_company(
-    sqlmodel_session: Session, job: Job, employee: Employee, location: CompanyLocation
+    sqlmodel_session: Session,
+    job: Job,
+    employee: Employee,
+    location: CompanyLocation,
 ):
     def make(**kwargs):
         company = Company(
@@ -69,5 +81,8 @@ def company(make_company, request):
     locations = param.get("locations", None)
 
     return make_company(
-        name=name, overview=overview, employees=employees, locations=locations
+        name=name,
+        overview=overview,
+        employees=employees,
+        locations=locations,
     )

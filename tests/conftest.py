@@ -1,36 +1,36 @@
+from collections.abc import AsyncGenerator
+from dataclasses import dataclass
+from typing import Any, BinaryIO
+
 import pytest
-from typing import Any, AsyncGenerator, BinaryIO
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from minio import Minio
 from minio.helpers import ObjectWriteResult
 from sqlmodel import Session, SQLModel, create_engine
 from urllib3 import BaseHTTPResponse, HTTPHeaderDict
-from dataclasses import dataclass
 
 from config import Settings, get_settings
-
-from tests.auth.conftest import headers, access_token, refresh_token
-from tests.user.conftest import make_subscription, subscription, make_user, user
-from tests.employee.conftest import make_employee, employee
-from tests.job.conftest import make_job, job
-from tests.company.conftest import make_company, company, location, address
-
-from src.talentgate.user.views import router as user_router
-from src.talentgate.employee.views import router as employee_router
-from src.talentgate.auth.views import router as auth_router
-from src.talentgate.location.views import router as location_router
-from src.talentgate.applicant.views import router as applicant_router
 from src.talentgate.application.views import router as application_router
-from src.talentgate.job.views import router as job_router
+from src.talentgate.auth.views import router as auth_router
 from src.talentgate.company.views import router as company_router
 from src.talentgate.database.service import get_sqlmodel_session
+from src.talentgate.employee.views import router as employee_router
+from src.talentgate.job.views import router as job_router
 from src.talentgate.storage.service import get_minio_client
+from src.talentgate.user.views import router as user_router
+from tests.auth.conftest import access_token, headers, refresh_token
+from tests.company.conftest import address, company, location, make_company
+from tests.employee.conftest import employee, make_employee
+from tests.job.conftest import job, make_job
+from tests.user.conftest import make_subscription, make_user, subscription, user
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
 engine = create_engine(
-    url=SQLALCHEMY_DATABASE_URL, echo=True, connect_args={"check_same_thread": False}
+    url=SQLALCHEMY_DATABASE_URL,
+    echo=True,
+    connect_args={"check_same_thread": False},
 )
 
 
@@ -39,8 +39,6 @@ async def start_application() -> FastAPI | None:
     app.include_router(user_router)
     app.include_router(employee_router)
     app.include_router(auth_router)
-    app.include_router(location_router)
-    app.include_router(applicant_router)
     app.include_router(application_router)
     app.include_router(job_router)
     app.include_router(company_router)
@@ -103,18 +101,20 @@ def minio_client() -> Minio:
             self.buckets = {}
 
         def put_object(
-            self, bucket_name: str, object_name: str, data: BinaryIO, length: int
+            self,
+            bucket_name: str,
+            object_name: str,
+            data: BinaryIO,
+            length: int,
         ):
             if bucket_name not in self.buckets:
                 self.buckets[bucket_name] = {}
             self.buckets[bucket_name][object_name] = data
             return FileObject(
-                **{
-                    "bucket_name": bucket_name,
-                    "object_name": object_name,
-                    "data": data,
-                    "length": length,
-                }
+                bucket_name=bucket_name,
+                object_name=object_name,
+                data=data,
+                length=length,
             )
 
         def get_object(self, bucket_name: str, object_name: str):
@@ -138,7 +138,9 @@ def minio_client() -> Minio:
 
 @pytest.fixture
 async def client(
-    app: FastAPI, sqlmodel_session: Session, minio_client: Minio
+    app: FastAPI,
+    sqlmodel_session: Session,
+    minio_client: Minio,
 ) -> AsyncGenerator[TestClient, Any]:
     async def _get_sqlmodel_session() -> AsyncGenerator[Session, Any]:
         yield sqlmodel_session

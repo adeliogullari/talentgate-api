@@ -7,9 +7,11 @@ IdNotFoundException = HTTPException(
 )
 
 ObserverAlreadyExistsException = HTTPException(
-    status_code=409, detail="Employee is already observing this job."
+    status_code=409,
+    detail="Employee is already observing this job.",
 )
 
 ObserverNotFoundException = HTTPException(
-    status_code=404, detail="Given employee is not observing this job."
+    status_code=404,
+    detail="Given employee is not observing this job.",
 )

@@ -1,57 +1,60 @@
-from typing import List, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
-from fastapi import Depends, APIRouter, Query
-from src.talentgate.user.views import retrieve_current_user
+
+from src.talentgate.auth.exceptions import InvalidAuthorizationException
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.employee import service as employee_service
-from src.talentgate.user.models import UserRole, User
+from src.talentgate.employee.exceptions import EmployeeIdNotFoundException
 from src.talentgate.employee.models import (
-    Employee,
-    CreateEmployee,
     CreatedEmployee,
-    RetrievedEmployee,
+    CreateEmployee,
+    DeletedEmployee,
+    Employee,
     EmployeeQueryParameters,
+    RetrievedEmployee,
     UpdatedEmployee,
     UpdateEmployee,
-    DeletedEmployee,
 )
-from src.talentgate.auth.exceptions import InvalidAuthorizationException
-from src.talentgate.employee.exceptions import EmployeeIdNotFoundException
+from src.talentgate.user.enums import UserRole
+from src.talentgate.user.models import User
+from src.talentgate.user.views import retrieve_current_user
 
 router = APIRouter(tags=["employee"])
 
 
 class CreateEmployeeDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class RetrieveEmployeeDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class RetrieveEmployeesDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class UpdateEmployeeDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
 
 
 class DeleteEmployeeDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)):
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
@@ -65,14 +68,13 @@ class DeleteEmployeeDependency:
 )
 async def create_employee(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     employee: CreateEmployee,
 ) -> Employee:
-    created_employee = await employee_service.create(
-        sqlmodel_session=sqlmodel_session, employee=employee
+    return await employee_service.create(
+        sqlmodel_session=sqlmodel_session,
+        employee=employee,
     )
-
-    return created_employee
 
 
 @router.get(
@@ -82,10 +84,13 @@ async def create_employee(
     dependencies=[Depends(RetrieveEmployeeDependency())],
 )
 async def retrieve_employee(
-    *, employee_id: int, sqlmodel_session: Session = Depends(get_sqlmodel_session)
+    *,
+    employee_id: int,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
 ) -> Employee:
     retrieved_employee = await employee_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, employee_id=employee_id
+        sqlmodel_session=sqlmodel_session,
+        employee_id=employee_id,
     )
 
     if not retrieved_employee:
@@ -96,20 +101,19 @@ async def retrieve_employee(
 
 @router.get(
     path="/api/v1/employees",
-    response_model=List[RetrievedEmployee],
+    response_model=list[RetrievedEmployee],
     status_code=200,
     dependencies=[Depends(RetrieveEmployeesDependency())],
 )
 async def retrieve_employees(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
-    query_parameters: EmployeeQueryParameters = Query(),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    query_parameters: Annotated[EmployeeQueryParameters, Query()],
 ) -> Sequence[Employee]:
-    retrieved_employee = await employee_service.retrieve_by_query_parameters(
-        sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
+    return await employee_service.retrieve_by_query_parameters(
+        sqlmodel_session=sqlmodel_session,
+        query_parameters=query_parameters,
     )
-
-    return retrieved_employee
 
 
 @router.put(
@@ -122,22 +126,21 @@ async def update_employee(
     *,
     employee_id: int,
     employee: UpdateEmployee,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
 ) -> Employee:
     retrieved_employee = await employee_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, employee_id=employee_id
+        sqlmodel_session=sqlmodel_session,
+        employee_id=employee_id,
     )
 
     if not retrieved_employee:
         raise EmployeeIdNotFoundException
 
-    updated_employee = await employee_service.update(
+    return await employee_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_employee=retrieved_employee,
         employee=employee,
     )
-
-    return updated_employee
 
 
 @router.delete(
@@ -149,17 +152,17 @@ async def update_employee(
 async def delete_employee(
     *,
     employee_id: int,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
 ) -> Employee:
     retrieved_employee = await employee_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, employee_id=employee_id
+        sqlmodel_session=sqlmodel_session,
+        employee_id=employee_id,
     )
 
     if not retrieved_employee:
         raise EmployeeIdNotFoundException
 
-    deleted_employee = await employee_service.delete(
-        sqlmodel_session=sqlmodel_session, retrieved_employee=retrieved_employee
+    return await employee_service.delete(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_employee=retrieved_employee,
     )
-
-    return deleted_employee

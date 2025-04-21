@@ -22,7 +22,8 @@ ApplicationIdNotFoundException = HTTPException(
 )
 
 DuplicateEmailException = HTTPException(
-    status_code=HTTP_409_CONFLICT, detail="An applicant with this email already exists."
+    status_code=HTTP_409_CONFLICT,
+    detail="An applicant with this email already exists.",
 )
 
 DuplicatePhoneException = HTTPException(

@@ -1,13 +1,12 @@
-from typing import Any
+from datetime import UTC, datetime
 from enum import StrEnum
-from fastapi import UploadFile
-from datetime import datetime, UTC
+from typing import TYPE_CHECKING, Any, Optional
 
-from typing import List, Optional
+from sqlmodel import Field, Relationship, SQLModel
 
-from sqlmodel import SQLModel, Field, Relationship
-from src.talentgate.employee.models import Employee
-from src.talentgate.job.models import Job
+if TYPE_CHECKING:
+    from src.talentgate.employee.models import Employee
+    from src.talentgate.job.models import Job
 
 
 class ApplicationStatus(StrEnum):
@@ -16,6 +15,22 @@ class ApplicationStatus(StrEnum):
     REFERENCE_CHECK = "Reference Check"
     OFFER = "Offer"
     WITHDRAWN = "Withdrawn"
+
+
+class ApplicationAddress(SQLModel, table=True):
+    __tablename__ = "application_address"
+
+    id: int = Field(primary_key=True)
+    unit: str | None = Field(default=None)
+    street: str | None = Field(default=None)
+    city: str | None = Field(default=None)
+    state: str | None = Field(default=None)
+    country: str | None = Field(default=None)
+    postal_code: str | None = Field(default=None)
+    application: Optional["Application"] = Relationship(
+        back_populates="address",
+        sa_relationship_kwargs={"uselist": False},
+    )
 
 
 class ApplicationLink(SQLModel, table=True):
@@ -78,17 +93,16 @@ class Application(SQLModel, table=True):
     lastname: str = Field(nullable=False)
     email: str = Field(nullable=False)
     phone: str = Field(nullable=False)
-    street: str | None = Field(default=None)
-    city: str | None = Field(default=None)
-    state: str | None = Field(default=None)
-    country: str | None = Field(default=None)
-    postal_code: str | None = Field(default=None)
     resume: str | None = Field(default=None)
-    earliest_start_date: datetime | None = Field(default=None)
-    links: List[ApplicationLink] = Relationship(back_populates="application")
-    status: ApplicationStatus | None = Field(default=ApplicationStatus.APPLIED)
-    evaluations: List[ApplicationEvaluation] = Relationship(
-        back_populates="application"
+    status: str | None = Field(default=ApplicationStatus.APPLIED.value)
+    address_id: int | None = Field(default=None, foreign_key="application_address.id")
+    address: ApplicationAddress | None = Relationship(
+        back_populates="application",
+        sa_relationship_kwargs={"uselist": False},
+    )
+    links: list[ApplicationLink] = Relationship(back_populates="application")
+    evaluations: list[ApplicationEvaluation] = Relationship(
+        back_populates="application",
     )
     job_id: int | None = Field(default=None, foreign_key="job.id")
     job: Optional["Job"] = Relationship(back_populates="applications")
@@ -107,6 +121,26 @@ class CreateResume(SQLModel):
 class RetrievedResume(SQLModel):
     name: str | None = None
     data: bytes | None = None
+
+
+class CreateAddress(SQLModel):
+    pass
+
+
+class CreatedAddress(SQLModel):
+    pass
+
+
+class RetrievedAddress(SQLModel):
+    pass
+
+
+class UpdateAddress(SQLModel):
+    pass
+
+
+class UpdatedAddress(SQLModel):
+    pass
 
 
 class CreateEvaluation(SQLModel):
@@ -154,13 +188,10 @@ class CreateApplication(SQLModel):
     lastname: str | None = None
     email: str | None = None
     phone: str | None = None
-    street: str | None = None
-    city: str | None = None
-    state: str | None = None
-    country: str | None = None
-    postal_code: str | None = None
-    resume: CreateResume | None = None
-    earliest_start_date: datetime | None = None
+    resume: str | None = None
+    address: CreateAddress | None = None
+    links: list[ApplicationLink] = None
+    evaluations: list[ApplicationEvaluation] = None
     status: ApplicationStatus | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -180,8 +211,8 @@ class CreatedApplication(SQLModel):
     resume: str | None = None
     earliest_start_date: datetime | None = None
     status: ApplicationStatus | None = None
-    links: List[ApplicationLink] = None
-    evaluations: List[ApplicationEvaluation] = None
+    links: list[ApplicationLink] = None
+    evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -200,8 +231,8 @@ class RetrievedApplication(SQLModel):
     resume: RetrievedResume | None = None
     earliest_start_date: datetime | None = None
     status: ApplicationStatus | None = None
-    links: List[ApplicationLink] = None
-    evaluations: List[ApplicationEvaluation] = None
+    links: list[ApplicationLink] = None
+    evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -246,8 +277,8 @@ class UpdatedApplication(SQLModel):
     resume: Any | None = None
     earliest_start_date: datetime | None = None
     status: ApplicationStatus | None = None
-    links: List[ApplicationLink] = None
-    evaluations: List[ApplicationEvaluation] = None
+    links: list[ApplicationLink] = None
+    evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

@@ -1,8 +1,10 @@
 import json
+from datetime import UTC, datetime, timedelta
 
 import pytest
-from datetime import timedelta, datetime, UTC
-
+from fastapi.testclient import TestClient
+from pytography import JsonWebToken
+from starlette.datastructures import Headers
 
 from config import Settings
 from src.talentgate.application.models import (
@@ -10,12 +12,9 @@ from src.talentgate.application.models import (
     ApplicationEvaluation,
     ApplicationEvaluationRequest,
     CreateApplication,
-    UpdateApplication,
     CreateResume,
+    UpdateApplication,
 )
-from pytography import JsonWebToken
-from starlette.datastructures import Headers
-from fastapi.testclient import TestClient
 
 settings = Settings()
 
@@ -33,7 +32,7 @@ async def test_create_application(client: TestClient, headers: Headers) -> None:
         url="/api/v1/applications",
         headers=headers,
         json=json.loads(
-            created_application.model_dump_json(exclude_none=True, exclude_unset=True)
+            created_application.model_dump_json(exclude_none=True, exclude_unset=True),
         ),
     )
 
@@ -42,7 +41,10 @@ async def test_create_application(client: TestClient, headers: Headers) -> None:
 
 
 async def test_retrieve_application(
-    client: TestClient, application: Application, resume, headers: Headers
+    client: TestClient,
+    application: Application,
+    resume,
+    headers: Headers,
 ) -> None:
     response = client.get(url=f"/api/v1/applications/{application.id}", headers=headers)
 
@@ -52,7 +54,10 @@ async def test_retrieve_application(
 
 
 async def test_retrieve_applications(
-    client: TestClient, application: Application, resume, headers: Headers
+    client: TestClient,
+    application: Application,
+    resume,
+    headers: Headers,
 ) -> None:
     response = client.get(url="/api/v1/applications", headers=headers)
 
@@ -61,7 +66,9 @@ async def test_retrieve_applications(
 
 
 async def test_update_application(
-    client: TestClient, application: Application, headers: Headers
+    client: TestClient,
+    application: Application,
+    headers: Headers,
 ) -> None:
     updated_application = UpdateApplication(
         firstname="updated firstname",
@@ -75,7 +82,7 @@ async def test_update_application(
         url=f"/api/v1/applications/{application.id}",
         headers=headers,
         json=json.loads(
-            updated_application.model_dump_json(exclude_none=True, exclude_unset=True)
+            updated_application.model_dump_json(exclude_none=True, exclude_unset=True),
         ),
     )
 
@@ -84,10 +91,13 @@ async def test_update_application(
 
 
 async def test_delete_application(
-    client: TestClient, application: Application, headers: Headers
+    client: TestClient,
+    application: Application,
+    headers: Headers,
 ) -> None:
     response = client.delete(
-        url=f"/api/v1/applications/{application.id}", headers=headers
+        url=f"/api/v1/applications/{application.id}",
+        headers=headers,
     )
 
     assert response.status_code == 200

@@ -1,10 +1,12 @@
-import pytest
 import secrets
+from datetime import UTC, datetime, timedelta
+
+import pytest
 from sqlmodel import Session
-from datetime import datetime, timedelta, UTC
-from src.talentgate.user.enums import SubscriptionPlan, UserRole
-from src.talentgate.user.models import UserSubscription, User
+
 from src.talentgate.auth import service as auth_service
+from src.talentgate.user.enums import SubscriptionPlan, UserRole
+from src.talentgate.user.models import User, UserSubscription
 
 
 @pytest.fixture

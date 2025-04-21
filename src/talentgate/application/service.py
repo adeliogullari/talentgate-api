@@ -1,26 +1,36 @@
-import uuid
+from collections.abc import Sequence
 from io import BytesIO
-from typing import Any, Sequence, List, Union
+from typing import Any
+
 from minio import Minio
-from sqlmodel import select, Session
+from minio.helpers import ObjectWriteResult
+from sqlmodel import Session, select
+
 from src.talentgate.application.models import (
     Application,
-    ApplicationQueryParameters,
-    CreateApplication,
-    UpdateApplication,
+    ApplicationAddress,
     ApplicationEvaluation,
-    RetrievedResume,
-    CreateEvaluation,
-    UpdateEvaluation,
     ApplicationLink,
-    UpdateLink,
+    ApplicationQueryParameters,
+    CreateAddress,
+    CreateApplication,
+    CreateEvaluation,
     CreateLink,
+    RetrievedResume,
+    UpdateAddress,
+    UpdateApplication,
+    UpdateEvaluation,
+    UpdateLink,
 )
 
 
 async def create_resume(
-    *, minio_client: Minio, object_name: str, data: BytesIO, length: int
-):
+    *,
+    minio_client: Minio,
+    object_name: str,
+    data: BytesIO,
+    length: int,
+) -> ObjectWriteResult:
     return minio_client.put_object(
         bucket_name="resume",
         object_name=object_name,
@@ -29,11 +39,12 @@ async def create_resume(
     )
 
 
-async def retrieve_resume(*, minio_client: Minio, object_name: str):
+async def retrieve_resume(*, minio_client: Minio, object_name: str) -> RetrievedResume:
     response = None
     try:
         response = minio_client.get_object(
-            bucket_name="resume", object_name=object_name
+            bucket_name="resume",
+            object_name=object_name,
         )
     finally:
         if response:
@@ -43,11 +54,76 @@ async def retrieve_resume(*, minio_client: Minio, object_name: str):
     return RetrievedResume(name=object_name, data=response.data)
 
 
+async def create_address(
+    *,
+    sqlmodel_session: Session,
+    address: CreateAddress,
+) -> ApplicationAddress:
+    created_address = ApplicationAddress(
+        **address.model_dump(exclude_unset=True, exclude_none=True),
+    )
+
+    sqlmodel_session.add(created_address)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_address)
+
+    return created_address
+
+
+async def retrieve_address_by_id(
+    *,
+    sqlmodel_session: Session,
+    address_id: int,
+) -> ApplicationAddress:
+    statement: Any = select(ApplicationAddress).where(
+        ApplicationAddress.id == address_id,
+    )
+
+    return sqlmodel_session.exec(statement).one_or_none()
+
+
+async def update_address(
+    *,
+    sqlmodel_session: Session,
+    retrieved_address: ApplicationAddress,
+    address: UpdateAddress,
+) -> ApplicationAddress:
+    retrieved_address.sqlmodel_update(
+        address.model_dump(exclude_none=True, exclude_unset=True),
+    )
+
+    sqlmodel_session.add(retrieved_address)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(retrieved_address)
+
+    return retrieved_address
+
+
+async def upsert_address(
+    *,
+    sqlmodel_session: Session,
+    address: CreateAddress | UpdateAddress,
+) -> ApplicationAddress:
+    retrieved_address = await retrieve_address_by_id(
+        sqlmodel_session=sqlmodel_session,
+        address_id=address.id,
+    )
+    if retrieved_address:
+        return await update_address(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_address=retrieved_address,
+            address=address,
+        )
+    return await create_address(sqlmodel_session=sqlmodel_session, address=address)
+
+
 async def create_link(
-    *, sqlmodel_session: Session, link: CreateLink
+    *,
+    sqlmodel_session: Session,
+    link: CreateLink,
 ) -> ApplicationLink:
     created_link = ApplicationLink(
-        **link.model_dump(exclude_unset=True, exclude_none=True)
+        **link.model_dump(exclude_unset=True, exclude_none=True),
     )
 
     sqlmodel_session.add(created_link)
@@ -58,13 +134,13 @@ async def create_link(
 
 
 async def retrieve_link_by_id(
-    *, sqlmodel_session: Session, link_id: int
+    *,
+    sqlmodel_session: Session,
+    link_id: int,
 ) -> ApplicationLink:
     statement: Any = select(ApplicationLink).where(ApplicationLink.id == link_id)
 
-    retrieved_evaluation = sqlmodel_session.exec(statement).one_or_none()
-
-    return retrieved_evaluation
+    return sqlmodel_session.exec(statement).one_or_none()
 
 
 async def update_link(
@@ -74,7 +150,7 @@ async def update_link(
     link: UpdateLink,
 ) -> ApplicationLink:
     retrieved_link.sqlmodel_update(
-        link.model_dump(exclude_none=True, exclude_unset=True)
+        link.model_dump(exclude_none=True, exclude_unset=True),
     )
 
     sqlmodel_session.add(retrieved_link)
@@ -85,10 +161,13 @@ async def update_link(
 
 
 async def upsert_link(
-    *, sqlmodel_session: Session, link: Union[CreateLink, UpdateLink]
+    *,
+    sqlmodel_session: Session,
+    link: CreateLink | UpdateLink,
 ) -> ApplicationLink:
     retrieved_link = await retrieve_link_by_id(
-        sqlmodel_session=sqlmodel_session, link_id=link.id
+        sqlmodel_session=sqlmodel_session,
+        link_id=link.id,
     )
     if retrieved_link:
         return await update_link(
@@ -100,10 +179,12 @@ async def upsert_link(
 
 
 async def create_evaluation(
-    *, sqlmodel_session: Session, evaluation: CreateEvaluation
+    *,
+    sqlmodel_session: Session,
+    evaluation: CreateEvaluation,
 ) -> ApplicationEvaluation:
     created_evaluation = ApplicationEvaluation(
-        **evaluation.model_dump(exclude_unset=True, exclude_none=True)
+        **evaluation.model_dump(exclude_unset=True, exclude_none=True),
     )
 
     sqlmodel_session.add(created_evaluation)
@@ -114,15 +195,15 @@ async def create_evaluation(
 
 
 async def retrieve_evaluation_by_id(
-    *, sqlmodel_session: Session, evaluation_id: int
+    *,
+    sqlmodel_session: Session,
+    evaluation_id: int,
 ) -> ApplicationEvaluation:
     statement: Any = select(ApplicationEvaluation).where(
-        ApplicationEvaluation.id == evaluation_id
+        ApplicationEvaluation.id == evaluation_id,
     )
 
-    retrieved_evaluation = sqlmodel_session.exec(statement).one_or_none()
-
-    return retrieved_evaluation
+    return sqlmodel_session.exec(statement).one_or_none()
 
 
 async def update_evaluation(
@@ -132,7 +213,7 @@ async def update_evaluation(
     evaluation: UpdateEvaluation,
 ) -> ApplicationEvaluation:
     retrieved_evaluation.sqlmodel_update(
-        evaluation.model_dump(exclude_none=True, exclude_unset=True)
+        evaluation.model_dump(exclude_none=True, exclude_unset=True),
     )
 
     sqlmodel_session.add(retrieved_evaluation)
@@ -143,10 +224,13 @@ async def update_evaluation(
 
 
 async def upsert_evaluation(
-    *, sqlmodel_session: Session, evaluation: Union[CreateEvaluation, UpdateEvaluation]
+    *,
+    sqlmodel_session: Session,
+    evaluation: CreateEvaluation | UpdateEvaluation,
 ) -> ApplicationEvaluation:
     retrieved_evaluation = await retrieve_evaluation_by_id(
-        sqlmodel_session=sqlmodel_session, evaluation_id=evaluation.id
+        sqlmodel_session=sqlmodel_session,
+        evaluation_id=evaluation.id,
     )
     if retrieved_evaluation:
         return await update_evaluation(
@@ -155,12 +239,16 @@ async def upsert_evaluation(
             evaluation=evaluation,
         )
     return await create_evaluation(
-        sqlmodel_session=sqlmodel_session, evaluation=evaluation
+        sqlmodel_session=sqlmodel_session,
+        evaluation=evaluation,
     )
 
 
 async def create(
-    *, sqlmodel_session: Session, minio_client: Minio, application: CreateApplication
+    *,
+    sqlmodel_session: Session,
+    minio_client: Minio,
+    application: CreateApplication,
 ) -> Application:
     resume = None
     if getattr(application, "resume", None) is not None:
@@ -171,18 +259,26 @@ async def create(
             length=len(application.resume.data),
         )
 
+    address = None
+    if getattr(application, "address", None) is not None:
+        address = await upsert_address(
+            sqlmodel_session=sqlmodel_session,
+            address=application.address,
+        )
+
     links = []
-    if getattr(application, "links", None) is not None:
+    if (getattr(application, "links", None) or None) is not None:
         links = [
             await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
             for link in application.links
         ]
 
     evaluations = []
-    if getattr(application, "evaluations", None) is not None:
+    if (getattr(application, "evaluations", None) or None) is not None:
         evaluations = [
             await upsert_evaluation(
-                sqlmodel_session=sqlmodel_session, evaluation=evaluation
+                sqlmodel_session=sqlmodel_session,
+                evaluation=evaluation,
             )
             for evaluation in application.evaluations
         ]
@@ -191,9 +287,10 @@ async def create(
         **application.model_dump(
             exclude_unset=True,
             exclude_none=True,
-            exclude={"resume", "links", "evaluations"},
+            exclude={"resume", "address", "links", "evaluations"},
         ),
         resume=resume.object_name,
+        address=address,
         links=links,
         evaluations=evaluations,
     )
@@ -206,7 +303,9 @@ async def create(
 
 
 async def retrieve_by_id(
-    *, sqlmodel_session: Session, application_id: int
+    *,
+    sqlmodel_session: Session,
+    application_id: int,
 ) -> Application:
     statement: Any = select(Application).where(Application.id == application_id)
 
@@ -218,36 +317,34 @@ async def retrieve_by_id(
 async def retrieve_by_email(*, sqlmodel_session: Session, email: str) -> Application:
     statement: Any = select(Application).where(Application.email == email)
 
-    retrieved_application = sqlmodel_session.exec(statement).one_or_none()
-
-    return retrieved_application
+    return sqlmodel_session.exec(statement).one_or_none()
 
 
 async def retrieve_by_phone(*, sqlmodel_session: Session, phone: str) -> Application:
     statement: Any = select(Application).where(Application.phone == phone)
 
-    retrieved_application = sqlmodel_session.exec(statement).one_or_none()
-
-    return retrieved_application
+    return sqlmodel_session.exec(statement).one_or_none()
 
 
 async def retrieve_by_query_parameters(
-    *, sqlmodel_session: Session, query_parameters: ApplicationQueryParameters
+    *,
+    sqlmodel_session: Session,
+    query_parameters: ApplicationQueryParameters,
 ) -> Sequence[Application]:
     offset = query_parameters.offset
     limit = query_parameters.limit
     filters = {
         getattr(Application, attr) == value
         for attr, value in query_parameters.model_dump(
-            exclude={"offset", "limit"}, exclude_unset=True, exclude_none=True
+            exclude={"offset", "limit", "resume"},
+            exclude_unset=True,
+            exclude_none=True,
         )
     }
 
     statement: Any = select(Application).offset(offset).limit(limit).where(*filters)
 
-    retrieved_application = sqlmodel_session.exec(statement).all()
-
-    return retrieved_application
+    return sqlmodel_session.exec(statement).all()
 
 
 async def update(
@@ -256,6 +353,12 @@ async def update(
     retrieved_application: Application,
     application: UpdateApplication,
 ) -> Application:
+    if getattr(application, "address", None) is not None:
+        retrieved_application.address = await upsert_address(
+            sqlmodel_session=sqlmodel_session,
+            address=application.address,
+        )
+
     if getattr(application, "links", None) is not None:
         retrieved_application.links = [
             await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
@@ -265,15 +368,18 @@ async def update(
     if getattr(application, "evaluations", None) is not None:
         retrieved_application.evaluations = [
             await upsert_evaluation(
-                sqlmodel_session=sqlmodel_session, evaluation=evaluation
+                sqlmodel_session=sqlmodel_session,
+                evaluation=evaluation,
             )
             for evaluation in application.evaluations
         ]
 
     retrieved_application.sqlmodel_update(
         application.model_dump(
-            exclude_none=True, exclude_unset=True, exclude={"links", "evaluations"}
-        )
+            exclude_none=True,
+            exclude_unset=True,
+            exclude={"address", "links", "evaluations"},
+        ),
     )
 
     sqlmodel_session.add(retrieved_application)
@@ -284,7 +390,9 @@ async def update(
 
 
 async def delete(
-    *, sqlmodel_session: Session, retrieved_application: Application
+    *,
+    sqlmodel_session: Session,
+    retrieved_application: Application,
 ) -> Application:
     sqlmodel_session.delete(retrieved_application)
     sqlmodel_session.commit()
