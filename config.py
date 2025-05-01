@@ -4,12 +4,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    postgresql_schema: str
-    postgresql_user: str
-    postgresql_password: str
-    postgresql_host: str
-    postgresql_port: str
-    postgresql_database: str
+    postgres_db: str
+    postgres_schema: str
+    postgres_user: str
+    postgres_password: str
+    postgres_host: str
+    postgres_port: str
     minio_schema: str
     minio_host: str
     minio_port: str

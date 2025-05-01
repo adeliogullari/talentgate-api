@@ -1,12 +1,9 @@
 import json
-from datetime import UTC, datetime, timedelta
 
-import pytest
 from fastapi.testclient import TestClient
-from pytography import JsonWebToken
 from starlette.datastructures import Headers
 
-from config import Settings
+from config import get_settings
 from src.talentgate.application.models import (
     Application,
     ApplicationEvaluation,
@@ -16,7 +13,7 @@ from src.talentgate.application.models import (
     UpdateApplication,
 )
 
-settings = Settings()
+settings = get_settings()
 
 
 async def test_create_application(client: TestClient, headers: Headers) -> None:

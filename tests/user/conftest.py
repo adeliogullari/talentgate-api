@@ -17,7 +17,7 @@ def make_subscription(sqlmodel_session: Session):
         end_date: float | None = None,
     ):
         subscription = UserSubscription(
-            plan=plan or SubscriptionPlan.BASIC,
+            plan=plan or SubscriptionPlan.BASIC.value,
             start_date=start_date
             or (datetime.now(UTC) - timedelta(days=2)).timestamp(),
             end_date=end_date or (datetime.now(UTC) - timedelta(days=1)).timestamp(),

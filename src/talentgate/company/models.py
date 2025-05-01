@@ -1,9 +1,9 @@
 from datetime import UTC, datetime
-from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from src.talentgate.company.enums import CompanyLocationType, LinkType
 from src.talentgate.database.models import BaseModel
 from src.talentgate.user.models import UserSubscription
 
@@ -28,16 +28,11 @@ class CompanyAddress(SQLModel, table=True):
     )
 
 
-class CompanyLocationType(StrEnum):
-    HEADQUARTERS = "Headquarters"
-    OFFICE = "Office"
-
-
 class CompanyLocation(SQLModel, table=True):
     __tablename__ = "company_location"
 
     id: int = Field(primary_key=True)
-    type: CompanyLocationType | None = Field(default=CompanyLocationType.OFFICE)
+    type: str | None = Field(default=CompanyLocationType.OFFICE.value)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
     address_id: int | None = Field(default=None, foreign_key="company_address.id")
@@ -49,17 +44,11 @@ class CompanyLocation(SQLModel, table=True):
     company: Optional["Company"] = Relationship(back_populates="locations")
 
 
-class LinkType(StrEnum):
-    WEBSITE = "Website"
-    LINKEDIN = "LinkedIn"
-    GITHUB = "Github"
-
-
 class CompanyLink(SQLModel, table=True):
     __tablename__ = "company_link"
 
     id: int = Field(primary_key=True)
-    type: LinkType | None = Field(default=LinkType.WEBSITE)
+    type: str | None = Field(default=LinkType.WEBSITE.value)
     url: str | None = Field(default=None, max_length=2048)
     company_id: int | None = Field(default=None, foreign_key="company.id")
     company: Optional["Company"] = Relationship(

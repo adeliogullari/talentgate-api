@@ -21,13 +21,6 @@ from src.talentgate.company.models import (
     UpdateLocation,
 )
 from src.talentgate.employee import service as employee_service
-from src.talentgate.employee.exceptions import (
-    EmployeeIdNotFoundException,
-)
-from src.talentgate.job.exceptions import (
-    ObserverAlreadyExistsException,
-    ObserverNotFoundException,
-)
 from src.talentgate.job.models import Job, JobLocation, JobQueryParameters
 
 settings = get_settings()
@@ -290,54 +283,6 @@ async def retrieve_company_job(
     return sqlmodel_session.exec(statement).one()
 
 
-# OBSERVER Services
-async def add_observer(
-    *,
-    sqlmodel_session: Session,
-    retrieved_job: Job,
-    observers: list[Any],
-) -> None:
-    for observer in observers:
-        retrieved_employee = await employee_service.retrieve_by_id(
-            sqlmodel_session=sqlmodel_session,
-            employee_id=observer,
-        )
-
-        if not retrieved_employee:
-            raise EmployeeIdNotFoundException
-
-        if retrieved_employee not in retrieved_job.observers:
-            retrieved_job.observers.append(retrieved_employee)
-        else:
-            raise ObserverAlreadyExistsException
-
-        sqlmodel_session.commit()
-        sqlmodel_session.refresh(retrieved_job)
-
-
-async def delete_observer(
-    *,
-    sqlmodel_session: Session,
-    retrieved_job: Job,
-    employee_id: int,
-) -> None:
-    retrieved_employee = await employee_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session,
-        employee_id=employee_id,
-    )
-
-    if not retrieved_employee:
-        raise EmployeeIdNotFoundException
-
-    if retrieved_employee in retrieved_job.observers:
-        retrieved_job.observers.remove(retrieved_employee)
-    else:
-        raise ObserverNotFoundException
-
-    sqlmodel_session.commit()
-    sqlmodel_session.refresh(retrieved_job)
-
-
 async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Company:
     locations = []
     if getattr(company, "locations", None) is not None:
@@ -383,6 +328,12 @@ async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Compan
 
 async def retrieve_by_id(*, sqlmodel_session: Session, company_id: int) -> Company:
     statement: Any = select(Company).where(Company.id == company_id)
+
+    return sqlmodel_session.exec(statement).one_or_none()
+
+
+async def retrieve_by_name(*, sqlmodel_session: Session, name: str) -> Company:
+    statement: Any = select(Company).where(Company.name == name)
 
     return sqlmodel_session.exec(statement).one_or_none()
 

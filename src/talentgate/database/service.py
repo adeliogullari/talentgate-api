@@ -7,12 +7,12 @@ from config import get_settings
 
 settings = get_settings()
 
-schema = settings.postgresql_schema
-user = settings.postgresql_user
-password = settings.postgresql_password
-host = settings.postgresql_host
-port = settings.postgresql_port
-database = settings.postgresql_database
+schema = settings.postgres_schema
+user = settings.postgres_user
+password = settings.postgres_password
+host = settings.postgres_host
+port = settings.postgres_port
+database = settings.postgres_db
 url = f"{schema}://{user}:{password}@{host}:{port}/{database}"
 
 engine = create_engine(url=url, echo=True)

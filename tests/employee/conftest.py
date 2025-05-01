@@ -10,7 +10,7 @@ from src.talentgate.user.models import User
 def make_employee(sqlmodel_session: Session, user: User):
     def make(**kwargs):
         employee = Employee(
-            title=kwargs.get("title") or EmployeeTitle.RECRUITER,
+            title=kwargs.get("title") or EmployeeTitle.RECRUITER.value,
             user=kwargs.get("user") or user,
         )
 
@@ -27,7 +27,8 @@ def make_employee(sqlmodel_session: Session, user: User):
 def employee(make_employee, request):
     param = getattr(request, "param", {})
     title = param.get("title", None)
-
+    user = param.get("user", None)
     return make_employee(
         title=title,
+        user=user,
     )

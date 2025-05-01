@@ -1,20 +1,13 @@
 from datetime import UTC, datetime
-from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from src.talentgate.application.enums import ApplicationStatus
+
 if TYPE_CHECKING:
     from src.talentgate.employee.models import Employee
     from src.talentgate.job.models import Job
-
-
-class ApplicationStatus(StrEnum):
-    APPLIED = "Applied"
-    SCREENING = "Screening"
-    REFERENCE_CHECK = "Reference Check"
-    OFFER = "Offer"
-    WITHDRAWN = "Withdrawn"
 
 
 class ApplicationAddress(SQLModel, table=True):
@@ -192,7 +185,7 @@ class CreateApplication(SQLModel):
     address: CreateAddress | None = None
     links: list[ApplicationLink] = None
     evaluations: list[ApplicationEvaluation] = None
-    status: ApplicationStatus | None = None
+    status: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -210,7 +203,7 @@ class CreatedApplication(SQLModel):
     postal_code: str | None = None
     resume: str | None = None
     earliest_start_date: datetime | None = None
-    status: ApplicationStatus | None = None
+    status: str | None = None
     links: list[ApplicationLink] = None
     evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None
@@ -230,7 +223,7 @@ class RetrievedApplication(SQLModel):
     postal_code: str | None = None
     resume: RetrievedResume | None = None
     earliest_start_date: datetime | None = None
-    status: ApplicationStatus | None = None
+    status: str | None = None
     links: list[ApplicationLink] = None
     evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None
@@ -258,7 +251,7 @@ class UpdateApplication(SQLModel):
     postal_code: str | None = None
     resume: Any | None = None
     earliest_start_date: datetime | None = None
-    status: ApplicationStatus | None = None
+    status: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -276,7 +269,7 @@ class UpdatedApplication(SQLModel):
     postal_code: str | None = None
     resume: Any | None = None
     earliest_start_date: datetime | None = None
-    status: ApplicationStatus | None = None
+    status: str | None = None
     links: list[ApplicationLink] = None
     evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None

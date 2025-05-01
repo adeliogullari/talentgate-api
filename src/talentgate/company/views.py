@@ -6,7 +6,7 @@ from sqlmodel import Session
 
 from src.talentgate.auth.exceptions import InvalidAuthorizationException
 from src.talentgate.company import service as company_service
-from src.talentgate.company.exceptions import IdNotFoundException
+from src.talentgate.company.exceptions import CompanyIdNotFoundException
 from src.talentgate.company.models import (
     Company,
     CompanyQueryParameters,
@@ -184,10 +184,15 @@ async def retrieve_company(
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     company_id: int,
 ) -> Company:
-    return await company_service.retrieve_by_id(
+    retrieved_company = await company_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session,
         company_id=company_id,
     )
+
+    if not retrieved_company:
+        raise CompanyIdNotFoundException
+
+    return retrieved_company
 
 
 @router.get(
@@ -225,7 +230,7 @@ async def update_company(
     )
 
     if not retrieved_company:
-        raise IdNotFoundException
+        raise CompanyIdNotFoundException
 
     return await company_service.update(
         sqlmodel_session=sqlmodel_session,
@@ -251,7 +256,7 @@ async def delete_company(
     )
 
     if not retrieved_company:
-        raise IdNotFoundException
+        raise CompanyIdNotFoundException
 
     return await company_service.delete(
         sqlmodel_session=sqlmodel_session,
