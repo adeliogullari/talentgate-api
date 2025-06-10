@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     refresh_token_key: str
     refresh_token_algorithm: str
     refresh_token_type: str
+    smtp_host: str
+    smtp_port: int
+    smtp_user: str
+    smtp_password: str
 
     model_config = SettingsConfigDict(
         extra="allow",

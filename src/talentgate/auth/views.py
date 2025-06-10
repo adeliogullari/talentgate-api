@@ -3,7 +3,8 @@ import string
 from typing import Annotated
 
 import requests
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from google.oauth2 import id_token
 from sqlmodel import Session
 from starlette.status import (
@@ -20,13 +21,17 @@ from src.talentgate.user.exceptions import (
     InvalidCredentialsException,
     InvalidVerificationException,
 )
-from src.talentgate.user.models import CreateUser
+from src.talentgate.user.models import CreateUser, User
+from src.talentgate.user.views import retrieve_current_user
 
+from src.talentgate.email.client import EmailClient, get_email_client
+from src.talentgate.email import service as email_service
 from .exceptions import (
     InvalidGoogleIDTokenException,
     InvalidLinkedInAccessTokenException,
 )
 from .models import (
+    AuthenticationTokens,
     GoogleCredentials,
     GoogleTokens,
     LinkedInCredentials,
@@ -34,7 +39,6 @@ from .models import (
     LoginCredentials,
     LoginTokens,
     RegisterCredentials,
-    RegisteredUser,
 )
 
 router = APIRouter(tags=["auth"])
@@ -46,7 +50,7 @@ async def login(
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
     credentials: LoginCredentials,
-) -> LoginTokens:
+) -> JSONResponse:
     retrieved_user = await user_service.retrieve_by_email(
         sqlmodel_session=sqlmodel_session,
         email=credentials.email,
@@ -76,7 +80,26 @@ async def login(
         seconds=settings.refresh_token_expiration,
     )
 
-    return LoginTokens(access_token=access_token, refresh_token=refresh_token)
+    content = LoginTokens(access_token=access_token, refresh_token=refresh_token)
+    response = JSONResponse(content=content)
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    return response
 
 
 @router.post(path="/api/v1/auth/google", status_code=200)
@@ -85,7 +108,7 @@ async def google(
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
     credentials: GoogleCredentials,
-) -> GoogleTokens:
+) -> JSONResponse:
     request = google.auth.transport.requests.Request()
 
     id_info = id_token.verify_oauth2_token(
@@ -141,7 +164,26 @@ async def google(
         seconds=settings.refresh_token_expiration,
     )
 
-    return GoogleTokens(access_token=access_token, refresh_token=refresh_token)
+    content = GoogleTokens(access_token=access_token, refresh_token=refresh_token)
+    response = JSONResponse(content=content)
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    return response
 
 
 @router.post(
@@ -153,7 +195,7 @@ async def linkedin(
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
     credentials: LinkedInCredentials,
-) -> LinkedInTokens:
+) -> JSONResponse:
     response = requests.get(
         "https://api.linkedin.com/v2/me",
         headers={
@@ -211,7 +253,26 @@ async def linkedin(
         seconds=settings.refresh_token_expiration,
     )
 
-    return LinkedInTokens(access_token=access_token, refresh_token=refresh_token)
+    content = LinkedInTokens(access_token=access_token, refresh_token=refresh_token)
+    response = JSONResponse(content=content)
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    return response
 
 
 @router.post(
@@ -221,8 +282,10 @@ async def linkedin(
 async def register(
     *,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    email_client: Annotated[EmailClient, Depends(get_email_client)],
+    background_tasks: BackgroundTasks,
     credentials: RegisterCredentials,
-) -> RegisteredUser:
+) -> User:
     retrieved_user = await user_service.retrieve_by_username(
         sqlmodel_session=sqlmodel_session,
         username=credentials.username,
@@ -239,7 +302,122 @@ async def register(
     if retrieved_user:
         raise DuplicateEmailException
 
-    return await user_service.create(
+    created_user = await user_service.create(
         sqlmodel_session=sqlmodel_session,
         user=CreateUser(**credentials.model_dump()),
     )
+
+    background_tasks.add_task(
+        email_service.send_email,
+        email_client,
+        "Password Reset",
+        "Reset your password",
+        "abdullahdeliogullari@outlook.com",
+        created_user.email,
+    )
+
+    return created_user
+
+
+@router.post(
+    path="/api/v1/auth/token/refresh",
+    status_code=200,
+)
+async def refresh(
+    *,
+    request: Request,
+    settings: Annotated[Settings, Depends(get_settings)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+) -> JSONResponse:
+    refresh_token = request.cookies.get("refresh_token")
+
+    if not refresh_token or not auth_service.verify_token(
+        token=refresh_token, key=settings.refresh_token_key
+    ):
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    retrieved_refresh_token = auth_service.retrieve_refresh_token(
+        sqlmodel_session=sqlmodel_session,
+        refresh_token=refresh_token,
+    )
+
+    if retrieved_refresh_token:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    auth_service.revoke_refresh_token(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_refresh_token=retrieved_refresh_token,
+    )
+
+    access_token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
+        key=settings.access_token_key,
+        seconds=settings.access_token_expiration,
+    )
+
+    refresh_token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
+        key=settings.refresh_token_key,
+        seconds=settings.refresh_token_expiration,
+    )
+
+    content = AuthenticationTokens(
+        access_token=access_token, refresh_token=refresh_token
+    )
+
+    response = JSONResponse(content=content)
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    return response
+
+
+@router.post(
+    path="/api/v1/auth/logout",
+    status_code=200,
+)
+async def logout(
+    *,
+    request: Request,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+) -> JSONResponse:
+    access_token = request.cookies.get("access_token")
+    refresh_token = request.cookies.get("refresh_token")
+    retrieved_refresh_token = await auth_service.retrieve_refresh_token(
+        sqlmodel_session=sqlmodel_session, refresh_token=refresh_token
+    )
+
+    await auth_service.revoke_refresh_token(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_refresh_token=retrieved_refresh_token,
+    )
+
+    content = AuthenticationTokens(
+        access_token=access_token, refresh_token=refresh_token
+    )
+
+    response = JSONResponse(content=content)
+
+    response.delete_cookie(
+        key="access_token", httponly=True, samesite="strict", secure=True
+    )
+
+    response.delete_cookie(
+        key="refresh_token", httponly=True, samesite="strict", secure=True
+    )
+
+    return response

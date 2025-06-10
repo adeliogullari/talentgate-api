@@ -1,18 +1,15 @@
 FROM python:3.12
-LABEL authors="talentgate"
+LABEL authors="talentgate-api"
 
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-COPY ./requirements.txt /app/requirements.txt
+COPY requirements.txt ./
 
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
-
-
-COPY . /code
-
+COPY . .
 
 CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "80"]
