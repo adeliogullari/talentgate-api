@@ -6,13 +6,25 @@ from src.talentgate.email.client import EmailClient
 settings = get_settings()
 
 
+def load_template(file: str):
+    with open(file, mode="r", encoding="utf-8") as f:
+        content = f.read()
+
+    return content
+
+
 def send_email(
     email_client: EmailClient,
-    subject: str,
-    body: str,
+    subject: str | None = None,
+    body: str | None = None,
+    html: str | None = None,
+    context: dict | None = None,
     from_addr: str | None = None,
     to_addrs: str | Sequence[str] | None = None,
 ):
+    body = body.format(**context)
+    html = html.format(**context)
+
     email_client.send_email(
-        subject=subject, body=body, from_addr=from_addr, to_addrs=to_addrs
+        subject=subject, body=body, html=html, from_addr=from_addr, to_addrs=to_addrs
     )

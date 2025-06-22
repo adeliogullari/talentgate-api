@@ -2,15 +2,15 @@ from enum import Enum
 
 
 class SubscriptionPlan(str, Enum):
-    BASIC = "Basic"
-    STANDARD = "Standard"
+    BASIC = "basic"
+    STANDARD = "standard"
 
 
 class SubscriptionStatus(str, Enum):
-    ACTIVE = "Active"
-    EXPIRED = "Expired"
+    ACTIVE = "active"
+    EXPIRED = "expired"
 
 
 class UserRole(str, Enum):
-    OWNER = "Owner"
-    ADMIN = "Admin"
+    OWNER = "owner"
+    ADMIN = "admin"

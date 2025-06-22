@@ -17,7 +17,8 @@ class EmailClient:
     def send_email(
         self,
         subject: str,
-        body: str,
+        body: str = None,
+        html: str = None,
         from_addr: str | None = None,
         to_addrs: str | Sequence[str] | None = None,
     ):
@@ -25,7 +26,8 @@ class EmailClient:
         msg.add_header("Subject", subject)
         msg.add_header("From", from_addr)
         msg.add_header("To", to_addrs)
-        msg.add_alternative(body, subtype="html")
+        msg.set_content(body)
+        msg.add_alternative(html, subtype="html")
 
         try:
             with smtplib.SMTP(host=self.host, port=self.port) as server:

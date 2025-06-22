@@ -11,10 +11,10 @@ async def schedule_purge_expired_task():
         await asyncio.sleep(settings.refresh_token_expiration)
 
 
-purge_expired_task = asyncio.create_task(schedule_purge_expired_task())
-purge_expired_task.cancel()
+# purge_expired_task = asyncio.create_task(schedule_purge_expired_task())
+# purge_expired_task.cancel()
 
-scheduler_task = None  # Global to track the background task
+# scheduler_task = None  # Global to track the background task
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI) -> AsyncGenerator[None, Any]:

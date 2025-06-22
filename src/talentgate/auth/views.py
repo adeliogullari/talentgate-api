@@ -21,7 +21,7 @@ from src.talentgate.user.exceptions import (
     InvalidCredentialsException,
     InvalidVerificationException,
 )
-from src.talentgate.user.models import CreateUser, User
+from src.talentgate.user.models import CreateUser, User, UpdateUser
 from src.talentgate.user.views import retrieve_current_user
 
 from src.talentgate.email.client import EmailClient, get_email_client
@@ -39,6 +39,9 @@ from .models import (
     LoginCredentials,
     LoginTokens,
     RegisterCredentials,
+    BlacklistToken,
+    RegisteredUser,
+    ResendEmail, VerifiedEmail,
 )
 
 router = APIRouter(tags=["auth"])
@@ -277,12 +280,14 @@ async def linkedin(
 
 @router.post(
     path="/api/v1/auth/register",
-    status_code=200,
+    response_model=RegisteredUser,
+    status_code=201,
 )
 async def register(
     *,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     email_client: Annotated[EmailClient, Depends(get_email_client)],
+    settings: Annotated[Settings, Depends(get_settings)],
     background_tasks: BackgroundTasks,
     credentials: RegisterCredentials,
 ) -> User:
@@ -307,16 +312,94 @@ async def register(
         user=CreateUser(**credentials.model_dump()),
     )
 
+    token = auth_service.encode_token(
+        user_id=str(created_user.id),
+        key=settings.access_token_key,
+        seconds=settings.access_token_expiration,
+    )
+
+    body = email_service.load_template(file="src/talentgate/auth/templates/verification.txt")
+    html = email_service.load_template(file="src/talentgate/auth/templates/verification.html")
+
+    context = {
+        "username": created_user.username,
+        "link": f"${settings.frontend_base_url}/verify?token={token}",
+    }
+
     background_tasks.add_task(
         email_service.send_email,
         email_client,
-        "Password Reset",
-        "Reset your password",
-        "abdullahdeliogullari@outlook.com",
+        "Email Verification",
+        body,
+        html,
+        context,
+        settings.smtp_email,
         created_user.email,
     )
 
     return created_user
+
+
+@router.post(
+    path="/api/v1/auth/email/verify",
+    response_model=VerifiedEmail,
+    status_code=201,
+)
+async def verify_email(
+    *,
+    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+):
+    await user_service.update(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_user=retrieved_user,
+        user=UpdateUser(verified=True),
+    )
+
+    return retrieved_user
+
+
+@router.post(
+    path="/api/v1/auth/email/resend",
+    response_model=ResendEmail,
+    status_code=201,
+)
+async def resend_email(
+    *,
+    background_tasks: BackgroundTasks,
+    settings: Annotated[Settings, Depends(get_settings)],
+    email_client: Annotated[EmailClient, Depends(get_email_client)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+):
+    if retrieved_user.verified:
+        raise HTTPException(status_code=404, detail="User email is already verified.")
+
+    token = auth_service.encode_token(
+        user_id=str(retrieved_user.id),
+        key=settings.access_token_key,
+        seconds=settings.access_token_expiration,
+    )
+
+    body = email_service.load_template(file="src/talentgate/auth/templates/verification.txt")
+    html = email_service.load_template(file="src/talentgate/auth/templates/verification.html")
+
+    context = {
+        "username": retrieved_user.username,
+        "link": f"${settings.frontend_base_url}/verify?token={token}",
+    }
+
+    background_tasks.add_task(
+        email_service.send_email,
+        email_client,
+        "Email Verification",
+        body,
+        html,
+        context,
+        settings.smtp_email,
+        retrieved_user.email,
+    )
+
+    return retrieved_user
 
 
 @router.post(
@@ -337,17 +420,21 @@ async def refresh(
     ):
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-    retrieved_refresh_token = auth_service.retrieve_refresh_token(
+    _, payload, _ = auth_service.decode_token(token=refresh_token)
+
+    retrieved_blacklisted_token = auth_service.retrieve_blacklisted_token(
         sqlmodel_session=sqlmodel_session,
-        refresh_token=refresh_token,
+        jti=payload.get("jti", None),
     )
 
-    if retrieved_refresh_token:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    if retrieved_blacklisted_token:
+        raise HTTPException(status_code=401, detail="Revoked refresh token")
 
-    auth_service.revoke_refresh_token(
+    auth_service.revoke_token(
         sqlmodel_session=sqlmodel_session,
-        retrieved_refresh_token=retrieved_refresh_token,
+        blacklist_token=BlacklistToken(
+            jti=payload.get("jti", None), user_id=payload.get("user_id", None)
+        ),
     )
 
     access_token = auth_service.encode_token(
@@ -397,13 +484,23 @@ async def logout(
 ) -> JSONResponse:
     access_token = request.cookies.get("access_token")
     refresh_token = request.cookies.get("refresh_token")
-    retrieved_refresh_token = await auth_service.retrieve_refresh_token(
-        sqlmodel_session=sqlmodel_session, refresh_token=refresh_token
+
+    _, payload, _ = auth_service.decode_token(token=refresh_token)
+
+    retrieved_blacklisted_token = await auth_service.retrieve_blacklisted_token(
+        sqlmodel_session=sqlmodel_session, jti=payload.get("jti", None)
     )
 
-    await auth_service.revoke_refresh_token(
+    if retrieved_blacklisted_token:
+        raise HTTPException(
+            status_code=401, detail="Refresh token has been revoked already"
+        )
+
+    await auth_service.revoke_token(
         sqlmodel_session=sqlmodel_session,
-        retrieved_refresh_token=retrieved_refresh_token,
+        blacklist_token=BlacklistToken(
+            jti=payload.get("jti", None), user_id=payload.get("user_id", None)
+        ),
     )
 
     content = AuthenticationTokens(

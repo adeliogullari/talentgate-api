@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    frontend_base_url: str
     postgres_db: str
     postgres_schema: str
     postgres_user: str
@@ -29,6 +30,7 @@ class Settings(BaseSettings):
     smtp_host: str
     smtp_port: int
     smtp_user: str
+    smtp_email: str
     smtp_password: str
 
     model_config = SettingsConfigDict(

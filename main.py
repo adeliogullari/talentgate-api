@@ -24,24 +24,25 @@ class TaskScheduler:
     purge_expired_task = None
 
     @staticmethod
-    def schedule_tasks():
+    async def schedule_tasks():
         TaskScheduler.purge_expired_task = asyncio.create_task(
             schedule_purge_expired_task()
         )
 
     @staticmethod
-    def cancel_tasks():
+    async def cancel_tasks():
         TaskScheduler.purge_expired_task.cancel()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, Any]:
     SQLModel.metadata.create_all(engine)
+
     if hostname.endswith("-1"):
-        TaskScheduler.schedule_tasks()
+        await TaskScheduler.schedule_tasks()
     yield
     if hostname.endswith("-1"):
-        TaskScheduler.cancel_tasks()
+        await TaskScheduler.cancel_tasks()
 
 
 app = FastAPI(lifespan=lifespan)

@@ -1,9 +1,10 @@
 from datetime import UTC, datetime, timedelta
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
 
 from config import get_settings
 from src.talentgate.database.models import BaseModel
+from src.talentgate.user.models import User
 
 settings = get_settings()
 
@@ -12,10 +13,14 @@ class TokenBlacklist(SQLModel, table=True):
     __tablename__ = "token_blacklist"
 
     id: int = Field(primary_key=True)
-    user_id: int = Field(nullable=False)
     jti: str = Field(unique=True)
+    user_id: int | None = Field(default=None, foreign_key="user.id")
     created_at: float | None = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
+    )
+    updated_at: float | None = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp(),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
     )
     expires_at: float | None = Field(
         default_factory=lambda: (
@@ -23,11 +28,11 @@ class TokenBlacklist(SQLModel, table=True):
         ).timestamp(),
     )
 
-# class TokenBlacklist(SQLModel, table=True):
-#     jti: str = Field(primary_key=True)  # matches the JWT's jti
-#     user_id: str = Field(foreign_key="user.id", index=True)
-#     revoked_at: datetime = Field(default_factory=datetime.utcnow)
-#     reason: Optional[str] = None
+
+class BlacklistToken(BaseModel):
+    jti: str | None
+    user_id: int | None
+
 
 class AuthenticationTokens(BaseModel):
     access_token: str | None
@@ -68,7 +73,22 @@ class RegisterCredentials(BaseModel):
 
 
 class RegisteredUser(BaseModel):
+    id: int
     firstname: str
     lastname: str
     username: str
+    email: str
+    verified: bool
+    role: str
+
+
+class EmailVerificationQueryParameters(BaseModel):
+    token: str | None = None
+
+
+class ResendEmail(BaseModel):
+    email: str
+
+
+class VerifiedEmail(BaseModel):
     email: str
