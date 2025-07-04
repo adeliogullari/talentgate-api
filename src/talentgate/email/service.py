@@ -7,7 +7,7 @@ settings = get_settings()
 
 
 def load_template(file: str):
-    with open(file, mode="r", encoding="utf-8") as f:
+    with open(file, encoding="utf-8") as f:
         content = f.read()
 
     return content

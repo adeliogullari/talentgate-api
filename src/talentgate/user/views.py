@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
 
@@ -44,23 +44,28 @@ router = APIRouter(tags=["users"])
 )
 async def retrieve_current_user(
     *,
+    request: Request,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
     http_authorization: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
 ) -> User:
+    token = request.cookies.get("access_token") or getattr(
+        http_authorization, "credentials", None
+    )
+
     is_verified = auth_service.verify_token(
-        token=http_authorization.credentials,
+        token=token,
         key=settings.access_token_key,
     )
 
     if not is_verified:
         raise InvalidAccessTokenException
 
-    _, payload, _ = auth_service.decode_token(token=http_authorization.credentials)
+    _, payload, _ = auth_service.decode_token(token=token)
 
     retrieved_user = await user_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session,
-        user_id=payload.get("user_id", None),
+        user_id=payload.get("user_id"),
     )
 
     if not retrieved_user:

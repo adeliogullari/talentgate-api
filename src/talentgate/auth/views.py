@@ -14,24 +14,26 @@ from starlette.status import (
 from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
 from src.talentgate.database.service import get_sqlmodel_session
+from src.talentgate.email import service as email_service
+from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.user import service as user_service
 from src.talentgate.user.exceptions import (
     DuplicateEmailException,
     DuplicateUsernameException,
+    EmailAlreadyVerifiedException,
     InvalidCredentialsException,
     InvalidVerificationException,
 )
-from src.talentgate.user.models import CreateUser, User, UpdateUser
+from src.talentgate.user.models import CreateUser, UpdateUser, User
 from src.talentgate.user.views import retrieve_current_user
 
-from src.talentgate.email.client import EmailClient, get_email_client
-from src.talentgate.email import service as email_service
 from .exceptions import (
     InvalidGoogleIDTokenException,
     InvalidLinkedInAccessTokenException,
 )
 from .models import (
     AuthenticationTokens,
+    BlacklistToken,
     GoogleCredentials,
     GoogleTokens,
     LinkedInCredentials,
@@ -39,9 +41,11 @@ from .models import (
     LoginCredentials,
     LoginTokens,
     RegisterCredentials,
-    BlacklistToken,
     RegisteredUser,
-    ResendEmail, VerifiedEmail,
+    ResendEmail,
+    VerifiedEmail,
+    LogoutTokens,
+    RefreshTokens,
 )
 
 router = APIRouter(tags=["auth"])
@@ -84,7 +88,7 @@ async def login(
     )
 
     content = LoginTokens(access_token=access_token, refresh_token=refresh_token)
-    response = JSONResponse(content=content)
+    response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
         key="access_token",
@@ -318,8 +322,12 @@ async def register(
         seconds=settings.access_token_expiration,
     )
 
-    body = email_service.load_template(file="src/talentgate/auth/templates/verification.txt")
-    html = email_service.load_template(file="src/talentgate/auth/templates/verification.html")
+    body = email_service.load_template(
+        file="src/talentgate/auth/templates/verification.txt"
+    )
+    html = email_service.load_template(
+        file="src/talentgate/auth/templates/verification.html"
+    )
 
     context = {
         "username": created_user.username,
@@ -372,7 +380,7 @@ async def resend_email(
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ):
     if retrieved_user.verified:
-        raise HTTPException(status_code=404, detail="User email is already verified.")
+        raise EmailAlreadyVerifiedException
 
     token = auth_service.encode_token(
         user_id=str(retrieved_user.id),
@@ -380,8 +388,12 @@ async def resend_email(
         seconds=settings.access_token_expiration,
     )
 
-    body = email_service.load_template(file="src/talentgate/auth/templates/verification.txt")
-    html = email_service.load_template(file="src/talentgate/auth/templates/verification.html")
+    body = email_service.load_template(
+        file="src/talentgate/auth/templates/verification.txt"
+    )
+    html = email_service.load_template(
+        file="src/talentgate/auth/templates/verification.html"
+    )
 
     context = {
         "username": retrieved_user.username,
@@ -412,8 +424,11 @@ async def refresh(
     settings: Annotated[Settings, Depends(get_settings)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    tokens: RefreshTokens,
 ) -> JSONResponse:
-    refresh_token = request.cookies.get("refresh_token")
+    refresh_token = request.cookies.get("refresh_token") or getattr(
+        tokens, "refresh_token", None
+    )
 
     if not refresh_token or not auth_service.verify_token(
         token=refresh_token, key=settings.refresh_token_key
@@ -424,7 +439,7 @@ async def refresh(
 
     retrieved_blacklisted_token = auth_service.retrieve_blacklisted_token(
         sqlmodel_session=sqlmodel_session,
-        jti=payload.get("jti", None),
+        jti=payload.get("jti"),
     )
 
     if retrieved_blacklisted_token:
@@ -433,7 +448,7 @@ async def refresh(
     auth_service.revoke_token(
         sqlmodel_session=sqlmodel_session,
         blacklist_token=BlacklistToken(
-            jti=payload.get("jti", None), user_id=payload.get("user_id", None)
+            jti=payload.get("jti"), user_id=payload.get("user_id")
         ),
     )
 
@@ -453,7 +468,7 @@ async def refresh(
         access_token=access_token, refresh_token=refresh_token
     )
 
-    response = JSONResponse(content=content)
+    response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
         key="access_token",
@@ -462,6 +477,7 @@ async def refresh(
         samesite="strict",
         secure=True,
     )
+
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
@@ -480,15 +496,18 @@ async def refresh(
 async def logout(
     *,
     request: Request,
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    tokens: LogoutTokens,
 ) -> JSONResponse:
-    access_token = request.cookies.get("access_token")
-    refresh_token = request.cookies.get("refresh_token")
+    refresh_token = request.cookies.get("refresh_token") or getattr(
+        tokens, "refresh_token", None
+    )
 
     _, payload, _ = auth_service.decode_token(token=refresh_token)
 
     retrieved_blacklisted_token = await auth_service.retrieve_blacklisted_token(
-        sqlmodel_session=sqlmodel_session, jti=payload.get("jti", None)
+        sqlmodel_session=sqlmodel_session, jti=payload.get("jti")
     )
 
     if retrieved_blacklisted_token:
@@ -503,11 +522,9 @@ async def logout(
         ),
     )
 
-    content = AuthenticationTokens(
-        access_token=access_token, refresh_token=refresh_token
-    )
+    content = AuthenticationTokens(access_token=None, refresh_token=refresh_token)
 
-    response = JSONResponse(content=content)
+    response = JSONResponse(content=content.model_dump())
 
     response.delete_cookie(
         key="access_token", httponly=True, samesite="strict", secure=True

@@ -1,10 +1,9 @@
 from datetime import UTC, datetime, timedelta
 
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, SQLModel
 
 from config import get_settings
 from src.talentgate.database.models import BaseModel
-from src.talentgate.user.models import User
 
 settings = get_settings()
 
@@ -92,3 +91,11 @@ class ResendEmail(BaseModel):
 
 class VerifiedEmail(BaseModel):
     email: str
+
+
+class RefreshTokens(BaseModel):
+    refresh_token: str | None
+
+
+class LogoutTokens(BaseModel):
+    refresh_token: str | None

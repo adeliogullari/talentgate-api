@@ -30,3 +30,7 @@ DuplicateEmailException = HTTPException(
     status_code=HTTP_409_CONFLICT,
     detail="A user with this email already exists.",
 )
+
+EmailAlreadyVerifiedException = HTTPException(
+    status_code=HTTP_409_CONFLICT, detail="User email is already verified"
+)

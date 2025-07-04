@@ -3,9 +3,10 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pytography import JsonWebToken, PasswordHashLibrary
+from redis import Redis
 from sqlmodel import Session, select
 
-from src.talentgate.auth.models import TokenBlacklist, BlacklistToken
+from src.talentgate.auth.models import BlacklistToken, TokenBlacklist
 
 
 def encode_password(password: str) -> str:
@@ -38,33 +39,13 @@ def verify_token(token: str, key: str) -> bool:
     return JsonWebToken.verify(token=token, key=key)
 
 
-def retrieve_blacklisted_token(
-    *, sqlmodel_session: Session, jti: str | None
-) -> TokenBlacklist:
-    statement: Any = select(TokenBlacklist).where(
-        TokenBlacklist.jti == jti,
-    )
-
-    return sqlmodel_session.exec(statement).one_or_none()
+def retrieve_blacklisted_token_v2(
+    *, redis_client: Redis, jti: str | None
+) -> str | None:
+    name = f"token:blacklist:{jti}"
+    return redis_client.get(name=name)
 
 
-def revoke_token(
-    *, sqlmodel_session: Session, blacklist_token: BlacklistToken
-) -> TokenBlacklist:
-    blacklisted_token = TokenBlacklist(
-        **blacklist_token.model_dump(exclude_unset=True, exclude_none=True),
-    )
-    sqlmodel_session.add(blacklisted_token)
-    sqlmodel_session.commit()
-    sqlmodel_session.refresh(blacklisted_token)
-
-    return blacklisted_token
-
-
-def purge_token(
-    *, sqlmodel_session: Session, retrieved_blacklisted_token: TokenBlacklist
-) -> TokenBlacklist:
-    sqlmodel_session.delete(retrieved_blacklisted_token)
-    sqlmodel_session.commit()
-
-    return retrieved_blacklisted_token
+def revoke_token_v2(*, redis_client: Redis, jti: str, ex) -> bool:
+    name = f"token:blacklist:{jti}"
+    return redis_client.set(name=name, value=jti, ex=ex)

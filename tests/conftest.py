@@ -1,12 +1,14 @@
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Optional, Callable, AsyncGenerator
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from minio import Minio
 from minio.helpers import ObjectWriteResult
+from redis import Redis
+from redis.typing import KeyT, EncodableT, ExpiryT
 from sqlmodel import Session, SQLModel, create_engine
 from urllib3 import BaseHTTPResponse, HTTPHeaderDict
 
@@ -14,7 +16,7 @@ from config import Settings, get_settings
 from src.talentgate.application.views import router as application_router
 from src.talentgate.auth.views import router as auth_router
 from src.talentgate.company.views import router as company_router
-from src.talentgate.database.service import get_sqlmodel_session
+from src.talentgate.database.service import get_sqlmodel_session, get_redis_client
 from src.talentgate.employee.views import router as employee_router
 from src.talentgate.job.views import router as job_router
 from src.talentgate.storage.service import get_minio_client
@@ -63,6 +65,30 @@ async def sqlmodel_session(app: FastAPI) -> AsyncGenerator[Session, Any]:
     session.close()
     transaction.rollback()
     connection.close()
+
+
+@pytest.fixture
+def redis_client() -> Redis:
+    class RedisClient:
+        def __init__(self):
+            self.store = {}
+
+        async def set(
+            self,
+            name: KeyT,
+            value: EncodableT,
+            ex: Optional[ExpiryT] = None,
+        ):
+            self.store[name] = value
+            return True
+
+        async def get(self, name: KeyT):
+            return self.store.get(name)
+
+        async def close(self):
+            pass
+
+    return RedisClient()
 
 
 @pytest.fixture
@@ -145,6 +171,9 @@ async def client(
     async def _get_sqlmodel_session() -> AsyncGenerator[Session, Any]:
         yield sqlmodel_session
 
+    async def _get_redis_client() -> AsyncGenerator[Callable[[], Redis], Any]:
+        yield redis_client
+
     async def _get_minio_client() -> AsyncGenerator[Minio, Any]:
         yield minio_client
 
@@ -159,6 +188,7 @@ async def client(
         )
 
     app.dependency_overrides[get_sqlmodel_session] = _get_sqlmodel_session
+    app.dependency_overrides[get_redis_client] = _get_redis_client
     app.dependency_overrides[get_minio_client] = _get_minio_client
     app.dependency_overrides[get_settings] = _get_settings
 
