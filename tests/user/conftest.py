@@ -56,7 +56,9 @@ def make_user(sqlmodel_session: Session, subscription: UserSubscription):
             email=kwargs.get("email") or f"{secrets.token_hex(16)}@example.com",
             password=kwargs.get("password")
             or auth_service.encode_password(password=secrets.token_hex(16)),
-            verified=kwargs.get("verified") or True,
+            verified=kwargs.get("verified")
+            if kwargs.get("verified") not in (None, "")
+            else True,
             role=kwargs.get("role") or UserRole.OWNER.value,
             subscription=kwargs.get("subscription") or subscription,
         )

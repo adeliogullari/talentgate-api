@@ -1,9 +1,10 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 
+from redis import Redis
 from sqlalchemy import Engine
 from sqlmodel import Session, create_engine
-from redis import Redis
+
 from config import get_settings
 
 settings = get_settings()

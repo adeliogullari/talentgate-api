@@ -4,6 +4,7 @@ from starlette.status import (
     HTTP_403_FORBIDDEN,
     HTTP_404_NOT_FOUND,
     HTTP_409_CONFLICT,
+    HTTP_400_BAD_REQUEST,
 )
 
 InvalidCredentialsException = HTTPException(
@@ -32,5 +33,5 @@ DuplicateEmailException = HTTPException(
 )
 
 EmailAlreadyVerifiedException = HTTPException(
-    status_code=HTTP_409_CONFLICT, detail="User email is already verified"
+    status_code=HTTP_400_BAD_REQUEST, detail="User email is already verified"
 )

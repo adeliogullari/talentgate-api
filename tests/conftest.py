@@ -1,22 +1,22 @@
+import pytest
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import Any, BinaryIO, Optional, Callable, AsyncGenerator
+from email.message import EmailMessage
+from typing import Any, BinaryIO, Sequence
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from minio import Minio
-from minio.helpers import ObjectWriteResult
 from redis import Redis
-from redis.typing import KeyT, EncodableT, ExpiryT
+from redis.typing import EncodableT, ExpiryT, KeyT
 from sqlmodel import Session, SQLModel, create_engine
-from urllib3 import BaseHTTPResponse, HTTPHeaderDict
 
 from config import Settings, get_settings
 from src.talentgate.application.views import router as application_router
 from src.talentgate.auth.views import router as auth_router
 from src.talentgate.company.views import router as company_router
-from src.talentgate.database.service import get_sqlmodel_session, get_redis_client
+from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
+from src.talentgate.email.client import EmailClient
 from src.talentgate.employee.views import router as employee_router
 from src.talentgate.job.views import router as job_router
 from src.talentgate.storage.service import get_minio_client
@@ -38,12 +38,12 @@ engine = create_engine(
 
 async def start_application() -> FastAPI | None:
     app = FastAPI()
+    app.include_router(auth_router)
     app.include_router(user_router)
     app.include_router(employee_router)
-    app.include_router(auth_router)
+    app.include_router(company_router)
     app.include_router(application_router)
     app.include_router(job_router)
-    app.include_router(company_router)
     return app
 
 
@@ -68,24 +68,50 @@ async def sqlmodel_session(app: FastAPI) -> AsyncGenerator[Session, Any]:
 
 
 @pytest.fixture
+async def email_client() -> EmailClient:
+    class SMTPClient:
+        def __init__(self):
+            self.inbox = []
+
+        def send_email(
+            self,
+            subject: str,
+            body: str = None,
+            html: str = None,
+            from_addr: str | None = None,
+            to_addrs: str | Sequence[str] | None = None,
+        ):
+            msg = EmailMessage()
+            msg.add_header("Subject", subject)
+            msg.add_header("From", from_addr)
+            msg.add_header("To", to_addrs)
+            msg.set_content(body)
+            msg.add_alternative(html, subtype="html")
+
+            self.inbox.append(msg)
+
+    return SMTPClient()
+
+
+@pytest.fixture
 def redis_client() -> Redis:
     class RedisClient:
         def __init__(self):
             self.store = {}
 
-        async def set(
+        def set(
             self,
             name: KeyT,
             value: EncodableT,
-            ex: Optional[ExpiryT] = None,
+            ex: ExpiryT | None = None,
         ):
             self.store[name] = value
             return True
 
-        async def get(self, name: KeyT):
+        def get(self, name: KeyT):
             return self.store.get(name)
 
-        async def close(self):
+        def close(self):
             pass
 
     return RedisClient()
@@ -166,12 +192,17 @@ def minio_client() -> Minio:
 async def client(
     app: FastAPI,
     sqlmodel_session: Session,
+    email_client: EmailClient,
+    redis_client: Redis,
     minio_client: Minio,
 ) -> AsyncGenerator[TestClient, Any]:
     async def _get_sqlmodel_session() -> AsyncGenerator[Session, Any]:
         yield sqlmodel_session
 
-    async def _get_redis_client() -> AsyncGenerator[Callable[[], Redis], Any]:
+    async def _get_email_client() -> AsyncGenerator[EmailClient, Any]:
+        yield email_client
+
+    async def _get_redis_client() -> AsyncGenerator[Redis, Any]:
         yield redis_client
 
     async def _get_minio_client() -> AsyncGenerator[Minio, Any]:
@@ -184,10 +215,11 @@ async def client(
             access_token_expiration=7200,
             access_token_key="SJ6nWJtM737AZWevVdDEr4Fh0GmoyR8k",
             refresh_token_expiration=86400,
-            refresh_token_key="SJ6nWJtM737AZWevVdDEr4Fh0GmoyR8k",
+            refresh_token_key="rD8W8x2hBVO0Iyg5mZ6D4aQcCzEpuSIR",
         )
 
     app.dependency_overrides[get_sqlmodel_session] = _get_sqlmodel_session
+    app.dependency_overrides[_get_email_client] = _get_email_client
     app.dependency_overrides[get_redis_client] = _get_redis_client
     app.dependency_overrides[get_minio_client] = _get_minio_client
     app.dependency_overrides[get_settings] = _get_settings

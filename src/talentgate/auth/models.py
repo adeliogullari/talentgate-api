@@ -94,8 +94,8 @@ class VerifiedEmail(BaseModel):
 
 
 class RefreshTokens(BaseModel):
-    refresh_token: str | None
+    refresh_token: str | None = None
 
 
 class LogoutTokens(BaseModel):
-    refresh_token: str | None
+    refresh_token: str | None = None

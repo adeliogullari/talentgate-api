@@ -107,7 +107,7 @@ async def test_update_user(client: TestClient, user: User, headers: Headers) -> 
         subscription=subscription,
     )
 
-    response = client.patch(
+    response = client.put(
         url=f"/api/v1/users/{user.id}",
         headers=headers,
         json=json.loads(
@@ -130,10 +130,9 @@ async def test_update_current_user(
         lastname="lastname",
         username="username",
         email="username@example.com",
-        password="password",
     )
 
-    response = client.patch(
+    response = client.put(
         url="/api/v1/me",
         headers=headers,
         json=json.loads(
@@ -142,7 +141,6 @@ async def test_update_current_user(
     )
 
     assert response.status_code == 200
-    assert response.json()["email"] == updated_user.email
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)

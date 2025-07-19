@@ -11,6 +11,11 @@ InvalidRefreshTokenException = HTTPException(
     detail="The refresh token is invalid or has expired.",
 )
 
+BlacklistedTokenException = HTTPException(
+    status_code=HTTP_401_UNAUTHORIZED,
+    detail="TToken has been blacklisted."
+)
+
 InvalidGoogleIDTokenException = HTTPException(
     status_code=HTTP_401_UNAUTHORIZED,
     detail="The google id token is invalid or has expired",

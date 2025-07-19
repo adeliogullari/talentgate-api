@@ -47,7 +47,7 @@ async def retrieve_current_user(
     request: Request,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
-    http_authorization: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
+    http_authorization: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer(auto_error=False))],
 ) -> User:
     token = request.cookies.get("access_token") or getattr(
         http_authorization, "credentials", None
@@ -181,7 +181,7 @@ async def retrieve_users(
     )
 
 
-@router.patch(
+@router.put(
     path="/api/v1/users/{user_id}",
     response_model=UpdatedUser,
     status_code=200,
@@ -208,7 +208,7 @@ async def update_user(
     )
 
 
-@router.patch(
+@router.put(
     path="/api/v1/me",
     response_model=UpdatedCurrentUser,
     status_code=200,

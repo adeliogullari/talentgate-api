@@ -3,9 +3,11 @@ import string
 from typing import Annotated
 
 import requests
+from google.auth.transport import requests as google_requests  # ✅ Avoid conflict
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from google.oauth2 import id_token
+from redis import Redis
 from sqlmodel import Session
 from starlette.status import (
     HTTP_200_OK,
@@ -13,7 +15,7 @@ from starlette.status import (
 
 from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
-from src.talentgate.database.service import get_sqlmodel_session
+from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
 from src.talentgate.email import service as email_service
 from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.user import service as user_service
@@ -29,23 +31,22 @@ from src.talentgate.user.views import retrieve_current_user
 
 from .exceptions import (
     InvalidGoogleIDTokenException,
-    InvalidLinkedInAccessTokenException,
+    InvalidLinkedInAccessTokenException, InvalidRefreshTokenException, BlacklistedTokenException,
 )
 from .models import (
     AuthenticationTokens,
-    BlacklistToken,
     GoogleCredentials,
     GoogleTokens,
     LinkedInCredentials,
     LinkedInTokens,
     LoginCredentials,
     LoginTokens,
+    LogoutTokens,
+    RefreshTokens,
     RegisterCredentials,
     RegisteredUser,
     ResendEmail,
     VerifiedEmail,
-    LogoutTokens,
-    RefreshTokens,
 )
 
 router = APIRouter(tags=["auth"])
@@ -116,7 +117,7 @@ async def google(
     settings: Annotated[Settings, Depends(get_settings)],
     credentials: GoogleCredentials,
 ) -> JSONResponse:
-    request = google.auth.transport.requests.Request()
+    request = google_requests.Request()
 
     id_info = id_token.verify_oauth2_token(
         id_token=credentials.token,
@@ -172,7 +173,7 @@ async def google(
     )
 
     content = GoogleTokens(access_token=access_token, refresh_token=refresh_token)
-    response = JSONResponse(content=content)
+    response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
         key="access_token",
@@ -261,7 +262,7 @@ async def linkedin(
     )
 
     content = LinkedInTokens(access_token=access_token, refresh_token=refresh_token)
-    response = JSONResponse(content=content)
+    response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
         key="access_token",
@@ -325,6 +326,7 @@ async def register(
     body = email_service.load_template(
         file="src/talentgate/auth/templates/verification.txt"
     )
+
     html = email_service.load_template(
         file="src/talentgate/auth/templates/verification.html"
     )
@@ -351,26 +353,29 @@ async def register(
 @router.post(
     path="/api/v1/auth/email/verify",
     response_model=VerifiedEmail,
-    status_code=201,
+    status_code=200,
 )
 async def verify_email(
     *,
     sqlmodel_session: Session = Depends(get_sqlmodel_session),
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ):
-    await user_service.update(
+    if retrieved_user.verified:
+        raise HTTPException(status_code=400, detail="Email has been already verified")
+
+    updated_user = await user_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_user=retrieved_user,
         user=UpdateUser(verified=True),
     )
 
-    return retrieved_user
+    return updated_user
 
 
 @router.post(
     path="/api/v1/auth/email/resend",
     response_model=ResendEmail,
-    status_code=201,
+    status_code=200,
 )
 async def resend_email(
     *,
@@ -391,6 +396,7 @@ async def resend_email(
     body = email_service.load_template(
         file="src/talentgate/auth/templates/verification.txt"
     )
+
     html = email_service.load_template(
         file="src/talentgate/auth/templates/verification.html"
     )
@@ -423,7 +429,7 @@ async def refresh(
     request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
-    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
     tokens: RefreshTokens,
 ) -> JSONResponse:
     refresh_token = request.cookies.get("refresh_token") or getattr(
@@ -433,23 +439,22 @@ async def refresh(
     if not refresh_token or not auth_service.verify_token(
         token=refresh_token, key=settings.refresh_token_key
     ):
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+        raise InvalidRefreshTokenException
 
     _, payload, _ = auth_service.decode_token(token=refresh_token)
 
     retrieved_blacklisted_token = auth_service.retrieve_blacklisted_token(
-        sqlmodel_session=sqlmodel_session,
+        redis_client=redis_client,
         jti=payload.get("jti"),
     )
 
     if retrieved_blacklisted_token:
-        raise HTTPException(status_code=401, detail="Revoked refresh token")
+        raise BlacklistedTokenException
 
-    auth_service.revoke_token(
-        sqlmodel_session=sqlmodel_session,
-        blacklist_token=BlacklistToken(
-            jti=payload.get("jti"), user_id=payload.get("user_id")
-        ),
+    auth_service.blacklist_token(
+        redis_client=redis_client,
+        jti=payload.get("jti"),
+        ex=int(settings.refresh_token_expiration),
     )
 
     access_token = auth_service.encode_token(
@@ -496,8 +501,8 @@ async def refresh(
 async def logout(
     *,
     request: Request,
-    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
-    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    redis_client: Annotated[Redis, Depends(get_redis_client)],
     tokens: LogoutTokens,
 ) -> JSONResponse:
     refresh_token = request.cookies.get("refresh_token") or getattr(
@@ -506,23 +511,22 @@ async def logout(
 
     _, payload, _ = auth_service.decode_token(token=refresh_token)
 
-    retrieved_blacklisted_token = await auth_service.retrieve_blacklisted_token(
-        sqlmodel_session=sqlmodel_session, jti=payload.get("jti")
+    retrieved_blacklisted_token = auth_service.retrieve_blacklisted_token(
+        redis_client=redis_client, jti=payload.get("jti")
     )
 
     if retrieved_blacklisted_token:
-        raise HTTPException(
-            status_code=401, detail="Refresh token has been revoked already"
-        )
+        raise BlacklistedTokenException
 
-    await auth_service.revoke_token(
-        sqlmodel_session=sqlmodel_session,
-        blacklist_token=BlacklistToken(
-            jti=payload.get("jti", None), user_id=payload.get("user_id", None)
-        ),
+    auth_service.blacklist_token(
+        redis_client=redis_client,
+        jti=payload.get("jti"),
+        ex=int(settings.refresh_token_expiration),
     )
 
-    content = AuthenticationTokens(access_token=None, refresh_token=refresh_token)
+    content = AuthenticationTokens(
+        access_token=None, refresh_token=None
+    )
 
     response = JSONResponse(content=content.model_dump())
 

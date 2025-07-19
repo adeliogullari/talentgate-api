@@ -181,7 +181,7 @@ class CreateApplication(SQLModel):
     lastname: str | None = None
     email: str | None = None
     phone: str | None = None
-    resume: str | None = None
+    resume: CreateResume | None = None
     address: CreateAddress | None = None
     links: list[ApplicationLink] = None
     evaluations: list[ApplicationEvaluation] = None

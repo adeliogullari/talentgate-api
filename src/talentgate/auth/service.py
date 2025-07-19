@@ -1,12 +1,8 @@
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 from pytography import JsonWebToken, PasswordHashLibrary
 from redis import Redis
-from sqlmodel import Session, select
-
-from src.talentgate.auth.models import BlacklistToken, TokenBlacklist
 
 
 def encode_password(password: str) -> str:
@@ -27,6 +23,7 @@ def encode_token(user_id: str, key: str, seconds: float) -> str:
     payload = {
         "user_id": user_id,
         "exp": exp,
+        "jti": jti,
     }
     return JsonWebToken.encode(payload=payload, key=key)
 
@@ -39,13 +36,11 @@ def verify_token(token: str, key: str) -> bool:
     return JsonWebToken.verify(token=token, key=key)
 
 
-def retrieve_blacklisted_token_v2(
-    *, redis_client: Redis, jti: str | None
-) -> str | None:
-    name = f"token:blacklist:{jti}"
-    return redis_client.get(name=name)
-
-
-def revoke_token_v2(*, redis_client: Redis, jti: str, ex) -> bool:
+def blacklist_token(*, redis_client: Redis, jti: str, ex) -> bool:
     name = f"token:blacklist:{jti}"
     return redis_client.set(name=name, value=jti, ex=ex)
+
+
+def retrieve_blacklisted_token(*, redis_client: Redis, jti: str | None) -> str | None:
+    name = f"token:blacklist:{jti}"
+    return redis_client.get(name=name)

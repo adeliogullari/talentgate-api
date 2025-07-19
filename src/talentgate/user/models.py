@@ -188,12 +188,10 @@ class UpdatedUser(BaseModel):
 
 
 class UpdateCurrentUser(BaseModel):
-    id: int | None = None
     firstname: str | None = None
     lastname: str | None = None
     username: str | None = None
     email: str | None = None
-    password: str | None = None
 
 
 class UpdatedCurrentUser(BaseModel):
@@ -204,6 +202,7 @@ class UpdatedCurrentUser(BaseModel):
     email: str
     verified: bool
     role: str
+    subscription: CreatedSubscription | None = None
     created_at: float
     updated_at: float
 

@@ -54,7 +54,7 @@ async def update_subscription(
     subscription: UpdateSubscription,
 ) -> UserSubscription:
     retrieved_subscription.sqlmodel_update(
-        subscription.model_dump(exclude_none=True, exclude_unset=True),
+        subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"}),
     )
 
     sqlmodel_session.add(retrieved_subscription)
@@ -170,7 +170,7 @@ async def update(
         user.model_dump(
             exclude_none=True,
             exclude_unset=True,
-            exclude={"password", "subscription"},
+            exclude={"id", "password", "subscription"},
         ),
     )
 
