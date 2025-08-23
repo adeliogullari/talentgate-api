@@ -1,6 +1,9 @@
 from collections.abc import Sequence
+from io import BytesIO
 from typing import Any
 
+from minio import Minio
+from minio.helpers import ObjectWriteResult
 from sqlmodel import Session, select
 
 from config import get_settings
@@ -17,6 +20,40 @@ from src.talentgate.user.models import (
 )
 
 settings = get_settings()
+
+
+async def upload_profile(
+    *,
+    minio_client: Minio,
+    object_name: str,
+    data: BytesIO,
+    length: int,
+    content_type: str
+) -> ObjectWriteResult:
+    return minio_client.put_object(
+        bucket_name="profile",
+        object_name=object_name,
+        data=data,
+        length=length,
+        content_type=content_type
+    )
+
+
+async def retrieve_profile(*, minio_client: Minio, object_name: str) -> bytes:
+    response = None
+
+    try:
+        response = minio_client.get_object(
+            bucket_name="profile",
+            object_name=object_name,
+        )
+        data = response.data
+    finally:
+        if response:
+            response.close()
+            response.release_conn()
+
+    return data
 
 
 async def create_subscription(

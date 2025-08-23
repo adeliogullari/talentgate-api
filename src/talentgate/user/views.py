@@ -1,9 +1,13 @@
 from collections.abc import Sequence
+from io import BytesIO
 from typing import Annotated
+from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from minio import Minio
 from sqlmodel import Session
+from starlette.responses import StreamingResponse
 
 from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
@@ -12,6 +16,7 @@ from src.talentgate.auth.exceptions import (
     InvalidAuthorizationException,
 )
 from src.talentgate.database.service import get_sqlmodel_session
+from src.talentgate.storage.service import get_minio_client
 from src.talentgate.user import service as user_service
 from src.talentgate.user.enums import UserRole
 from src.talentgate.user.exceptions import (
@@ -47,7 +52,9 @@ async def retrieve_current_user(
     request: Request,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
-    http_authorization: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer(auto_error=False))],
+    http_authorization: Annotated[
+        HTTPAuthorizationCredentials, Depends(HTTPBearer(auto_error=False))
+    ],
 ) -> User:
     token = request.cookies.get("access_token") or getattr(
         http_authorization, "credentials", None
@@ -72,6 +79,47 @@ async def retrieve_current_user(
         raise UserIdNotFoundException
 
     return retrieved_user
+
+
+@router.get(
+    path="/api/v1/me/profile",
+    response_model=None,
+    status_code=200,
+)
+async def retrieve_current_user_profile(
+    *,
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+) -> StreamingResponse:
+    profile = await user_service.retrieve_profile(
+        minio_client=minio_client, object_name=retrieved_user.profile
+    )
+
+    return StreamingResponse(
+        content=BytesIO(profile),
+    )
+
+
+@router.post(
+    path="/api/v1/me/profile",
+    status_code=201,
+)
+async def upload_current_user_profile(
+    *,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+    file: Annotated[UploadFile, File()],
+) -> None:
+    data = await file.read()
+    profile = await user_service.upload_profile(
+        minio_client=minio_client,
+        object_name=retrieved_user.profile or f"{uuid4()}",
+        data=BytesIO(data),
+        length=len(data),
+        content_type=file.content_type
+    )
+    await user_service.update(sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user, user=UpdateUser(profile=profile))
 
 
 class CreateUserDependency:

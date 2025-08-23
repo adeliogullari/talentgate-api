@@ -1,36 +1,7 @@
-from datetime import UTC, datetime, timedelta
-
-from sqlmodel import Field, SQLModel
-
 from config import get_settings
 from src.talentgate.database.models import BaseModel
 
 settings = get_settings()
-
-
-class TokenBlacklist(SQLModel, table=True):
-    __tablename__ = "token_blacklist"
-
-    id: int = Field(primary_key=True)
-    jti: str = Field(unique=True)
-    user_id: int | None = Field(default=None, foreign_key="user.id")
-    created_at: float | None = Field(
-        default_factory=lambda: datetime.now(UTC).timestamp(),
-    )
-    updated_at: float | None = Field(
-        default_factory=lambda: datetime.now(UTC).timestamp(),
-        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
-    )
-    expires_at: float | None = Field(
-        default_factory=lambda: (
-            datetime.now(UTC) + timedelta(seconds=settings.refresh_token_expiration)
-        ).timestamp(),
-    )
-
-
-class BlacklistToken(BaseModel):
-    jti: str | None
-    user_id: int | None
 
 
 class AuthenticationTokens(BaseModel):

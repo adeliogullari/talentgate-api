@@ -3,7 +3,7 @@ from sqlmodel import Field, SQLModel
 
 class BaseModel(SQLModel):
     model_config = {
-        "extra": "forbid",
+        "extra": "ignore",
         "from_attributes": True,
     }
 

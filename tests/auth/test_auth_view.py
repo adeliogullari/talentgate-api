@@ -165,7 +165,9 @@ async def test_resend_already_verified_email(
     assert response.status_code == 400
 
 
-async def test_refresh_token(client: TestClient, user: User, headers: Headers, refresh_token: str) -> None:
+async def test_refresh_token(
+    client: TestClient, user: User, headers: Headers, refresh_token: str
+) -> None:
     client.cookies.set("refresh_token", refresh_token)
     response = client.post(
         url="/api/v1/auth/token/refresh",
@@ -176,7 +178,9 @@ async def test_refresh_token(client: TestClient, user: User, headers: Headers, r
     assert response.status_code == 400
 
 
-async def test_logout(client: TestClient, user: User, headers: Headers, refresh_token: str) -> None:
+async def test_logout(
+    client: TestClient, user: User, headers: Headers, refresh_token: str
+) -> None:
     client.cookies.set("refresh_token", refresh_token)
     response = client.post(
         url="/api/v1/auth/logout",
@@ -185,5 +189,5 @@ async def test_logout(client: TestClient, user: User, headers: Headers, refresh_
     )
 
     assert response.status_code == 200
-    assert response.cookies.get('access_token') is None
-    assert response.cookies.get('refresh_token') is None
+    assert response.cookies.get("access_token") is None
+    assert response.cookies.get("refresh_token") is None

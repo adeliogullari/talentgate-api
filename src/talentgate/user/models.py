@@ -40,6 +40,7 @@ class User(SQLModel, table=True):
     username: str = Field(unique=True)
     email: str = Field(unique=True)
     password: str = Field(nullable=False)
+    profile: str | None = Field(default=None)
     verified: bool = Field(default=False)
     role: str = Field(default=UserRole.OWNER.value)
     employee: Optional["Employee"] = Relationship(

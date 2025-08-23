@@ -3,9 +3,9 @@ import string
 from typing import Annotated
 
 import requests
-from google.auth.transport import requests as google_requests  # ✅ Avoid conflict
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from google.auth.transport import requests as google_requests  # ✅ Avoid conflict
 from google.oauth2 import id_token
 from redis import Redis
 from sqlmodel import Session
@@ -26,12 +26,14 @@ from src.talentgate.user.exceptions import (
     InvalidCredentialsException,
     InvalidVerificationException,
 )
-from src.talentgate.user.models import CreateUser, UpdateUser, User
+from src.talentgate.user.models import CreateSubscription, CreateUser, UpdateUser, User
 from src.talentgate.user.views import retrieve_current_user
 
 from .exceptions import (
+    BlacklistedTokenException,
     InvalidGoogleIDTokenException,
-    InvalidLinkedInAccessTokenException, InvalidRefreshTokenException, BlacklistedTokenException,
+    InvalidLinkedInAccessTokenException,
+    InvalidRefreshTokenException,
 )
 from .models import (
     AuthenticationTokens,
@@ -152,6 +154,7 @@ async def google(
                 email=email,
                 password=password,
                 verified=True,
+                subscription=CreateSubscription(),
             ),
         )
 
@@ -314,7 +317,7 @@ async def register(
 
     created_user = await user_service.create(
         sqlmodel_session=sqlmodel_session,
-        user=CreateUser(**credentials.model_dump()),
+        user=CreateUser(**credentials.model_dump(), subscription=CreateSubscription()),
     )
 
     token = auth_service.encode_token(
@@ -524,9 +527,7 @@ async def logout(
         ex=int(settings.refresh_token_expiration),
     )
 
-    content = AuthenticationTokens(
-        access_token=None, refresh_token=None
-    )
+    content = AuthenticationTokens(access_token=None, refresh_token=None)
 
     response = JSONResponse(content=content.model_dump())
 
