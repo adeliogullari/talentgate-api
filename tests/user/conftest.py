@@ -1,5 +1,6 @@
 import secrets
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 from sqlmodel import Session
@@ -10,12 +11,12 @@ from src.talentgate.user.models import User, UserSubscription
 
 
 @pytest.fixture
-def make_subscription(sqlmodel_session: Session):
+def make_subscription(sqlmodel_session: Session) -> Any:
     def make(
         plan: str | None = None,
         start_date: float | None = None,
         end_date: float | None = None,
-    ):
+    ) -> UserSubscription:
         subscription = UserSubscription(
             plan=plan or SubscriptionPlan.BASIC.value,
             start_date=start_date

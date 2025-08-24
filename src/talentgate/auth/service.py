@@ -36,7 +36,7 @@ def verify_token(token: str, key: str) -> bool:
     return JsonWebToken.verify(token=token, key=key)
 
 
-def blacklist_token(*, redis_client: Redis, jti: str, ex) -> bool:
+def blacklist_token(*, redis_client: Redis, jti: str, ex: int) -> bool:
     name = f"token:blacklist:{jti}"
     return redis_client.set(name=name, value=jti, ex=ex)
 

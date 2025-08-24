@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.datastructures import Headers
 
-from config import Settings
+from config import get_settings
 from src.talentgate.company.models import Company
 from src.talentgate.job.models import (
     CreateJob,
@@ -15,7 +15,7 @@ from src.talentgate.job.models import (
 )
 from src.talentgate.user.models import UserRole
 
-settings = Settings()
+settings = get_settings()
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)

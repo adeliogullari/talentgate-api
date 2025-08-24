@@ -360,19 +360,17 @@ async def register(
 )
 async def verify_email(
     *,
-    sqlmodel_session: Session = Depends(get_sqlmodel_session),
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
-):
+) -> User:
     if retrieved_user.verified:
         raise HTTPException(status_code=400, detail="Email has been already verified")
 
-    updated_user = await user_service.update(
+    return await user_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_user=retrieved_user,
         user=UpdateUser(verified=True),
     )
-
-    return updated_user
 
 
 @router.post(
@@ -386,7 +384,7 @@ async def resend_email(
     settings: Annotated[Settings, Depends(get_settings)],
     email_client: Annotated[EmailClient, Depends(get_email_client)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
-):
+) -> User:
     if retrieved_user.verified:
         raise EmailAlreadyVerifiedException
 

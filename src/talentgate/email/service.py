@@ -6,11 +6,9 @@ from src.talentgate.email.client import EmailClient
 settings = get_settings()
 
 
-def load_template(file: str):
+def load_template(file: str) -> str:
     with open(file, encoding="utf-8") as f:
-        content = f.read()
-
-    return content
+        return f.read()
 
 
 def send_email(
@@ -21,7 +19,7 @@ def send_email(
     context: dict | None = None,
     from_addr: str | None = None,
     to_addrs: str | Sequence[str] | None = None,
-):
+) -> None:
     body = body.format(**context)
     html = html.format(**context)
 

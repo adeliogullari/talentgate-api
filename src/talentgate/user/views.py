@@ -117,9 +117,13 @@ async def upload_current_user_profile(
         object_name=retrieved_user.profile or f"{uuid4()}",
         data=BytesIO(data),
         length=len(data),
-        content_type=file.content_type
+        content_type=file.content_type,
     )
-    await user_service.update(sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_user, user=UpdateUser(profile=profile))
+    await user_service.update(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_user=retrieved_user,
+        user=UpdateUser(profile=profile),
+    )
 
 
 class CreateUserDependency:

@@ -1,5 +1,5 @@
 """
-add profile to user model
+add profile to user model.
 
 Revision ID: db3da66edca3
 Revises:

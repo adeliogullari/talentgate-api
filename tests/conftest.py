@@ -68,7 +68,7 @@ async def sqlmodel_session(app: FastAPI) -> AsyncGenerator[Session, Any]:
 
 
 @pytest.fixture
-async def email_client() -> EmailClient:
+async def email_client() -> Any:
     class SMTPClient:
         def __init__(self):
             self.inbox = []
@@ -94,7 +94,7 @@ async def email_client() -> EmailClient:
 
 
 @pytest.fixture
-def redis_client() -> Redis:
+def redis_client() -> Any:
     class RedisClient:
         def __init__(self):
             self.store = {}
@@ -118,7 +118,7 @@ def redis_client() -> Redis:
 
 
 @pytest.fixture
-def minio_client() -> Minio:
+def minio_client() -> Any:
     @dataclass
     class FileObject:
         bucket_name: str

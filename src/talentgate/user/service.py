@@ -28,14 +28,14 @@ async def upload_profile(
     object_name: str,
     data: BytesIO,
     length: int,
-    content_type: str
+    content_type: str,
 ) -> ObjectWriteResult:
     return minio_client.put_object(
         bucket_name="profile",
         object_name=object_name,
         data=data,
         length=length,
-        content_type=content_type
+        content_type=content_type,
     )
 
 
