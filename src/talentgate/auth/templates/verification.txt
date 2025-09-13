@@ -1,6 +1,6 @@
-Hi {username},
+Hi {firstname},
 
-Please verify your email by clicking the link below:
+Please verify your email address by clicking the button below.
 {link}
 
 Thanks,

@@ -1,11 +1,16 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, BackgroundTasks
 from sqlmodel import Session
 
+from config import Settings, get_settings
 from src.talentgate.auth.exceptions import InvalidAuthorizationException
+from src.talentgate.email.client import EmailClient, get_email_client
+from src.talentgate.auth import service as auth_service
+from src.talentgate.user import service as user_service
 from src.talentgate.company import service as company_service
+from src.talentgate.employee import service as employee_service
 from src.talentgate.company.exceptions import CompanyIdNotFoundException
 from src.talentgate.company.models import (
     Company,
@@ -221,6 +226,9 @@ async def retrieve_companies(
 async def update_company(
     *,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    email_client: Annotated[EmailClient, Depends(get_email_client)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    background_tasks: BackgroundTasks,
     company_id: int,
     company: UpdateCompany,
 ) -> Company:
@@ -232,11 +240,38 @@ async def update_company(
     if not retrieved_company:
         raise CompanyIdNotFoundException
 
-    return await company_service.update(
+    updated_company = await company_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_company=retrieved_company,
         company=company,
     )
+
+    for employee in company.employees:
+        if not employee.user.id:
+            retrieved_user = await user_service.retrieve_by_email(
+                sqlmodel_session=sqlmodel_session, email=employee.user.email
+            )
+
+            token = auth_service.encode_token(
+                user_id=str(employee.user.id),
+                key=settings.access_token_key,
+                seconds=settings.access_token_expiration,
+            )
+
+            context = {
+                "username": employee.user.username,
+                "link": f"${settings.frontend_base_url}/verify?token={token}",
+            }
+
+            await company_service.send_onboarding_email(
+                email_client=email_client,
+                background_tasks=background_tasks,
+                context=context,
+                from_addr=settings.smtp_email,
+                to_addrs=retrieved_user.email,
+            )
+
+    return updated_company
 
 
 @router.delete(

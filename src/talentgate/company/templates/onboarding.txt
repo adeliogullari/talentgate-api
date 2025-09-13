@@ -1,0 +1,7 @@
+Hi {username},
+
+Please verify your email by clicking the link below:
+{link}
+
+Thanks,
+TalentGate Team

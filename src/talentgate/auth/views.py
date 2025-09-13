@@ -5,7 +5,7 @@ from typing import Annotated
 import requests
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
-from google.auth.transport import requests as google_requests  # ✅ Avoid conflict
+from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from redis import Redis
 from sqlmodel import Session
@@ -326,28 +326,17 @@ async def register(
         seconds=settings.access_token_expiration,
     )
 
-    body = email_service.load_template(
-        file="src/talentgate/auth/templates/verification.txt"
-    )
-
-    html = email_service.load_template(
-        file="src/talentgate/auth/templates/verification.html"
-    )
-
     context = {
         "username": created_user.username,
         "link": f"${settings.frontend_base_url}/verify?token={token}",
     }
 
-    background_tasks.add_task(
-        email_service.send_email,
-        email_client,
-        "Email Verification",
-        body,
-        html,
-        context,
-        settings.smtp_email,
-        created_user.email,
+    await auth_service.send_verification_email(
+        email_client=email_client,
+        background_tasks=background_tasks,
+        context=context,
+        from_addr=settings.smtp_email,
+        to_addrs=created_user.email,
     )
 
     return created_user
@@ -394,28 +383,17 @@ async def resend_email(
         seconds=settings.access_token_expiration,
     )
 
-    body = email_service.load_template(
-        file="src/talentgate/auth/templates/verification.txt"
-    )
-
-    html = email_service.load_template(
-        file="src/talentgate/auth/templates/verification.html"
-    )
-
     context = {
         "username": retrieved_user.username,
         "link": f"${settings.frontend_base_url}/verify?token={token}",
     }
 
-    background_tasks.add_task(
-        email_service.send_email,
-        email_client,
-        "Email Verification",
-        body,
-        html,
-        context,
-        settings.smtp_email,
-        retrieved_user.email,
+    await auth_service.send_verification_email(
+        email_client=email_client,
+        background_tasks=background_tasks,
+        context=context,
+        from_addr=settings.smtp_email,
+        to_addrs=retrieved_user.email,
     )
 
     return retrieved_user

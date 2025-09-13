@@ -1,5 +1,5 @@
 -r requirements.txt
 ty==0.0.1a19
-ruff==0.12.10
-pytest==8.4.1
-pytest-asyncio==1.1.0
+ruff==0.13.0
+pytest==8.4.2
+pytest-asyncio==1.2.0

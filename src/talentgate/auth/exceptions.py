@@ -12,7 +12,7 @@ InvalidRefreshTokenException = HTTPException(
 )
 
 BlacklistedTokenException = HTTPException(
-    status_code=HTTP_401_UNAUTHORIZED, detail="TToken has been blacklisted."
+    status_code=HTTP_401_UNAUTHORIZED, detail="Token has been blacklisted."
 )
 
 InvalidGoogleIDTokenException = HTTPException(

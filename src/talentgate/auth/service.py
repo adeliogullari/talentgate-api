@@ -1,8 +1,14 @@
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Sequence
 
+from fastapi import BackgroundTasks
+
+from src.talentgate.email import service as email_service
 from pytography import JsonWebToken, PasswordHashLibrary
 from redis import Redis
+
+from src.talentgate.email.client import EmailClient
 
 
 def encode_password(password: str) -> str:
@@ -44,3 +50,31 @@ def blacklist_token(*, redis_client: Redis, jti: str, ex: int) -> bool:
 def retrieve_blacklisted_token(*, redis_client: Redis, jti: str | None) -> str | None:
     name = f"token:blacklist:{jti}"
     return redis_client.get(name=name)
+
+
+async def send_verification_email(
+    *,
+    email_client: EmailClient,
+    background_tasks: BackgroundTasks,
+    context: dict,
+    from_addr: str | None = None,
+    to_addrs: str | Sequence[str] | None = None,
+):
+    body = email_service.load_template(
+        file="src/talentgate/auth/templates/verification.txt"
+    )
+
+    html = email_service.load_template(
+        file="src/talentgate/auth/templates/verification.html"
+    )
+
+    background_tasks.add_task(
+        email_service.send_email,
+        email_client,
+        "Email Verification",
+        body,
+        html,
+        context,
+        from_addr,
+        to_addrs,
+    )

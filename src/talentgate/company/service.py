@@ -1,8 +1,10 @@
 from collections.abc import Sequence
 from typing import Any
 
+from fastapi import BackgroundTasks
 from sqlalchemy import func
 from sqlmodel import Session, and_, or_, select
+from src.talentgate.email import service as email_service
 
 from config import get_settings
 from src.talentgate.company.models import (
@@ -20,6 +22,7 @@ from src.talentgate.company.models import (
     UpdateLink,
     UpdateLocation,
 )
+from src.talentgate.email.client import EmailClient
 from src.talentgate.employee import service as employee_service
 from src.talentgate.job.models import Job, JobLocation, JobQueryParameters
 
@@ -390,7 +393,7 @@ async def update(
         company.model_dump(
             exclude_none=True,
             exclude_unset=True,
-            exclude={"locations", "links"},
+            exclude={"locations", "links", "employees"},
         ),
     )
 
@@ -406,3 +409,31 @@ async def delete(*, sqlmodel_session: Session, retrieved_company: Company) -> Co
     sqlmodel_session.commit()
 
     return retrieved_company
+
+
+async def send_onboarding_email(
+    *,
+    email_client: EmailClient,
+    background_tasks: BackgroundTasks,
+    context: dict,
+    from_addr: str | None = None,
+    to_addrs: str | Sequence[str] | None = None,
+):
+    body = email_service.load_template(
+        file="src/talentgate/company/templates/onboarding.txt"
+    )
+
+    html = email_service.load_template(
+        file="src/talentgate/company/templates/onboarding.html"
+    )
+
+    background_tasks.add_task(
+        email_service.send_email,
+        email_client,
+        "Employee Onboarding",
+        body,
+        html,
+        context,
+        from_addr,
+        to_addrs,
+    )
