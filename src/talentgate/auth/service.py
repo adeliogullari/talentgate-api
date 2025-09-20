@@ -1,13 +1,12 @@
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
-from typing import Sequence
 
 from fastapi import BackgroundTasks
-
-from src.talentgate.email import service as email_service
 from pytography import JsonWebToken, PasswordHashLibrary
 from redis import Redis
 
+from src.talentgate.email import service as email_service
 from src.talentgate.email.client import EmailClient
 
 
@@ -59,7 +58,7 @@ async def send_verification_email(
     context: dict,
     from_addr: str | None = None,
     to_addrs: str | Sequence[str] | None = None,
-):
+) -> None:
     body = email_service.load_template(
         file="src/talentgate/auth/templates/verification.txt"
     )

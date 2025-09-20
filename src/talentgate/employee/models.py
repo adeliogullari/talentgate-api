@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from src.talentgate.company.models import Company
+from src.talentgate.company.models import Company, CreateCompany
 from src.talentgate.database.models import BaseModel, Observer
 from src.talentgate.user.models import (
     CreatedUser,
@@ -67,6 +67,7 @@ class CreateEmployee(BaseModel):
     id: int | None = None
     title: str | None = None
     user: CreateUser | None = None
+    company: CreateCompany | None = None
 
 
 class CreatedEmployee(BaseModel):

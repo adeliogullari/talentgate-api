@@ -16,12 +16,12 @@ from src.talentgate.application.views import router as application_router
 from src.talentgate.auth.views import router as auth_router
 from src.talentgate.company.views import router as company_router
 from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
-from src.talentgate.email.client import EmailClient
+from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.employee.views import router as employee_router
 from src.talentgate.job.views import router as job_router
 from src.talentgate.storage.service import get_minio_client
 from src.talentgate.user.views import router as user_router
-from tests.auth.conftest import access_token, headers, refresh_token
+from tests.auth.conftest import headers, access_token, refresh_token
 from tests.company.conftest import address, company, location, make_company
 from tests.employee.conftest import employee, make_employee
 from tests.job.conftest import job, make_job
@@ -189,12 +189,25 @@ def minio_client() -> Any:
 
 
 @pytest.fixture
+def settings() -> Settings:
+    return Settings(
+        password_hash_algorithm="scrypt",
+        message_digest_algorithm="blake2b",
+        access_token_expiration=7200,
+        access_token_key="fY7mNQvA9HdJcT1E2RpOXaZ5LbVgK4sM",
+        refresh_token_expiration=86400,
+        refresh_token_key="ZcQ5TRjUmn28XeFoBKHvAGd0wL7iyE6Y",
+    )
+
+
+@pytest.fixture
 async def client(
     app: FastAPI,
     sqlmodel_session: Session,
     email_client: EmailClient,
     redis_client: Redis,
     minio_client: Minio,
+    settings: Settings,
 ) -> AsyncGenerator[TestClient, Any]:
     async def _get_sqlmodel_session() -> AsyncGenerator[Session, Any]:
         yield sqlmodel_session
@@ -209,17 +222,10 @@ async def client(
         yield minio_client
 
     async def _get_settings() -> AsyncGenerator[Settings, Any]:
-        yield Settings(
-            password_hash_algorithm="scrypt",
-            message_digest_algorithm="blake2b",
-            access_token_expiration=7200,
-            access_token_key="SJ6nWJtM737AZWevVdDEr4Fh0GmoyR8k",
-            refresh_token_expiration=86400,
-            refresh_token_key="rD8W8x2hBVO0Iyg5mZ6D4aQcCzEpuSIR",
-        )
+        yield settings
 
     app.dependency_overrides[get_sqlmodel_session] = _get_sqlmodel_session
-    app.dependency_overrides[_get_email_client] = _get_email_client
+    app.dependency_overrides[get_email_client] = _get_email_client
     app.dependency_overrides[get_redis_client] = _get_redis_client
     app.dependency_overrides[get_minio_client] = _get_minio_client
     app.dependency_overrides[get_settings] = _get_settings

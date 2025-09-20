@@ -1,16 +1,13 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlmodel import Session
 
 from config import Settings, get_settings
-from src.talentgate.auth.exceptions import InvalidAuthorizationException
-from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.auth import service as auth_service
-from src.talentgate.user import service as user_service
+from src.talentgate.auth.exceptions import InvalidAuthorizationException
 from src.talentgate.company import service as company_service
-from src.talentgate.employee import service as employee_service
 from src.talentgate.company.exceptions import CompanyIdNotFoundException
 from src.talentgate.company.models import (
     Company,
@@ -23,6 +20,7 @@ from src.talentgate.company.models import (
     UpdatedCompany,
 )
 from src.talentgate.database.service import get_sqlmodel_session
+from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.employee.enums import EmployeeTitle
 from src.talentgate.job.models import (
     Job,
@@ -31,6 +29,7 @@ from src.talentgate.job.models import (
     RetrievedCompanyJobs,
     RetrievedJob,
 )
+from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
     SubscriptionPlan,
     SubscriptionStatus,

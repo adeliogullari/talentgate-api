@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
-from redis import Redis
 from starlette.datastructures import Headers
 
 from src.talentgate.auth import service as auth_service
+from src.talentgate.user.enums import SubscriptionPlan, SubscriptionStatus
 from src.talentgate.user.models import User
 
 
@@ -69,19 +69,35 @@ async def test_login_with_invalid_credentials(
     assert response.status_code == 401
 
 
-async def test_register(client: TestClient) -> None:
+@pytest.mark.parametrize(
+    "firstname, lastname, username, email, password",
+    [
+        ["firstname", "lastname", "username", "username@example.com", "password"],
+    ],
+)
+async def test_register(
+    client: TestClient,
+    firstname: str,
+    lastname: str,
+    username: str,
+    email: str,
+    password: str,
+) -> None:
     response = client.post(
         url="/api/v1/auth/register",
         json={
-            "firstname": "firstname",
-            "lastname": "lastname",
-            "username": "username",
-            "email": "username@example.com",
-            "password": "password",
+            "firstname": firstname,
+            "lastname": lastname,
+            "username": username,
+            "email": email,
+            "password": password,
         },
     )
 
     assert response.status_code == 201
+    assert response.json()["email"] == email
+    assert response.json()["subscription"]["plan"] == SubscriptionPlan.STANDARD
+    assert response.json()["subscription"]["status"] == SubscriptionStatus.ACTIVE
 
 
 @pytest.mark.parametrize(
@@ -134,7 +150,7 @@ async def test_verify_email(client: TestClient, user: User, headers: Headers) ->
     assert response.status_code == 200
 
 
-async def test_verify_already_verified_email(
+async def test_verify_email_already_verified(
     client: TestClient, user: User, headers: Headers
 ) -> None:
     response = client.post(url="/api/v1/auth/email/verify", headers=headers)
@@ -151,16 +167,27 @@ async def test_verify_already_verified_email(
     ],
     indirect=True,
 )
-async def test_resend_email(client: TestClient, user: User, headers: Headers) -> None:
-    response = client.post(url="/api/v1/auth/email/verify", headers=headers)
+async def test_resend_email(
+    client: TestClient,
+    user: User,
+) -> None:
+    response = client.post(
+        url="/api/v1/auth/email/verify/resend",
+        json={
+            "email": user.email,
+        },
+    )
 
     assert response.status_code == 200
 
 
-async def test_resend_already_verified_email(
-    client: TestClient, user: User, headers: Headers
-) -> None:
-    response = client.post(url="/api/v1/auth/email/resend", headers=headers)
+async def test_resend_email_already_verified(client: TestClient, user: User) -> None:
+    response = client.post(
+        url="/api/v1/auth/email/verify/resend",
+        json={
+            "email": user.email,
+        },
+    )
 
     assert response.status_code == 400
 
@@ -175,13 +202,64 @@ async def test_refresh_token(
         headers=headers,
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert response.cookies.get("access_token") is not None
+    assert response.cookies.get("refresh_token") is not None
 
 
-async def test_logout(
+@pytest.mark.parametrize(
+    "refresh_token",
+    [
+        {
+            "key": "invalid_key",
+        },
+    ],
+    indirect=True,
+)
+async def test_refresh_invalid_token(
     client: TestClient, user: User, headers: Headers, refresh_token: str
 ) -> None:
     client.cookies.set("refresh_token", refresh_token)
+    response = client.post(
+        url="/api/v1/auth/token/refresh",
+        json={"refresh_token": refresh_token},
+        headers=headers,
+    )
+
+    assert response.status_code == 401
+
+
+async def test_logout(
+    client: TestClient,
+    user: User,
+    headers: Headers,
+    access_token: str,
+    refresh_token: str,
+) -> None:
+    client.cookies.set("access_token", access_token)
+    client.cookies.set("refresh_token", refresh_token)
+
+    response = client.post(
+        url="/api/v1/auth/logout",
+        json={"refresh_token": refresh_token},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.cookies.get("access_token") is None
+    assert response.cookies.get("refresh_token") is None
+
+
+async def test_logout_with_invalid_refresh_token(
+    client: TestClient,
+    user: User,
+    headers: Headers,
+    access_token: str,
+    refresh_token: str,
+) -> None:
+    client.cookies.set("access_token", access_token)
+    client.cookies.set("refresh_token", refresh_token)
+
     response = client.post(
         url="/api/v1/auth/logout",
         json={"refresh_token": refresh_token},

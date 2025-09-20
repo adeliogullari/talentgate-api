@@ -1,5 +1,6 @@
 import random
 import string
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import requests
@@ -16,9 +17,11 @@ from starlette.status import (
 from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
 from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
-from src.talentgate.email import service as email_service
 from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.user import service as user_service
+from src.talentgate.employee import service as employee_service
+from src.talentgate.company import service as company_service
+from src.talentgate.user.enums import SubscriptionPlan
 from src.talentgate.user.exceptions import (
     DuplicateEmailException,
     DuplicateUsernameException,
@@ -38,18 +41,19 @@ from .exceptions import (
 from .models import (
     AuthenticationTokens,
     GoogleCredentials,
-    GoogleTokens,
     LinkedInCredentials,
-    LinkedInTokens,
     LoginCredentials,
-    LoginTokens,
     LogoutTokens,
     RefreshTokens,
     RegisterCredentials,
     RegisteredUser,
+    ResendCredentials,
     ResendEmail,
     VerifiedEmail,
 )
+from ..company.models import CreateCompany
+from ..employee.enums import EmployeeTitle
+from ..employee.models import CreateEmployee
 
 router = APIRouter(tags=["auth"])
 
@@ -90,7 +94,9 @@ async def login(
         seconds=settings.refresh_token_expiration,
     )
 
-    content = LoginTokens(access_token=access_token, refresh_token=refresh_token)
+    content = AuthenticationTokens(
+        access_token=access_token, refresh_token=refresh_token
+    )
     response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
@@ -150,11 +156,17 @@ async def google(
         await user_service.create(
             sqlmodel_session=sqlmodel_session,
             user=CreateUser(
+                firstname=firstname,
+                lastname=lastname,
                 username=username,
                 email=email,
                 password=password,
                 verified=True,
-                subscription=CreateSubscription(),
+                subscription=CreateSubscription(
+                    plan=SubscriptionPlan.STANDARD.value,
+                    start_date=datetime.now(UTC).timestamp(),
+                    end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                ),
             ),
         )
 
@@ -175,7 +187,9 @@ async def google(
         seconds=settings.refresh_token_expiration,
     )
 
-    content = GoogleTokens(access_token=access_token, refresh_token=refresh_token)
+    content = AuthenticationTokens(
+        access_token=access_token, refresh_token=refresh_token
+    )
     response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
@@ -240,10 +254,17 @@ async def linkedin(
         await user_service.create(
             sqlmodel_session=sqlmodel_session,
             user=CreateUser(
+                firstname=firstname,
+                lastname=lastname,
                 username=username,
                 email=email,
                 password=password,
                 verified=True,
+                subscription=CreateSubscription(
+                    plan=SubscriptionPlan.STANDARD.value,
+                    start_date=datetime.now(UTC).timestamp(),
+                    end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                ),
             ),
         )
 
@@ -264,7 +285,9 @@ async def linkedin(
         seconds=settings.refresh_token_expiration,
     )
 
-    content = LinkedInTokens(access_token=access_token, refresh_token=refresh_token)
+    content = AuthenticationTokens(
+        access_token=access_token, refresh_token=refresh_token
+    )
     response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
@@ -317,7 +340,14 @@ async def register(
 
     created_user = await user_service.create(
         sqlmodel_session=sqlmodel_session,
-        user=CreateUser(**credentials.model_dump(), subscription=CreateSubscription()),
+        user=CreateUser(
+            **credentials.model_dump(exclude_unset=True, exclude_none=True),
+            subscription=CreateSubscription(
+                plan=SubscriptionPlan.STANDARD.value,
+                start_date=datetime.now(UTC).timestamp(),
+                end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+            ),
+        ),
     )
 
     token = auth_service.encode_token(
@@ -327,7 +357,7 @@ async def register(
     )
 
     context = {
-        "username": created_user.username,
+        "firstname": created_user.firstname,
         "link": f"${settings.frontend_base_url}/verify?token={token}",
     }
 
@@ -363,17 +393,25 @@ async def verify_email(
 
 
 @router.post(
-    path="/api/v1/auth/email/resend",
+    path="/api/v1/auth/email/verify/resend",
     response_model=ResendEmail,
     status_code=200,
 )
-async def resend_email(
+async def resend_verification_email(
     *,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     background_tasks: BackgroundTasks,
     settings: Annotated[Settings, Depends(get_settings)],
     email_client: Annotated[EmailClient, Depends(get_email_client)],
-    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+    credentials: ResendCredentials,
 ) -> User:
+    retrieved_user = await user_service.retrieve_by_email(
+        sqlmodel_session=sqlmodel_session, email=credentials.email
+    )
+
+    if not retrieved_user:
+        raise InvalidCredentialsException
+
     if retrieved_user.verified:
         raise EmailAlreadyVerifiedException
 
@@ -384,7 +422,7 @@ async def resend_email(
     )
 
     context = {
-        "username": retrieved_user.username,
+        "firstname": retrieved_user.firstname,
         "link": f"${settings.frontend_base_url}/verify?token={token}",
     }
 
@@ -407,7 +445,6 @@ async def refresh(
     *,
     request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
-    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
     tokens: RefreshTokens,
 ) -> JSONResponse:
@@ -437,13 +474,13 @@ async def refresh(
     )
 
     access_token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        user_id=str(payload["user_id"]),
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
 
     refresh_token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        user_id=str(payload["user_id"]),
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )
@@ -487,6 +524,11 @@ async def logout(
     refresh_token = request.cookies.get("refresh_token") or getattr(
         tokens, "refresh_token", None
     )
+
+    if not refresh_token or not auth_service.verify_token(
+        token=refresh_token, key=settings.refresh_token_key
+    ):
+        raise InvalidRefreshTokenException
 
     _, payload, _ = auth_service.decode_token(token=refresh_token)
 

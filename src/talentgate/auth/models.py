@@ -1,5 +1,6 @@
 from config import get_settings
 from src.talentgate.database.models import BaseModel
+from src.talentgate.user.models import CreatedSubscription
 
 settings = get_settings()
 
@@ -50,10 +51,15 @@ class RegisteredUser(BaseModel):
     email: str
     verified: bool
     role: str
+    subscription: CreatedSubscription
 
 
 class EmailVerificationQueryParameters(BaseModel):
     token: str | None = None
+
+
+class ResendCredentials(BaseModel):
+    email: str
 
 
 class ResendEmail(BaseModel):

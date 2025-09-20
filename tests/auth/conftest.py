@@ -1,27 +1,34 @@
 import pytest
 from starlette.datastructures import Headers
 
-from config import get_settings
 from src.talentgate.auth import service as auth_service
-
-settings = get_settings()
 
 
 @pytest.fixture
-def access_token(user):
+def access_token(user, settings, request):
+    param = getattr(request, "param", {})
+    user_id = param.get("user_id", str(user.id))
+    key = param.get("key", settings.access_token_key)
+    seconds = param.get("seconds", settings.access_token_expiration)
+
     return auth_service.encode_token(
-        user_id=str(user.id),
-        key=settings.access_token_key,
-        seconds=settings.access_token_expiration,
+        user_id=user_id,
+        key=key,
+        seconds=seconds,
     )
 
 
 @pytest.fixture
-def refresh_token(user):
+def refresh_token(user, settings, request):
+    param = getattr(request, "param", {})
+    user_id = param.get("user_id", str(user.id))
+    key = param.get("key", settings.refresh_token_key)
+    seconds = param.get("seconds", settings.refresh_token_expiration)
+
     return auth_service.encode_token(
-        user_id=str(user.id),
-        key=settings.refresh_token_key,
-        seconds=settings.refresh_token_expiration,
+        user_id=user_id,
+        key=key,
+        seconds=seconds,
     )
 
 
