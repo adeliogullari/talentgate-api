@@ -41,14 +41,14 @@ def verify_token(token: str, key: str) -> bool:
     return JsonWebToken.verify(token=token, key=key)
 
 
-def blacklist_token(*, redis_client: Redis, jti: str, ex: int) -> bool:
+async def blacklist_token(*, redis_client: Redis, jti: str, ex: int) -> bool:
     name = f"token:blacklist:{jti}"
-    return redis_client.set(name=name, value=jti, ex=ex)
+    return await redis_client.set(name=name, value=jti, ex=ex)
 
 
-def retrieve_blacklisted_token(*, redis_client: Redis, jti: str | None) -> str | None:
+async def retrieve_blacklisted_token(*, redis_client: Redis, jti: str | None) -> str | None:
     name = f"token:blacklist:{jti}"
-    return redis_client.get(name=name)
+    return await redis_client.get(name=name)
 
 
 async def send_verification_email(

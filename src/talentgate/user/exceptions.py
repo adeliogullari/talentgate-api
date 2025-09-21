@@ -7,6 +7,11 @@ from starlette.status import (
     HTTP_409_CONFLICT,
 )
 
+EmailAlreadyVerifiedException = HTTPException(
+    status_code=HTTP_400_BAD_REQUEST,
+    detail="This email address has already been verified.",
+)
+
 InvalidCredentialsException = HTTPException(
     status_code=HTTP_401_UNAUTHORIZED,
     detail="Invalid email or password.",
@@ -14,12 +19,12 @@ InvalidCredentialsException = HTTPException(
 
 InvalidVerificationException = HTTPException(
     status_code=HTTP_403_FORBIDDEN,
-    detail="The user verification is invalid.",
+    detail="Invalid or expired token.",
 )
 
 UserIdNotFoundException = HTTPException(
     status_code=HTTP_404_NOT_FOUND,
-    detail="User not found for the provided id.",
+    detail="No user found with the provided ID.",
 )
 
 DuplicateUsernameException = HTTPException(
@@ -29,9 +34,5 @@ DuplicateUsernameException = HTTPException(
 
 DuplicateEmailException = HTTPException(
     status_code=HTTP_409_CONFLICT,
-    detail="A user with this email already exists.",
-)
-
-EmailAlreadyVerifiedException = HTTPException(
-    status_code=HTTP_400_BAD_REQUEST, detail="User email is already verified"
+    detail="A user with this email address already exists.",
 )

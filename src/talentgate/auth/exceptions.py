@@ -1,5 +1,8 @@
 from fastapi import HTTPException
-from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
+from starlette.status import (
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
+)
 
 InvalidAccessTokenException = HTTPException(
     status_code=HTTP_401_UNAUTHORIZED,
@@ -12,17 +15,18 @@ InvalidRefreshTokenException = HTTPException(
 )
 
 BlacklistedTokenException = HTTPException(
-    status_code=HTTP_401_UNAUTHORIZED, detail="Token has been blacklisted."
+    status_code=HTTP_401_UNAUTHORIZED,
+    detail="The token has been blacklisted.",
 )
 
 InvalidGoogleIDTokenException = HTTPException(
     status_code=HTTP_401_UNAUTHORIZED,
-    detail="The google id token is invalid or has expired",
+    detail="The Google ID token is invalid or has expired.",
 )
 
 InvalidLinkedInAccessTokenException = HTTPException(
     status_code=HTTP_401_UNAUTHORIZED,
-    detail="The linkedin access token is invalid or has expired",
+    detail="The LinkedIn access token is invalid or has expired.",
 )
 
 InvalidAuthorizationException = HTTPException(

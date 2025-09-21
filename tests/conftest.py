@@ -99,7 +99,7 @@ def redis_client() -> Any:
         def __init__(self):
             self.store = {}
 
-        def set(
+        async def set(
             self,
             name: KeyT,
             value: EncodableT,
@@ -108,10 +108,10 @@ def redis_client() -> Any:
             self.store[name] = value
             return True
 
-        def get(self, name: KeyT):
+        async def get(self, name: KeyT):
             return self.store.get(name)
 
-        def close(self):
+        async def close(self):
             pass
 
     return RedisClient()

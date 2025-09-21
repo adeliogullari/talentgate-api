@@ -35,15 +35,15 @@ async def test_verify_refresh_token(user: User) -> None:
 
 async def test_blacklist_token(redis_client: Redis) -> None:
     jti = str(uuid.uuid4())
-    auth_service.blacklist_token(redis_client=redis_client, jti=jti, ex=86400)
-    retrieved_token = redis_client.get(name=f"token:blacklist:{jti}")
+    await auth_service.blacklist_token(redis_client=redis_client, jti=jti, ex=86400)
+    retrieved_token = await redis_client.get(name=f"token:blacklist:{jti}")
     assert retrieved_token == jti
 
 
 async def test_retrieve_blacklisted_token(redis_client: Redis) -> None:
     jti = str(uuid.uuid4())
-    redis_client.set(name=f"token:blacklist:{jti}", value=jti)
-    retrieved_token = auth_service.retrieve_blacklisted_token(
+    await redis_client.set(name=f"token:blacklist:{jti}", value=jti)
+    retrieved_token = await auth_service.retrieve_blacklisted_token(
         redis_client=redis_client, jti=jti
     )
     assert retrieved_token == jti

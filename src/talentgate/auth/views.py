@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import requests
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import JSONResponse
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
@@ -19,8 +19,6 @@ from src.talentgate.auth import service as auth_service
 from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.user import service as user_service
-from src.talentgate.employee import service as employee_service
-from src.talentgate.company import service as company_service
 from src.talentgate.user.enums import SubscriptionPlan
 from src.talentgate.user.exceptions import (
     DuplicateEmailException,
@@ -51,9 +49,6 @@ from .models import (
     ResendEmail,
     VerifiedEmail,
 )
-from ..company.models import CreateCompany
-from ..employee.enums import EmployeeTitle
-from ..employee.models import CreateEmployee
 
 router = APIRouter(tags=["auth"])
 
@@ -97,6 +92,7 @@ async def login(
     content = AuthenticationTokens(
         access_token=access_token, refresh_token=refresh_token
     )
+
     response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
@@ -383,7 +379,7 @@ async def verify_email(
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ) -> User:
     if retrieved_user.verified:
-        raise HTTPException(status_code=400, detail="Email has been already verified")
+        raise EmailAlreadyVerifiedException
 
     return await user_service.update(
         sqlmodel_session=sqlmodel_session,
@@ -459,7 +455,7 @@ async def refresh(
 
     _, payload, _ = auth_service.decode_token(token=refresh_token)
 
-    retrieved_blacklisted_token = auth_service.retrieve_blacklisted_token(
+    retrieved_blacklisted_token = await auth_service.retrieve_blacklisted_token(
         redis_client=redis_client,
         jti=payload.get("jti"),
     )
@@ -467,7 +463,7 @@ async def refresh(
     if retrieved_blacklisted_token:
         raise BlacklistedTokenException
 
-    auth_service.blacklist_token(
+    await auth_service.blacklist_token(
         redis_client=redis_client,
         jti=payload.get("jti"),
         ex=int(settings.refresh_token_expiration),
@@ -532,14 +528,14 @@ async def logout(
 
     _, payload, _ = auth_service.decode_token(token=refresh_token)
 
-    retrieved_blacklisted_token = auth_service.retrieve_blacklisted_token(
+    retrieved_blacklisted_token = await auth_service.retrieve_blacklisted_token(
         redis_client=redis_client, jti=payload.get("jti")
     )
 
     if retrieved_blacklisted_token:
         raise BlacklistedTokenException
 
-    auth_service.blacklist_token(
+    await auth_service.blacklist_token(
         redis_client=redis_client,
         jti=payload.get("jti"),
         ex=int(settings.refresh_token_expiration),
