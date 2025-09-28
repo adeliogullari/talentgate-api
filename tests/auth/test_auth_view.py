@@ -250,6 +250,15 @@ async def test_logout(
     assert response.cookies.get("refresh_token") is None
 
 
+@pytest.mark.parametrize(
+    "refresh_token",
+    [
+        {
+            "key": "invalid_key",
+        },
+    ],
+    indirect=True,
+)
 async def test_logout_with_invalid_refresh_token(
     client: TestClient,
     user: User,
@@ -266,6 +275,4 @@ async def test_logout_with_invalid_refresh_token(
         headers=headers,
     )
 
-    assert response.status_code == 200
-    assert response.cookies.get("access_token") is None
-    assert response.cookies.get("refresh_token") is None
+    assert response.status_code == 401

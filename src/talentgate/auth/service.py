@@ -46,7 +46,9 @@ async def blacklist_token(*, redis_client: Redis, jti: str, ex: int) -> bool:
     return await redis_client.set(name=name, value=jti, ex=ex)
 
 
-async def retrieve_blacklisted_token(*, redis_client: Redis, jti: str | None) -> str | None:
+async def retrieve_blacklisted_token(
+    *, redis_client: Redis, jti: str | None
+) -> str | None:
     name = f"token:blacklist:{jti}"
     return await redis_client.get(name=name)
 
