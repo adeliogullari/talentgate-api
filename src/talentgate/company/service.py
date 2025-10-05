@@ -295,7 +295,7 @@ async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Compan
         ]
 
     links = []
-    if company.links is not None:
+    if getattr(company, "links", None) is not None:
         links = [
             await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
             for link in company.links

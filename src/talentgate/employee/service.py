@@ -10,12 +10,13 @@ from src.talentgate.employee.models import (
     UpdateEmployee,
 )
 from src.talentgate.user import service as user_service
+from src.talentgate.user.models import User
 
 
 async def create(*, sqlmodel_session: Session, employee: CreateEmployee) -> Employee:
     user = None
     if getattr(employee, "user", None) is not None:
-        user = await user_service.create(
+        user = await user_service.upsert(
             sqlmodel_session=sqlmodel_session,
             user=employee.user,
         )
@@ -45,16 +46,32 @@ async def retrieve_by_query_parameters(
 ) -> Sequence[Employee]:
     offset = query_parameters.offset
     limit = query_parameters.limit
-    filters = {
+
+    employee_filters = [
         getattr(Employee, attr) == value
         for attr, value in query_parameters.model_dump(
-            exclude={"offset", "limit"},
+            exclude={"offset", "limit", "user"},
             exclude_unset=True,
             exclude_none=True,
-        )
-    }
+        ).items()
+    ]
 
-    statement: Any = select(Employee).offset(offset).limit(limit).where(*filters)
+    user_filters = []
+    if getattr(query_parameters, "user", None) is not None:
+        user_filters = [
+            getattr(User, attr) == value
+            for attr, value in query_parameters.user.model_dump(
+                exclude={"offset", "limit", "user"},
+                exclude_unset=True,
+                exclude_none=True,
+            ).items()
+        ]
+
+    filters = employee_filters + user_filters
+
+    statement: Any = (
+        select(Employee).join(User).offset(offset).limit(limit).where(*filters)
+    )
 
     return sqlmodel_session.exec(statement).all()
 

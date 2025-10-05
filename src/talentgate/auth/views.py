@@ -16,8 +16,13 @@ from starlette.status import (
 
 from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
+from src.talentgate.company import service as company_service
+from src.talentgate.company.models import CreateCompany
 from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
+from src.talentgate.employee import service as employee_service
+from src.talentgate.employee.enums import EmployeeTitle
+from src.talentgate.employee.models import CreateEmployee
 from src.talentgate.user import service as user_service
 from src.talentgate.user.enums import SubscriptionPlan
 from src.talentgate.user.exceptions import (
@@ -149,7 +154,7 @@ async def google(
             ),
         )
 
-        await user_service.create(
+        created_user = await user_service.create(
             sqlmodel_session=sqlmodel_session,
             user=CreateUser(
                 firstname=firstname,
@@ -163,6 +168,21 @@ async def google(
                     start_date=datetime.now(UTC).timestamp(),
                     end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
                 ),
+            ),
+        )
+
+        created_employee = await employee_service.create(
+            sqlmodel_session=sqlmodel_session,
+            employee=CreateEmployee(
+                title=EmployeeTitle.FOUNDER.value, user_id=created_user.id
+            ),
+        )
+
+        await company_service.create(
+            sqlmodel_session=sqlmodel_session,
+            company=CreateCompany(
+                name=f"${created_user.username}Company",
+                employees=[CreateEmployee(id=created_employee.id)],
             ),
         )
 
@@ -247,7 +267,7 @@ async def linkedin(
             ),
         )
 
-        await user_service.create(
+        created_user = await user_service.create(
             sqlmodel_session=sqlmodel_session,
             user=CreateUser(
                 firstname=firstname,
@@ -261,6 +281,21 @@ async def linkedin(
                     start_date=datetime.now(UTC).timestamp(),
                     end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
                 ),
+            ),
+        )
+
+        created_employee = await employee_service.create(
+            sqlmodel_session=sqlmodel_session,
+            employee=CreateEmployee(
+                title=EmployeeTitle.FOUNDER.value, user_id=created_user.id
+            ),
+        )
+
+        await company_service.create(
+            sqlmodel_session=sqlmodel_session,
+            company=CreateCompany(
+                name=f"${created_user.username}Company",
+                employees=[CreateEmployee(id=created_employee.id)],
             ),
         )
 
@@ -343,6 +378,21 @@ async def register(
                 start_date=datetime.now(UTC).timestamp(),
                 end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
             ),
+        ),
+    )
+
+    created_employee = await employee_service.create(
+        sqlmodel_session=sqlmodel_session,
+        employee=CreateEmployee(
+            title=EmployeeTitle.FOUNDER.value, user_id=created_user.id
+        ),
+    )
+
+    await company_service.create(
+        sqlmodel_session=sqlmodel_session,
+        company=CreateCompany(
+            name=f"${created_user.username}Company",
+            employees=[CreateEmployee(id=created_employee.id)],
         ),
     )
 

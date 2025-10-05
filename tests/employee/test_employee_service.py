@@ -4,11 +4,18 @@ from src.talentgate.employee.models import (
     CreateEmployee,
     Employee,
     UpdateEmployee,
+    EmployeeQueryParameters,
 )
 from src.talentgate.employee import service as employee_service
-from src.talentgate.employee.service import create, delete, retrieve_by_id, update
+from src.talentgate.employee.service import (
+    create,
+    delete,
+    retrieve_by_id,
+    retrieve_by_query_parameters,
+    update,
+)
 from src.talentgate.user.enums import UserRole
-from src.talentgate.user.models import CreateUser, UpdateUser
+from src.talentgate.user.models import CreateUser, UpdateUser, UserQueryParameters
 
 
 async def test_create(sqlmodel_session: Session) -> None:
@@ -39,6 +46,30 @@ async def test_retrieve_by_id(sqlmodel_session: Session, employee: Employee) -> 
     )
 
     assert retrieved_employee.id == employee.id
+
+
+async def test_retrieve_by_query_parameters(
+    sqlmodel_session: Session, employee: Employee
+) -> None:
+    query_parameters = EmployeeQueryParameters(
+        id=employee.id,
+        title=employee.title,
+        user=UserQueryParameters(
+            id=employee.user.id,
+            firstname=employee.user.firstname,
+            lastname=employee.user.lastname,
+            username=employee.user.username,
+            email=employee.user.email,
+            verified=employee.user.verified,
+            role=employee.user.role,
+        ),
+    )
+
+    retrieved_employees = await retrieve_by_query_parameters(
+        sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
+    )
+
+    retrieved_employees[0].id = employee.id
 
 
 async def test_update(sqlmodel_session: Session, make_employee) -> None:

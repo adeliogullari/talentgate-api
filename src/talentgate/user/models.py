@@ -152,8 +152,8 @@ class RetrievedCurrentUser(BaseModel):
 
 
 class UserQueryParameters(BaseModel):
-    offset: int
-    limit: int
+    offset: int | None = None
+    limit: int | None = None
     id: int | None = None
     firstname: str | None = None
     lastname: str | None = None

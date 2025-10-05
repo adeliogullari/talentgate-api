@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from src.talentgate.company.models import Company, CreateCompany
+from src.talentgate.company.models import Company
 from src.talentgate.database.models import BaseModel, Observer
 from src.talentgate.user.models import (
     CreatedUser,
@@ -12,8 +12,7 @@ from src.talentgate.user.models import (
     UpdatedUser,
     UpdateUser,
     User,
-    UserRole,
-    UserSubscription,
+    UserQueryParameters,
 )
 
 if TYPE_CHECKING:
@@ -44,19 +43,6 @@ class Employee(SQLModel, table=True):
     )
 
 
-class EmployeeUser(BaseModel):
-    id: int
-    firstname: str
-    lastname: str
-    username: str
-    email: str
-    verified: bool
-    role: UserRole | None = None
-    subscription: UserSubscription | None = None
-    created_at: datetime
-    updated_at: datetime
-
-
 class EmployeeCompany(BaseModel):
     id: int | None = None
     name: str | None = None
@@ -66,8 +52,9 @@ class EmployeeCompany(BaseModel):
 class CreateEmployee(BaseModel):
     id: int | None = None
     title: str | None = None
+    user_id: int | None = None
     user: CreateUser | None = None
-    company: CreateCompany | None = None
+    company_id: int | None = None
 
 
 class CreatedEmployee(BaseModel):
@@ -93,6 +80,7 @@ class EmployeeQueryParameters(BaseModel):
     limit: int | None = None
     id: int | None = None
     title: str | None = None
+    user: UserQueryParameters | None = None
 
 
 class UpdateEmployee(BaseModel):

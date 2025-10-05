@@ -71,8 +71,6 @@ async def test_retrieve_current_user(
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_users(client: TestClient, user: User, headers: Headers) -> None:
     params = {
-        "offset": 0,
-        "limit": 100,
         "id": user.id,
         "firstname": user.firstname,
         "lastname": user.lastname,

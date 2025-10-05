@@ -50,7 +50,19 @@ async def test_retrieve_employees(
     employee: Employee,
     headers: Headers,
 ) -> None:
-    response = client.get(url="/api/v1/employees", headers=headers)
+    params = {
+        "id": employee.id,
+        "title": employee.title,
+        "user.id": employee.user.id,
+        "user.firstname": employee.user.firstname,
+        "user.lastname": employee.user.lastname,
+        "user.username": employee.user.username,
+        "user.email": employee.user.email,
+        "user.verified": employee.user.verified,
+        "user.role": employee.user.role,
+    }
+
+    response = client.get(url="/api/v1/employees", params=params, headers=headers)
 
     assert response.status_code == 200
     assert response.json()[0]["id"] == employee.id
