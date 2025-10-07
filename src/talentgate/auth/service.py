@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import BackgroundTasks
 from pytography import JsonWebToken, PasswordHashLibrary
-from redis import Redis
+from redis.asyncio import Redis
 
 from src.talentgate.email import service as email_service
 from src.talentgate.email.client import EmailClient

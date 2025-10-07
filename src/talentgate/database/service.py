@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from redis import Redis
+from redis.asyncio import Redis
 from sqlalchemy import Engine
 from sqlmodel import Session, create_engine
 

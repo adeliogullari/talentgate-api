@@ -8,7 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import JSONResponse
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
-from redis import Redis
+from redis.asyncio import Redis
 from sqlmodel import Session
 from starlette.status import (
     HTTP_200_OK,

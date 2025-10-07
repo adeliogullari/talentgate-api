@@ -94,7 +94,7 @@ async def email_client() -> Any:
 
 
 @pytest.fixture
-def redis_client() -> Any:
+async def redis_client() -> Any:
     class RedisClient:
         def __init__(self):
             self.store = {}
