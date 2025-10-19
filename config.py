@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from paddle_billing import Environment
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,6 +37,9 @@ class Settings(BaseSettings):
     smtp_user: str
     smtp_email: str
     smtp_password: str
+    paddle_api_secret_key: str
+    paddle_api_environment: Environment
+    paddle_standard_product_id: int
 
     model_config = SettingsConfigDict(
         extra="allow",

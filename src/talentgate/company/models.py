@@ -63,6 +63,7 @@ class Company(SQLModel, table=True):
     id: int = Field(primary_key=True)
     name: str = Field(unique=True)
     overview: str | None = Field(default=None)
+    logo: str | None = Field(default=None)
     employees: list["Employee"] = Relationship(
         back_populates="company",
         sa_relationship_kwargs={"cascade": "all"},
@@ -245,6 +246,18 @@ class RetrievedCompany(BaseModel):
     overview: str | None = None
     employees: list[CompanyEmployee] | None = None
     locations: list[CompanyLocation] | None = None
+    links: list[RetrievedLink] | None = None
+    created_at: float
+    updated_at: float
+
+
+class RetrievedCurrentCompany(BaseModel):
+    id: int
+    name: str
+    overview: str | None = None
+    employees: list[CompanyEmployee] | None = None
+    locations: list[CompanyLocation] | None = None
+    links: list[RetrievedLink] | None = None
     created_at: float
     updated_at: float
 

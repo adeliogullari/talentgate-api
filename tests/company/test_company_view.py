@@ -10,7 +10,7 @@ from src.talentgate.company.models import Company, CreateCompany, UpdateCompany
 from src.talentgate.employee.enums import EmployeeTitle
 from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job
-from src.talentgate.user.models import SubscriptionPlan, UserRole
+from src.talentgate.user.models import SubscriptionPlan, UserRole, User
 
 settings = get_settings()
 
@@ -116,6 +116,15 @@ async def test_retrieve_company(
     headers: Headers,
 ) -> None:
     response = client.get(url=f"/api/v1/companies/{company.id}", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["id"] == company.id
+
+
+async def test_retrieve_current_company(
+    client: TestClient, company: Company, headers: Headers
+) -> None:
+    response = client.get(url="/api/v1/me/company", headers=headers)
 
     assert response.status_code == 200
     assert response.json()["id"] == company.id

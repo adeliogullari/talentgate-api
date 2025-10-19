@@ -156,6 +156,7 @@ services:
         mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
 
         mc ls myminio/profile || mc mb myminio/profile;
+        mc ls myminio/logo || mc mb myminio/logo;
         mc ls myminio/resume || mc mb myminio/resume;
       "
     networks:

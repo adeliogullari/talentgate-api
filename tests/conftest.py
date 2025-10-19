@@ -10,6 +10,7 @@ from minio import Minio
 from redis import Redis
 from redis.typing import EncodableT, ExpiryT, KeyT
 from sqlmodel import Session, SQLModel, create_engine
+from paddle_billing import Client
 
 from config import Settings, get_settings
 from src.talentgate.application.views import router as application_router
@@ -189,6 +190,40 @@ def minio_client() -> Any:
 
 
 @pytest.fixture
+async def paddle_client() -> Any:
+    class Customers:
+        async def create(self, data: dict):
+            # Simulate Paddle Billing response
+            return {
+                "id": "cus_123",
+                "email": data["email"],
+                "status": "active",
+            }
+
+    class PaddleClient:
+        def __init__(self):
+            self.customers = Customers()
+            self.store = {}
+
+        async def set(
+            self,
+            name: KeyT,
+            value: EncodableT,
+            ex: ExpiryT | None = None,
+        ):
+            self.store[name] = value
+            return True
+
+        async def get(self, name: KeyT):
+            return self.store.get(name)
+
+        async def close(self):
+            pass
+
+    return PaddleClient()
+
+
+@pytest.fixture
 def settings() -> Settings:
     return Settings(
         password_hash_algorithm="scrypt",
@@ -207,6 +242,7 @@ async def client(
     email_client: EmailClient,
     redis_client: Redis,
     minio_client: Minio,
+    paddle_client: Client,
     settings: Settings,
 ) -> AsyncGenerator[TestClient, Any]:
     async def _get_sqlmodel_session() -> AsyncGenerator[Session, Any]:
@@ -221,6 +257,9 @@ async def client(
     async def _get_minio_client() -> AsyncGenerator[Minio, Any]:
         yield minio_client
 
+    async def _get_paddle_client() -> AsyncGenerator[Client, Any]:
+        yield paddle_client
+
     async def _get_settings() -> AsyncGenerator[Settings, Any]:
         yield settings
 
@@ -228,6 +267,7 @@ async def client(
     app.dependency_overrides[get_email_client] = _get_email_client
     app.dependency_overrides[get_redis_client] = _get_redis_client
     app.dependency_overrides[get_minio_client] = _get_minio_client
+    app.dependency_overrides[_get_paddle_client] = _get_paddle_client
     app.dependency_overrides[get_settings] = _get_settings
 
     with TestClient(app) as client:

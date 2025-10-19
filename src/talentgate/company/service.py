@@ -1,7 +1,10 @@
 from collections.abc import Sequence
+from io import BytesIO
 from typing import Any
 
 from fastapi import BackgroundTasks
+from minio import Minio
+from minio.helpers import ObjectWriteResult
 from sqlalchemy import func
 from sqlmodel import Session, and_, or_, select
 
@@ -27,6 +30,40 @@ from src.talentgate.employee import service as employee_service
 from src.talentgate.job.models import Job, JobLocation, JobQueryParameters
 
 settings = get_settings()
+
+
+async def upload_logo(
+    *,
+    minio_client: Minio,
+    object_name: str,
+    data: BytesIO,
+    length: int,
+    content_type: str,
+) -> ObjectWriteResult:
+    return minio_client.put_object(
+        bucket_name="logo",
+        object_name=object_name,
+        data=data,
+        length=length,
+        content_type=content_type,
+    )
+
+
+async def retrieve_logo(*, minio_client: Minio, object_name: str) -> bytes:
+    response = None
+
+    try:
+        response = minio_client.get_object(
+            bucket_name="logo",
+            object_name=object_name,
+        )
+        data = response.data
+    finally:
+        if response:
+            response.close()
+            response.release_conn()
+
+    return data
 
 
 async def create_address(

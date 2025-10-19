@@ -1,5 +1,5 @@
 -r requirements.txt
-ty==0.0.1a20
-ruff==0.13.3
+ty==0.0.1a23
+ruff==0.14.1
 pytest==8.4.2
 pytest-asyncio==1.2.0

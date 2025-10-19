@@ -1,8 +1,12 @@
 from collections.abc import Sequence
+from io import BytesIO
 from typing import Annotated
+from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile
+from minio import Minio
 from sqlmodel import Session
+from starlette.responses import StreamingResponse
 
 from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
@@ -16,6 +20,7 @@ from src.talentgate.company.models import (
     CreatedCompany,
     DeletedCompany,
     RetrievedCompany,
+    RetrievedCurrentCompany,
     UpdateCompany,
     UpdatedCompany,
 )
@@ -29,6 +34,7 @@ from src.talentgate.job.models import (
     RetrievedCompanyJobs,
     RetrievedJob,
 )
+from src.talentgate.storage.service import get_minio_client
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
     SubscriptionPlan,
@@ -39,6 +45,66 @@ from src.talentgate.user.models import (
 from src.talentgate.user.views import retrieve_current_user
 
 router = APIRouter(tags=["company"])
+
+
+@router.get(
+    path="/api/v1/me/company",
+    response_model=RetrievedCurrentCompany,
+    status_code=200,
+)
+async def retrieve_current_company(
+    *,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+) -> Company:
+    return await company_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, company_id=retrieved_user.employee.company_id
+    )
+
+
+@router.get(
+    path="/api/v1/me/company/logo",
+    response_model=None,
+    status_code=200,
+)
+async def retrieve_current_company_logo(
+    *,
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
+) -> StreamingResponse:
+    logo = await company_service.retrieve_logo(
+        minio_client=minio_client, object_name=retrieved_company.logo
+    )
+
+    return StreamingResponse(
+        content=BytesIO(logo),
+    )
+
+
+@router.post(
+    path="/api/v1/me/company/logo",
+    status_code=201,
+)
+async def upload_current_company_logo(
+    *,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
+    file: Annotated[UploadFile, File()],
+) -> None:
+    data = await file.read()
+    logo = await company_service.upload_logo(
+        minio_client=minio_client,
+        object_name=retrieved_company.logo or f"{uuid4()}",
+        data=BytesIO(data),
+        length=len(data),
+        content_type=file.content_type,
+    )
+    await company_service.update(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_company=retrieved_company,
+        company=UpdateCompany(logo=logo),
+    )
 
 
 class CreateCompanyDependency:

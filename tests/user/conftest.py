@@ -1,6 +1,7 @@
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
 import pytest
 from sqlmodel import Session
@@ -57,6 +58,7 @@ def make_user(sqlmodel_session: Session, subscription: UserSubscription):
             email=kwargs.get("email") or f"{secrets.token_hex(16)}@example.com",
             password=kwargs.get("password")
             or auth_service.encode_password(password=secrets.token_hex(16)),
+            profile=kwargs.get("profile") or str(uuid4()),
             verified=kwargs.get("verified")
             if kwargs.get("verified") not in (None, "")
             else True,
@@ -81,6 +83,7 @@ def user(make_user, request):
     username = param.get("username", None)
     email = param.get("email", None)
     password = param.get("password", None)
+    profile = param.get("profile", None)
     verified = param.get("verified", None)
     role = param.get("role", None)
     subscription = param.get("subscription", None)
@@ -91,6 +94,7 @@ def user(make_user, request):
         username=username,
         email=email,
         password=password,
+        profile=profile,
         verified=verified,
         role=role,
         subscription=subscription,
