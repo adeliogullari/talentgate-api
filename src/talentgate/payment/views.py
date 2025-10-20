@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, APIRouter
 from paddle_billing import Client
 from paddle_billing.Entities.Shared import TransactionStatus
 from paddle_billing.Entities.Subscriptions import SubscriptionStatus
@@ -23,14 +23,14 @@ from src.talentgate.user.enums import SubscriptionPlan
 from src.talentgate.user.models import UpdateSubscription, User
 from src.talentgate.user.views import retrieve_current_user
 
-app = FastAPI()
+router = APIRouter(tags=["payment"])
 
 
 class PaymentCheckout(BaseModel):
     transaction_id: str | None = None
 
 
-@app.post("/payment/checkout")
+@router.post("/payment/checkout")
 async def payment_checkout(
     *,
     paddle_client: Annotated[Client, Depends(get_paddle_client)],

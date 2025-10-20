@@ -14,6 +14,7 @@ from src.talentgate.database.service import get_sqlmodel_engine
 from src.talentgate.employee.views import router as employee_router
 from src.talentgate.job.views import router as job_router
 from src.talentgate.user.views import router as user_router
+from src.talentgate.payment.views import router as payment_router
 
 hostname = os.getenv("HOSTNAME", "-1")
 
@@ -38,6 +39,7 @@ app.openapi_tags = [
     {"name": "application", "description": "Operations with applications"},
     {"name": "job", "description": "Operations with jobs"},
     {"name": "company", "description": "Operations with companies"},
+    {"name": "payment", "description": "Operations with payments"}
 ]
 
 app.include_router(user_router)
@@ -46,6 +48,7 @@ app.include_router(auth_router)
 app.include_router(application_router)
 app.include_router(job_router)
 app.include_router(company_router)
+app.include_router(payment_router)
 
 
 app.add_middleware(
