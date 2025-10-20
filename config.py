@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     smtp_password: str
     paddle_api_secret_key: str
     paddle_api_environment: str
-    paddle_standard_product_id: int
+    paddle_standard_product_id: str
 
     model_config = SettingsConfigDict(
         extra="allow",
