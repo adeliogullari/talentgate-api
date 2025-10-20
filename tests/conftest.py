@@ -232,6 +232,9 @@ def settings() -> Settings:
         access_token_key="fY7mNQvA9HdJcT1E2RpOXaZ5LbVgK4sM",
         refresh_token_expiration=86400,
         refresh_token_key="ZcQ5TRjUmn28XeFoBKHvAGd0wL7iyE6Y",
+        paddle_api_secret_key="pdl_sdbx_apikey_01k7c3manhmawq78hgnk8ng5th_WfyY1psz2EJyXJWxYQQDyk_AMw",
+        paddle_api_environment="sandbox",
+        paddle_standard_product_id=123456,
     )
 
 

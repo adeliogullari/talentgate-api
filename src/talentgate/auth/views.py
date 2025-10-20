@@ -391,7 +391,7 @@ async def register(
     await company_service.create(
         sqlmodel_session=sqlmodel_session,
         company=CreateCompany(
-            name=f"${created_user.username}Company",
+            name=f"${created_user.username} Company",
             employees=[CreateEmployee(id=created_employee.id)],
         ),
     )

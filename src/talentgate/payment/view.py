@@ -28,7 +28,6 @@ app = FastAPI()
 
 class PaymentCheckout(BaseModel):
     transaction_id: str | None = None
-    subscription_id: str | None = None
 
 
 @app.post("/payment/checkout")
@@ -42,7 +41,7 @@ async def payment_checkout(
 ) -> dict[str, str | None]:
     transaction = paddle_client.transactions.get(transaction_id=checkout.transaction_id)
     subscription = paddle_client.subscriptions.get(
-        subscription_id=checkout.subscription_id
+        subscription_id=transaction.subscription_id
     )
 
     if not transaction.status == TransactionStatus.Completed:
