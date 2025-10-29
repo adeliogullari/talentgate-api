@@ -271,6 +271,7 @@ class CompanyQueryParameters(BaseModel):
 class UpdateCompany(BaseModel):
     name: str
     overview: str | None = None
+    logo: str | None = None
     locations: list[CompanyLocation] | None = None
     links: list[CompanyLink] | None = None
     employees: list[CompanyEmployee] | None = None

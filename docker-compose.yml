@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: postgres
-    image: postgres:latest
+    image: postgres:18.0-alpine
     restart: always
     healthcheck:
       test: >
@@ -14,11 +14,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/18/docker
     networks:
       - talentgate-api-net
     profiles:
@@ -27,18 +26,11 @@ services:
 
   pgadmin:
     container_name: pgadmin
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:9.9.0
     depends_on:
       postgres:
         condition: service_healthy
     restart: always
-    healthcheck:
-      test: >
-        bash -c "mc ready local"
-      interval: 10s
-      retries: 10
-      start_period: 10s
-      timeout: 10s
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -53,11 +45,10 @@ services:
 
   redis:
     container_name: redis
-    image: redis:latest
+    image: redis:8.2-alpine
     restart: always
     healthcheck:
-      test: >
-        bash -c "redis-cli ping"
+      test: sh -c "redis-cli -u redis://${REDIS_USERNAME}:${REDIS_PASSWORD}@localhost:6379 ping | grep -q PONG"
       interval: 10s
       retries: 10
       start_period: 10s
@@ -90,25 +81,17 @@ services:
 
   redisinsight:
     container_name: redisinsight
-    image: redis/redisinsight:latest
+    image: redis/redisinsight:2.70.1
     depends_on:
       redis:
         condition: service_healthy
     restart: always
-    healthcheck:
-      test: >
-        bash -c "curl -f http://localhost:5540"
-      interval: 10s
-      retries: 10
-      start_period: 10s
-      timeout: 10s
     environment:
       RI_REDIS_HOST: redis
       RI_REDIS_PORT: ${REDIS_PORT}
+      RI_REDIS_ALIAS: talentgate
       RI_REDIS_USERNAME: ${REDIS_USERNAME}
       RI_REDIS_PASSWORD: ${REDIS_PASSWORD}
-      RI_REDIS_ALIAS: talentgate
-      RI_REDIS_DB: 0
     ports:
       - "5540:5540"
     networks:
@@ -118,7 +101,7 @@ services:
 
   minio:
     container_name: minio
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
     restart: always
     healthcheck:
       test: >
@@ -144,7 +127,7 @@ services:
 
   minio-init:
     container_name: minio-init
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z-cpuv1
     depends_on:
       minio:
         condition: service_healthy
@@ -167,7 +150,7 @@ services:
 
   talentgate-api-traefik:
     container_name: talentgate-api-traefik
-    image: traefik:latest
+    image: traefik:3.5
     restart: always
     command:
       - "--providers.docker=true"

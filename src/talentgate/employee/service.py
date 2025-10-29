@@ -14,17 +14,15 @@ from src.talentgate.user.models import User
 
 
 async def create(*, sqlmodel_session: Session, employee: CreateEmployee) -> Employee:
-    user = None
+    created_employee = Employee(
+        **employee.model_dump(exclude_unset=True, exclude_none=True, exclude={"user"}),
+    )
+
     if getattr(employee, "user", None) is not None:
-        user = await user_service.upsert(
+        created_employee.user = await user_service.upsert(
             sqlmodel_session=sqlmodel_session,
             user=employee.user,
         )
-
-    created_employee = Employee(
-        **employee.model_dump(exclude_unset=True, exclude_none=True, exclude={"user"}),
-        user=user,
-    )
 
     sqlmodel_session.add(created_employee)
     sqlmodel_session.commit()

@@ -171,24 +171,25 @@ async def google(
             ),
         )
 
-        created_employee = await employee_service.create(
-            sqlmodel_session=sqlmodel_session,
-            employee=CreateEmployee(
-                title=EmployeeTitle.FOUNDER.value, user_id=created_user.id
-            ),
-        )
-
-        await company_service.create(
+        created_company = await company_service.create(
             sqlmodel_session=sqlmodel_session,
             company=CreateCompany(
                 name=f"${created_user.username}Company",
-                employees=[CreateEmployee(id=created_employee.id)],
+            ),
+        )
+
+        await employee_service.create(
+            sqlmodel_session=sqlmodel_session,
+            employee=CreateEmployee(
+                title=EmployeeTitle.FOUNDER.value,
+                user_id=created_user.id,
+                company_id=created_company.id,
             ),
         )
 
     retrieved_user = await user_service.retrieve_by_email(
         sqlmodel_session=sqlmodel_session,
-        email=email,
+        email=id_info["email"],
     )
 
     access_token = auth_service.encode_token(
@@ -381,18 +382,19 @@ async def register(
         ),
     )
 
-    created_employee = await employee_service.create(
+    created_company = await company_service.create(
         sqlmodel_session=sqlmodel_session,
-        employee=CreateEmployee(
-            title=EmployeeTitle.FOUNDER.value, user_id=created_user.id
+        company=CreateCompany(
+            name=f"${created_user.username}Company",
         ),
     )
 
-    await company_service.create(
+    await employee_service.create(
         sqlmodel_session=sqlmodel_session,
-        company=CreateCompany(
-            name=f"${created_user.username} Company",
-            employees=[CreateEmployee(id=created_employee.id)],
+        employee=CreateEmployee(
+            title=EmployeeTitle.FOUNDER.value,
+            user_id=created_user.id,
+            company_id=created_company.id,
         ),
     )
 
