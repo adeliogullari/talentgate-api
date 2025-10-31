@@ -18,7 +18,7 @@ async def create(*, sqlmodel_session: Session, employee: CreateEmployee) -> Empl
         **employee.model_dump(exclude_unset=True, exclude_none=True, exclude={"user"}),
     )
 
-    if getattr(employee, "user", None) is not None:
+    if getattr(employee, "user", None):
         created_employee.user = await user_service.upsert(
             sqlmodel_session=sqlmodel_session,
             user=employee.user,
@@ -55,7 +55,7 @@ async def retrieve_by_query_parameters(
     ]
 
     user_filters = []
-    if getattr(query_parameters, "user", None) is not None:
+    if getattr(query_parameters, "user", None):
         user_filters = [
             getattr(User, attr) == value
             for attr, value in query_parameters.user.model_dump(

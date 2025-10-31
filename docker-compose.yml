@@ -94,6 +94,8 @@ services:
       RI_REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
     networks:
       - talentgate-api-net
     profiles:
@@ -150,7 +152,7 @@ services:
 
   talentgate-api-traefik:
     container_name: talentgate-api-traefik
-    image: traefik:3.5
+    image: traefik:3.5.0
     restart: always
     command:
       - "--providers.docker=true"
@@ -184,6 +186,7 @@ volumes:
   postgres-data:
   pgadmin-data:
   redis-data:
+  redisinsight_data:
   minio-data:
 
 networks:

@@ -1,6 +1,9 @@
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
+from uuid import uuid4
 
 import pytest
+from minio import Minio
 from sqlmodel import Session
 
 from src.talentgate.user import service as user_service
@@ -15,7 +18,45 @@ from src.talentgate.user.models import (
     UserQueryParameters,
     UserRole,
     UserSubscription,
+    UpsertSubscription,
+    UpsertUser,
 )
+
+
+async def test_upload_profile(minio_client: Minio):
+    object_name = str(uuid4())
+    data = BytesIO(b"data")
+
+    await user_service.upload_profile(
+        minio_client=minio_client,
+        object_name=object_name,
+        data=data,
+        length=4,
+        content_type="file",
+    )
+
+    data = minio_client.get_object(bucket_name="profile", object_name=object_name)
+
+    assert data == data
+
+
+async def test_retrieve_profile(minio_client: Minio):
+    object_name = str(uuid4())
+    data = b"data"
+
+    minio_client.put_object(
+        bucket_name="profile",
+        object_name=object_name,
+        data=BytesIO(data),
+        length=4,
+        content_type="file",
+    )
+
+    retrieved_profile = await user_service.retrieve_profile(
+        minio_client=minio_client, object_name=object_name
+    )
+
+    assert retrieved_profile == data
 
 
 async def test_create_subscription(sqlmodel_session: Session) -> None:
@@ -113,7 +154,7 @@ async def test_update_subscription(
 
 
 async def test_upsert_create_subscription(sqlmodel_session: Session) -> None:
-    subscription = CreateSubscription(
+    subscription = UpsertSubscription(
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
@@ -133,7 +174,7 @@ async def test_upsert_update_subscription(
 ) -> None:
     retrieved_subscription = make_subscription()
 
-    subscription = UpdateSubscription(
+    subscription = UpsertSubscription(
         id=retrieved_subscription.id,
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
@@ -230,7 +271,7 @@ async def test_retrieve_by_query_parameters(
 async def test_update(sqlmodel_session: Session, make_user, subscription) -> None:
     retrieved_user = make_user()
 
-    subscription = UpdateSubscription(
+    subscription = UpsertSubscription(
         id=retrieved_user.subscription_id,
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
@@ -265,7 +306,7 @@ async def test_upsert_create(sqlmodel_session: Session) -> None:
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
 
-    user = CreateUser(
+    user = UpsertUser(
         firstname="firstname",
         lastname="lastname",
         username="username",
@@ -288,14 +329,14 @@ async def test_upsert_create(sqlmodel_session: Session) -> None:
 async def test_upsert_update(sqlmodel_session: Session, make_user) -> None:
     retrieved_user = make_user()
 
-    subscription = UpdateSubscription(
+    subscription = UpsertSubscription(
         id=retrieved_user.subscription_id,
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
 
-    user = UpdateUser(
+    user = UpsertUser(
         id=retrieved_user.id,
         firstname="firstname",
         lastname="lastname",

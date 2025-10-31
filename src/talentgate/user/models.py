@@ -87,13 +87,27 @@ class RetrievedSubscription(BaseModel):
 
 
 class UpdateSubscription(BaseModel):
-    id: int | None = None
     plan: str | None = None
     start_date: float | None = None
     end_date: float | None = None
 
 
 class UpdatedSubscription(BaseModel):
+    id: int
+    plan: str
+    start_date: float
+    end_date: float
+    status: str
+
+
+class UpsertSubscription(BaseModel):
+    id: int | None = None
+    plan: str | None = None
+    start_date: float | None = None
+    end_date: float | None = None
+
+
+class UpsertedSubscription(BaseModel):
     id: int
     plan: str
     start_date: float
@@ -109,7 +123,7 @@ class CreateUser(BaseModel):
     password: str
     verified: bool | None = None
     role: str | None = None
-    subscription: CreateSubscription | None = None
+    subscription: UpsertSubscription | None = None
 
 
 class CreatedUser(BaseModel):
@@ -120,7 +134,7 @@ class CreatedUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: CreatedSubscription | None = None
+    subscription: UpsertedSubscription | None = None
     created_at: float
     updated_at: float
 
@@ -164,7 +178,6 @@ class UserQueryParameters(BaseModel):
 
 
 class UpdateUser(BaseModel):
-    id: int | None = None
     firstname: str | None = None
     lastname: str | None = None
     username: str | None = None
@@ -172,7 +185,7 @@ class UpdateUser(BaseModel):
     password: str | None = None
     verified: bool | None = None
     role: str | None = None
-    subscription: UpdateSubscription | None = None
+    subscription: UpsertSubscription | None = None
 
 
 class UpdatedUser(BaseModel):
@@ -183,7 +196,32 @@ class UpdatedUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: CreatedSubscription | None = None
+    subscription: UpsertedSubscription | None = None
+    created_at: float
+    updated_at: float
+
+
+class UpsertUser(BaseModel):
+    id: int | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str | None = None
+    email: str | None = None
+    password: str | None = None
+    verified: bool | None = None
+    role: str | None = None
+    subscription: UpsertSubscription | None = None
+
+
+class UpsertedUser(BaseModel):
+    id: int | None = None
+    firstname: str
+    lastname: str
+    username: str
+    email: str
+    verified: bool
+    role: str
+    subscription: UpsertedSubscription | None = None
     created_at: float
     updated_at: float
 
@@ -203,7 +241,7 @@ class UpdatedCurrentUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: CreatedSubscription | None = None
+    subscription: UpsertedSubscription | None = None
     created_at: float
     updated_at: float
 

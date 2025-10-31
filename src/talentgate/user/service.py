@@ -14,6 +14,8 @@ from src.talentgate.user.models import (
     UpdateCurrentUser,
     UpdateSubscription,
     UpdateUser,
+    UpsertSubscription,
+    UpsertUser,
     User,
     UserQueryParameters,
     UserSubscription,
@@ -91,7 +93,7 @@ async def update_subscription(
     subscription: UpdateSubscription,
 ) -> UserSubscription:
     retrieved_subscription.sqlmodel_update(
-        subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"}),
+        subscription.model_dump(exclude_none=True, exclude_unset=True),
     )
 
     sqlmodel_session.add(retrieved_subscription)
@@ -104,43 +106,51 @@ async def update_subscription(
 async def upsert_subscription(
     *,
     sqlmodel_session: Session,
-    subscription: CreateSubscription | UpdateSubscription,
+    subscription: UpsertSubscription,
 ) -> UserSubscription:
+    subscription_id = getattr(subscription, "id", None)
+
     retrieved_subscription = await retrieve_subscription_by_id(
         sqlmodel_session=sqlmodel_session,
-        subscription_id=getattr(subscription, "id", None),
+        subscription_id=subscription_id,
     )
+
     if retrieved_subscription:
         return await update_subscription(
             sqlmodel_session=sqlmodel_session,
             retrieved_subscription=retrieved_subscription,
-            subscription=subscription,
+            subscription=UpdateSubscription(
+                **subscription.model_dump(
+                    exclude_none=True, exclude_unset=True, exclude={"id"}
+                )
+            ),
         )
+
     return await create_subscription(
         sqlmodel_session=sqlmodel_session,
-        subscription=subscription,
+        subscription=CreateSubscription(
+            **subscription.model_dump(
+                exclude_none=True, exclude_unset=True, exclude={"id"}
+            )
+        ),
     )
 
 
 async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
     password = auth_service.encode_password(password=user.password)
 
-    subscription = None
-    if getattr(user, "subscription", None) is not None:
-        subscription = await create_subscription(
+    created_user = User(
+        **user.model_dump(
+            exclude_unset=True, exclude_none=True, exclude={"password", "subscription"}
+        ),
+        password=password,
+    )
+
+    if getattr(user, "subscription", None):
+        created_user.subscription = await upsert_subscription(
             sqlmodel_session=sqlmodel_session,
             subscription=user.subscription,
         )
-
-    created_user = User(
-        **user.model_dump(
-            exclude_unset=True,
-            exclude_none=True,
-            exclude={"password", "subscription"},
-        ),
-        password=password,
-        subscription=subscription,
-    )
 
     sqlmodel_session.add(created_user)
     sqlmodel_session.commit()
@@ -194,10 +204,10 @@ async def update(
     retrieved_user: User,
     user: UpdateUser | UpdateCurrentUser,
 ) -> User:
-    if getattr(user, "password", None) is not None:
+    if getattr(user, "password", None):
         retrieved_user.password = auth_service.encode_password(password=user.password)
 
-    if getattr(user, "subscription", None) is not None:
+    if getattr(user, "subscription", None):
         retrieved_user.subscription = await upsert_subscription(
             sqlmodel_session=sqlmodel_session,
             subscription=user.subscription,
@@ -207,7 +217,7 @@ async def update(
         user.model_dump(
             exclude_none=True,
             exclude_unset=True,
-            exclude={"id", "password", "subscription"},
+            exclude={"password", "subscription"},
         ),
     )
 
@@ -221,21 +231,38 @@ async def update(
 async def upsert(
     *,
     sqlmodel_session: Session,
-    user: CreateUser | UpdateUser,
+    user: UpsertUser,
 ) -> User:
+    user_id = getattr(user, "id", None)
+
     retrieved_user = await retrieve_by_id(
         sqlmodel_session=sqlmodel_session,
-        user_id=getattr(user, "id", None),
+        user_id=user_id,
     )
 
     if retrieved_user:
         return await update(
             sqlmodel_session=sqlmodel_session,
             retrieved_user=retrieved_user,
-            user=user,
+            user=UpdateUser(
+                **user.model_dump(
+                    exclude_none=True,
+                    exclude_unset=True,
+                    exclude={"id"},
+                ),
+            ),
         )
 
-    return await create(sqlmodel_session=sqlmodel_session, user=user)
+    return await create(
+        sqlmodel_session=sqlmodel_session,
+        user=CreateUser(
+            **user.model_dump(
+                exclude_none=True,
+                exclude_unset=True,
+                exclude={"id"},
+            ),
+        ),
+    )
 
 
 async def delete(*, sqlmodel_session: Session, retrieved_user: User) -> User:

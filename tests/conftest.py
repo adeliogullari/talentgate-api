@@ -1,16 +1,19 @@
+from io import BytesIO
+
 import pytest
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from email.message import EmailMessage
-from typing import Any, BinaryIO, Sequence
-
+from typing import Any, BinaryIO, Sequence, Optional, Dict
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from minio import Minio
+from minio.helpers import ObjectWriteResult
 from redis import Redis
 from redis.typing import EncodableT, ExpiryT, KeyT
 from sqlmodel import Session, SQLModel, create_engine
 from paddle_billing import Client
+from urllib3 import BaseHTTPResponse, HTTPHeaderDict, HTTPResponse
 
 from config import Settings, get_settings
 from src.talentgate.application.views import router as application_router
@@ -128,11 +131,9 @@ def minio_client() -> Any:
         length: int
 
     class FileWriteResult:
-        def __init__(
-            self,
-            bucket_name: str,
-            object_name: str,
-        ):
+        def __init__(self, bucket_name: str, object_name: str):
+            self.bucket_name = bucket_name
+            self.object_name = object_name
             self._data = None
 
         @property
@@ -144,14 +145,14 @@ def minio_client() -> Any:
             self._data = value
 
         def close(self):
-            return None
+            pass
 
         def release_conn(self):
-            return None
+            pass
 
     class MinioClient:
         def __init__(self):
-            self.buckets = {}
+            self.buckets: dict[str, dict[str, BinaryIO]] = {}
 
         def put_object(
             self,
@@ -159,32 +160,40 @@ def minio_client() -> Any:
             object_name: str,
             data: BinaryIO,
             length: int,
-        ):
+            content_type: str = "application/octet-stream",
+        ) -> ObjectWriteResult:
             if bucket_name not in self.buckets:
                 self.buckets[bucket_name] = {}
+
+            if isinstance(data, bytes):
+                data = BytesIO(data)
+
             self.buckets[bucket_name][object_name] = data
-            return FileObject(
+
+            return ObjectWriteResult(
                 bucket_name=bucket_name,
                 object_name=object_name,
-                data=data,
-                length=length,
+                version_id="1",
+                etag="etag",
+                http_headers=HTTPHeaderDict(),
             )
 
-        def get_object(self, bucket_name: str, object_name: str):
-            result = FileWriteResult(bucket_name=bucket_name, object_name=object_name)
-            result.data = self.buckets[bucket_name][object_name]
-            return result
+        def get_object(
+            self,
+            bucket_name: str,
+            object_name: str,
+        ) -> BaseHTTPResponse:
+            data = self.buckets[bucket_name][object_name]
+
+            if hasattr(data, "getvalue"):
+                data = data.getvalue()
+
+            return HTTPResponse(data)
 
         def upload_file(self, bucket_name: str, file_name: str, data: bytes) -> None:
             if bucket_name not in self.buckets:
                 self.buckets[bucket_name] = {}
-            self.buckets[bucket_name][file_name] = data
-
-        def list_files(self, bucket_name: str):
-            return list(self.buckets.get(bucket_name, {}).keys())
-
-        def download_file(self, bucket_name: str, file_name: str) -> bytes:
-            return self.buckets.get(bucket_name, {}).get(file_name, b"")
+            self.buckets[bucket_name][file_name] = BytesIO(data)
 
     return MinioClient()
 

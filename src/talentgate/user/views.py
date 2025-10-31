@@ -112,6 +112,7 @@ async def upload_current_user_profile(
     file: Annotated[UploadFile, File()],
 ) -> None:
     data = await file.read()
+
     profile = await user_service.upload_profile(
         minio_client=minio_client,
         object_name=retrieved_user.profile or f"{uuid4()}",
@@ -119,6 +120,7 @@ async def upload_current_user_profile(
         length=len(data),
         content_type=file.content_type,
     )
+
     await user_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_user=retrieved_user,

@@ -1,8 +1,11 @@
 import json
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from minio import Minio
 from starlette.datastructures import Headers
 
 from src.talentgate.user.models import (
@@ -66,6 +69,24 @@ async def test_retrieve_current_user(
 
     assert response.status_code == 200
     assert response.json()["id"] == user.id
+
+
+@pytest.mark.parametrize("user", [{"profile": str(uuid4())}], indirect=True)
+async def test_retrieve_current_user_profile(client: TestClient, minio_client: Minio, user: User, headers: Headers) -> None:
+    data = b"data"
+
+    minio_client.put_object(
+        bucket_name="profile",
+        object_name=user.profile,
+        data=BytesIO(data),
+        length=4,
+        content_type="file",
+    )
+
+    response = client.get(url="/api/v1/me/profile", headers=headers)
+
+    assert response.status_code == 200
+    assert response.content == data
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
