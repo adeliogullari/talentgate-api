@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from minio import Minio
 from sqlmodel import Session
@@ -22,7 +22,7 @@ from src.talentgate.user.enums import UserRole
 from src.talentgate.user.exceptions import (
     DuplicateEmailException,
     DuplicateUsernameException,
-    UserIdNotFoundException,
+    UserIdNotFoundException, UserProfileNotFoundException,
 )
 from src.talentgate.user.models import (
     CreatedUser,
@@ -91,6 +91,9 @@ async def retrieve_current_user_profile(
     minio_client: Annotated[Minio, Depends(get_minio_client)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ) -> StreamingResponse:
+    if not retrieved_user.profile:
+        raise UserProfileNotFoundException
+
     profile = await user_service.retrieve_profile(
         minio_client=minio_client, object_name=retrieved_user.profile
     )
@@ -124,7 +127,7 @@ async def upload_current_user_profile(
     await user_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_user=retrieved_user,
-        user=UpdateUser(profile=profile),
+        user=UpdateUser(profile=profile.object_name),
     )
 
 

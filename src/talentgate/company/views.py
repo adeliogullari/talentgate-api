@@ -3,7 +3,15 @@ from io import BytesIO
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+)
 from minio import Minio
 from sqlmodel import Session
 from starlette.responses import StreamingResponse
@@ -12,7 +20,7 @@ from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
 from src.talentgate.auth.exceptions import InvalidAuthorizationException
 from src.talentgate.company import service as company_service
-from src.talentgate.company.exceptions import CompanyIdNotFoundException
+from src.talentgate.company.exceptions import CompanyIdNotFoundException, CompanyLogoNotFoundException
 from src.talentgate.company.models import (
     Company,
     CompanyQueryParameters,
@@ -72,6 +80,9 @@ async def retrieve_current_company_logo(
     minio_client: Annotated[Minio, Depends(get_minio_client)],
     retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
 ) -> StreamingResponse:
+    if not retrieved_company.logo:
+        raise CompanyLogoNotFoundException
+
     logo = await company_service.retrieve_logo(
         minio_client=minio_client, object_name=retrieved_company.logo
     )
@@ -93,6 +104,7 @@ async def upload_current_company_logo(
     file: Annotated[UploadFile, File()],
 ) -> None:
     data = await file.read()
+
     logo = await company_service.upload_logo(
         minio_client=minio_client,
         object_name=retrieved_company.logo or f"{uuid4()}",
@@ -100,6 +112,7 @@ async def upload_current_company_logo(
         length=len(data),
         content_type=file.content_type,
     )
+
     await company_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_company=retrieved_company,

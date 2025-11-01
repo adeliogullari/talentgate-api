@@ -123,6 +123,7 @@ class CreateUser(BaseModel):
     password: str
     verified: bool | None = None
     role: str | None = None
+    subscription_id: int | None = None
     subscription: UpsertSubscription | None = None
 
 
@@ -185,6 +186,8 @@ class UpdateUser(BaseModel):
     password: str | None = None
     verified: bool | None = None
     role: str | None = None
+    profile: str | None = None
+    subscription_id: int | None = None
     subscription: UpsertSubscription | None = None
 
 
@@ -210,6 +213,7 @@ class UpsertUser(BaseModel):
     password: str | None = None
     verified: bool | None = None
     role: str | None = None
+    subscription_id: int | None = None
     subscription: UpsertSubscription | None = None
 
 
@@ -231,6 +235,7 @@ class UpdateCurrentUser(BaseModel):
     lastname: str | None = None
     username: str | None = None
     email: str | None = None
+    profile: str | None = None
 
 
 class UpdatedCurrentUser(BaseModel):

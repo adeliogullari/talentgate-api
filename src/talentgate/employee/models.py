@@ -6,11 +6,10 @@ from sqlmodel import Field, Relationship, SQLModel
 from src.talentgate.company.models import Company
 from src.talentgate.database.models import BaseModel, Observer
 from src.talentgate.user.models import (
-    CreatedUser,
-    CreateUser,
     RetrievedUser,
     UpdatedUser,
-    UpdateUser,
+    UpsertedUser,
+    UpsertUser,
     User,
     UserQueryParameters,
 )
@@ -50,17 +49,16 @@ class EmployeeCompany(BaseModel):
 
 
 class CreateEmployee(BaseModel):
-    id: int | None = None
     title: str | None = None
     user_id: int | None = None
-    user: CreateUser | None = None
+    user: UpsertUser | None = None
     company_id: int | None = None
 
 
 class CreatedEmployee(BaseModel):
     id: int
     title: str | None = None
-    user: CreatedUser | None = None
+    user: UpsertedUser | None = None
     company: EmployeeCompany | None = None
     created_at: float
     updated_at: float
@@ -84,12 +82,26 @@ class EmployeeQueryParameters(BaseModel):
 
 
 class UpdateEmployee(BaseModel):
-    id: int | None = None
     title: str | None = None
-    user: UpdateUser | None = None
+    user: UpsertUser | None = None
 
 
 class UpdatedEmployee(BaseModel):
+    id: int
+    title: str | None = None
+    user: UpsertedUser | None = None
+    company: EmployeeCompany | None = None
+    created_at: float
+    updated_at: float
+
+
+class UpsertEmployee(BaseModel):
+    id: int | None = None
+    title: str | None = None
+    user: UpsertUser | None = None
+
+
+class UpsertedEmployee(BaseModel):
     id: int
     title: str | None = None
     user: UpdatedUser | None = None

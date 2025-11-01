@@ -8,6 +8,7 @@ from src.talentgate.employee.models import (
     Employee,
     EmployeeQueryParameters,
     UpdateEmployee,
+    UpsertEmployee,
 )
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import User
@@ -97,7 +98,7 @@ async def update(
 async def upsert(
     *,
     sqlmodel_session: Session,
-    employee: CreateEmployee | UpdateEmployee,
+    employee: UpsertEmployee,
 ) -> Employee:
     retrieved_employee = await retrieve_by_id(
         sqlmodel_session=sqlmodel_session,
@@ -107,9 +108,18 @@ async def upsert(
         return await update(
             sqlmodel_session=sqlmodel_session,
             retrieved_employee=retrieved_employee,
-            employee=employee,
+            employee=UpdateEmployee(
+                **employee.model_dump(
+                    exclude_none=True, exclude_unset=True, exclude={"id"}
+                )
+            ),
         )
-    return await create(sqlmodel_session=sqlmodel_session, employee=employee)
+    return await create(
+        sqlmodel_session=sqlmodel_session,
+        employee=CreateEmployee(
+            **employee.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
+        ),
+    )
 
 
 async def delete(

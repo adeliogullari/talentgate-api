@@ -5,6 +5,7 @@ from src.talentgate.employee.models import (
     Employee,
     UpdateEmployee,
     EmployeeQueryParameters,
+    UpsertEmployee,
 )
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.service import (
@@ -15,7 +16,12 @@ from src.talentgate.employee.service import (
     update,
 )
 from src.talentgate.user.enums import UserRole
-from src.talentgate.user.models import CreateUser, UpdateUser, UserQueryParameters
+from src.talentgate.user.models import (
+    CreateUser,
+    UpdateUser,
+    UserQueryParameters,
+    UpsertUser,
+)
 
 
 async def test_create(sqlmodel_session: Session) -> None:
@@ -107,7 +113,7 @@ async def test_upsert_create(sqlmodel_session: Session) -> None:
         role=UserRole.ADMIN,
     )
 
-    employee = CreateEmployee(title=EmployeeTitle.FOUNDER, user=user)
+    employee = UpsertEmployee(title=EmployeeTitle.FOUNDER, user=user)
 
     created_employee = await employee_service.upsert(
         sqlmodel_session=sqlmodel_session,
@@ -120,7 +126,7 @@ async def test_upsert_create(sqlmodel_session: Session) -> None:
 async def test_upsert_update(sqlmodel_session: Session, make_employee) -> None:
     retrieved_employee = make_employee()
 
-    user = UpdateUser(
+    user = UpsertUser(
         id=retrieved_employee.user_id,
         firstname="firstname",
         lastname="lastname",
@@ -131,7 +137,7 @@ async def test_upsert_update(sqlmodel_session: Session, make_employee) -> None:
         role=UserRole.ADMIN,
     )
 
-    employee = CreateEmployee(
+    employee = UpsertEmployee(
         id=retrieved_employee.id, title=EmployeeTitle.FOUNDER, user=user
     )
 
