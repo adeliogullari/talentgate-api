@@ -1,8 +1,11 @@
 import json
 from datetime import UTC, datetime, timedelta
+from io import BytesIO
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from minio import Minio
 from starlette.datastructures import Headers
 
 from config import Settings, get_settings
@@ -128,6 +131,44 @@ async def test_retrieve_current_company(
 
     assert response.status_code == 200
     assert response.json()["id"] == company.id
+
+
+@pytest.mark.parametrize("company", [{"logo": str(uuid4())}], indirect=True)
+async def test_retrieve_current_company_logo(
+    client: TestClient, minio_client: Minio, company: Company, headers: Headers
+) -> None:
+    data = b"data"
+
+    minio_client.put_object(
+        bucket_name="logo",
+        object_name=company.logo,
+        data=BytesIO(data),
+        length=4,
+        content_type="file",
+    )
+
+    response = client.get(url="/api/v1/me/company/logo", headers=headers)
+
+    assert response.status_code == 200
+    assert response.content == data
+
+
+async def test_upload_current_company_logo(
+    client: TestClient, minio_client: Minio, company: Company, headers: Headers
+) -> None:
+    data = b"data"
+    file_stream = BytesIO(data)
+
+    response = client.post(
+        url="/api/v1/me/company/logo",
+        files={"file": ("logo.txt", file_stream, "octet/stream")},
+        headers=headers,
+    )
+
+    logo = minio_client.get_object(bucket_name="logo", object_name=company.logo)
+
+    assert response.status_code == 201
+    assert logo.data == data
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)

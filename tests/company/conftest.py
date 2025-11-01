@@ -1,4 +1,5 @@
 import secrets
+from uuid import uuid4
 
 import pytest
 from sqlmodel import Session
@@ -58,6 +59,7 @@ def make_company(
         company = Company(
             name=kwargs.get("firstname") or secrets.token_hex(12),
             overview=kwargs.get("overview") or secrets.token_hex(12),
+            logo=kwargs.get("logo") or str(uuid4()),
             employees=kwargs.get("employees") or [employee],
             locations=kwargs.get("locations") or [location],
             jobs=[job],
@@ -77,12 +79,14 @@ def company(make_company, request):
     param = getattr(request, "param", {})
     name = param.get("name", None)
     overview = param.get("overview", None)
+    logo = param.get("logo", None)
     employees = param.get("employees", None)
     locations = param.get("locations", None)
 
     return make_company(
         name=name,
         overview=overview,
+        logo=logo,
         employees=employees,
         locations=locations,
     )

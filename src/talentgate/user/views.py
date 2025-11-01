@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from minio import Minio
 from sqlmodel import Session
@@ -22,7 +22,8 @@ from src.talentgate.user.enums import UserRole
 from src.talentgate.user.exceptions import (
     DuplicateEmailException,
     DuplicateUsernameException,
-    UserIdNotFoundException, UserProfileNotFoundException,
+    UserIdNotFoundException,
+    UserProfileNotFoundException,
 )
 from src.talentgate.user.models import (
     CreatedUser,

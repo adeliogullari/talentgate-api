@@ -1,3 +1,7 @@
+from io import BytesIO
+from uuid import uuid4
+
+from minio import Minio
 from sqlmodel import Session
 
 from src.talentgate.company.models import Company, CreateCompany, UpdateCompany
@@ -9,10 +13,48 @@ from src.talentgate.company.service import (
     retrieve_jobs_by_query_parameters,
     update,
     retrieve_by_name,
+    upload_logo,
+    retrieve_logo,
 )
 
 from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job, JobQueryParameters
+
+
+async def test_upload_logo(minio_client: Minio):
+    object_name = str(uuid4())
+    data = BytesIO(b"data")
+
+    await upload_logo(
+        minio_client=minio_client,
+        object_name=object_name,
+        data=data,
+        length=4,
+        content_type="file",
+    )
+
+    data = minio_client.get_object(bucket_name="logo", object_name=object_name)
+
+    assert data == data
+
+
+async def test_retrieve_logo(minio_client: Minio):
+    object_name = str(uuid4())
+    data = b"data"
+
+    minio_client.put_object(
+        bucket_name="logo",
+        object_name=object_name,
+        data=BytesIO(data),
+        length=4,
+        content_type="file",
+    )
+
+    retrieved_logo = await retrieve_logo(
+        minio_client=minio_client, object_name=object_name
+    )
+
+    assert retrieved_logo == data
 
 
 async def test_retrieve_company_job(

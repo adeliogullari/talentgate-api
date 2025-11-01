@@ -269,13 +269,8 @@ class CompanyQueryParameters(BaseModel):
 
 
 class UpdateCompany(BaseModel):
-    name: str
+    name: str | None = None
     overview: str | None = None
-    logo: str | None = None
-    locations: list[CompanyLocation] | None = None
-    links: list[CompanyLink] | None = None
-    employees: list[CompanyEmployee] | None = None
-    jobs: list | None = None
 
 
 class UpdatedCompany(BaseModel):
@@ -285,6 +280,19 @@ class UpdatedCompany(BaseModel):
     employees: list[CompanyEmployee] | None = None
     locations: list[CompanyLocation] | None = None
     links: list[CompanyLink] | None = None
+    created_at: float
+    updated_at: float
+
+
+class UpdateCurrentCompany(BaseModel):
+    name: str | None = None
+    overview: str | None = None
+
+
+class UpdatedCurrentCompany(BaseModel):
+    id: int
+    name: str
+    overview: str | None = None
     created_at: float
     updated_at: float
 

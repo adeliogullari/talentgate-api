@@ -9,6 +9,5 @@ CompanyIdNotFoundException = HTTPException(
 )
 
 CompanyLogoNotFoundException = HTTPException(
-    status_code=HTTP_404_NOT_FOUND,
-    detail="Company has no logo image."
+    status_code=HTTP_404_NOT_FOUND, detail="Company has no logo image."
 )
