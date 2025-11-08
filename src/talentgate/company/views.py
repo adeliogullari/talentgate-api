@@ -5,7 +5,6 @@ from uuid import uuid4
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     Depends,
     File,
     Query,
@@ -15,8 +14,6 @@ from minio import Minio
 from sqlmodel import Session
 from starlette.responses import StreamingResponse
 
-from config import Settings, get_settings
-from src.talentgate.auth import service as auth_service
 from src.talentgate.auth.exceptions import InvalidAuthorizationException
 from src.talentgate.company import service as company_service
 from src.talentgate.company.exceptions import (
@@ -32,10 +29,10 @@ from src.talentgate.company.models import (
     RetrievedCompany,
     RetrievedCurrentCompany,
     UpdateCompany,
+    UpdateCurrentCompany,
     UpdatedCompany,
 )
 from src.talentgate.database.service import get_sqlmodel_session
-from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.employee.enums import EmployeeTitle
 from src.talentgate.job.models import (
     Job,
@@ -45,7 +42,6 @@ from src.talentgate.job.models import (
     RetrievedJob,
 )
 from src.talentgate.storage.service import get_minio_client
-from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
     SubscriptionPlan,
     SubscriptionStatus,
@@ -306,9 +302,6 @@ async def retrieve_companies(
 async def update_company(
     *,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
-    email_client: Annotated[EmailClient, Depends(get_email_client)],
-    settings: Annotated[Settings, Depends(get_settings)],
-    background_tasks: BackgroundTasks,
     company_id: int,
     company: UpdateCompany,
 ) -> Company:
@@ -320,95 +313,37 @@ async def update_company(
     if not retrieved_company:
         raise CompanyIdNotFoundException
 
-    updated_company = await company_service.update(
+    return await company_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_company=retrieved_company,
         company=company,
     )
-
-    for employee in company.employees:
-        if not employee.user.id:
-            retrieved_user = await user_service.retrieve_by_email(
-                sqlmodel_session=sqlmodel_session, email=employee.user.email
-            )
-
-            token = auth_service.encode_token(
-                user_id=str(employee.user.id),
-                key=settings.access_token_key,
-                seconds=settings.access_token_expiration,
-            )
-
-            context = {
-                "username": employee.user.username,
-                "link": f"${settings.frontend_base_url}/verify?token={token}",
-            }
-
-            await company_service.send_onboarding_email(
-                email_client=email_client,
-                background_tasks=background_tasks,
-                context=context,
-                from_addr=settings.smtp_email,
-                to_addrs=retrieved_user.email,
-            )
-
-    return updated_company
 
 
 @router.put(
     path="/api/v1/me/company",
     response_model=UpdatedCompany,
     status_code=200,
-    dependencies=[Depends(UpdateCompanyDependency())],
 )
 async def update_current_company(
     *,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
-    email_client: Annotated[EmailClient, Depends(get_email_client)],
-    settings: Annotated[Settings, Depends(get_settings)],
-    background_tasks: BackgroundTasks,
-    company_id: int,
-    company: UpdateCompany,
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+    company: UpdateCurrentCompany,
 ) -> Company:
     retrieved_company = await company_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session,
-        company_id=company_id,
+        company_id=retrieved_user.employee.company_id,
     )
 
     if not retrieved_company:
         raise CompanyIdNotFoundException
 
-    updated_company = await company_service.update(
+    return await company_service.update(
         sqlmodel_session=sqlmodel_session,
         retrieved_company=retrieved_company,
         company=company,
     )
-
-    for employee in company.employees:
-        if not employee.user.id:
-            retrieved_user = await user_service.retrieve_by_email(
-                sqlmodel_session=sqlmodel_session, email=employee.user.email
-            )
-
-            token = auth_service.encode_token(
-                user_id=str(employee.user.id),
-                key=settings.access_token_key,
-                seconds=settings.access_token_expiration,
-            )
-
-            context = {
-                "username": employee.user.username,
-                "link": f"${settings.frontend_base_url}/verify?token={token}",
-            }
-
-            await company_service.send_onboarding_email(
-                email_client=email_client,
-                background_tasks=background_tasks,
-                context=context,
-                from_addr=settings.smtp_email,
-                to_addrs=retrieved_user.email,
-            )
-
-    return updated_company
 
 
 @router.delete(

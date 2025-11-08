@@ -21,6 +21,7 @@ from src.talentgate.company.models import (
     CreateLocation,
     UpdateAddress,
     UpdateCompany,
+    UpdateCurrentCompany,
     UpdateLink,
     UpdateLocation,
 )
@@ -403,7 +404,7 @@ async def update(
     *,
     sqlmodel_session: Session,
     retrieved_company: Company,
-    company: UpdateCompany,
+    company: UpdateCompany | UpdateCurrentCompany,
 ) -> Company:
     if getattr(company, "locations", None) is not None:
         retrieved_company.locations = [

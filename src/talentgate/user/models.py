@@ -31,6 +31,22 @@ class UserSubscription(SQLModel, table=True):
         return SubscriptionStatus.EXPIRED
 
 
+class UserPayment(SQLModel, table=True):
+    __tablename__ = "user_payment"
+
+    id: int = Field(primary_key=True)
+    customer_id: str | None = Field(default=None)
+    transaction_id: str | None = Field(default=None)
+    subscription_id: str | None = Field(default=None)
+    user: Optional["User"] = Relationship(back_populates="payment")
+    start_date: float = Field(
+        default_factory=lambda: (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+    )
+    end_date: float = Field(
+        default_factory=lambda: (datetime.now(UTC) - timedelta(days=1)).timestamp(),
+    )
+
+
 class User(SQLModel, table=True):
     __tablename__ = "user"
 
@@ -52,6 +68,14 @@ class User(SQLModel, table=True):
         foreign_key="user_subscription.id",
     )
     subscription: UserSubscription | None = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"uselist": False, "cascade": "all"},
+    )
+    payment_id: int | None = Field(
+        default=None,
+        foreign_key="user_payment.id",
+    )
+    payment: UserPayment | None = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"uselist": False, "cascade": "all"},
     )
@@ -101,7 +125,7 @@ class UpdatedSubscription(BaseModel):
 
 
 class UpsertSubscription(BaseModel):
-    id: int | None = None
+    id: int
     plan: str | None = None
     start_date: float | None = None
     end_date: float | None = None
@@ -115,6 +139,53 @@ class UpsertedSubscription(BaseModel):
     status: str
 
 
+class CreatePayment(BaseModel):
+    customer_id: str | None = None
+    transaction_id: str | None = None
+    subscription_id: str | None = None
+
+
+class CreatedPayment(BaseModel):
+    id: int
+    customer_id: str | None = None
+    transaction_id: str | None = None
+    subscription_id: str | None = None
+
+
+class RetrievedPayment(BaseModel):
+    id: int
+    customer_id: str | None = None
+    transaction_id: str | None = None
+    subscription_id: str | None = None
+
+
+class UpdatePayment(BaseModel):
+    customer_id: str | None = None
+    transaction_id: str | None = None
+    subscription_id: str | None = None
+
+
+class UpdatedPayment(BaseModel):
+    id: int
+    customer_id: str | None = None
+    transaction_id: str | None = None
+    subscription_id: str | None = None
+
+
+class UpsertPayment(BaseModel):
+    id: int
+    customer_id: str | None = None
+    transaction_id: str | None = None
+    subscription_id: str | None = None
+
+
+class UpsertedPayment(BaseModel):
+    id: int
+    customer_id: str | None = None
+    transaction_id: str | None = None
+    subscription_id: str | None = None
+
+
 class CreateUser(BaseModel):
     firstname: str
     lastname: str
@@ -125,6 +196,7 @@ class CreateUser(BaseModel):
     role: str | None = None
     subscription_id: int | None = None
     subscription: UpsertSubscription | None = None
+    payment_id: int | None = None
 
 
 class CreatedUser(BaseModel):

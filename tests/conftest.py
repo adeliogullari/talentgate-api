@@ -26,7 +26,7 @@ from src.talentgate.job.views import router as job_router
 from src.talentgate.storage.service import get_minio_client
 from src.talentgate.user.views import router as user_router
 from tests.auth.conftest import headers, access_token, refresh_token
-from tests.company.conftest import address, company, location, make_company
+from tests.company.conftest import address, company, location, link, make_company
 from tests.employee.conftest import employee, make_employee
 from tests.job.conftest import job, make_job
 from tests.user.conftest import make_subscription, make_user, subscription, user

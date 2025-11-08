@@ -4,11 +4,13 @@ from uuid import uuid4
 import pytest
 from sqlmodel import Session
 
+from src.talentgate.company.enums import LinkType
 from src.talentgate.company.models import (
     Company,
     CompanyAddress,
     CompanyLocation,
     CompanyLocationType,
+    CompanyLink,
 )
 from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job
@@ -49,11 +51,23 @@ def location(sqlmodel_session: Session, address: CompanyAddress):
 
 
 @pytest.fixture
+def link(sqlmodel_session: Session):
+    company_link = CompanyLink(type=LinkType.WEBSITE.value, url="www.example.com")
+
+    sqlmodel_session.add(company_link)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(company_link)
+
+    return company_link
+
+
+@pytest.fixture
 def make_company(
     sqlmodel_session: Session,
     job: Job,
     employee: Employee,
     location: CompanyLocation,
+    link: CompanyLink,
 ):
     def make(**kwargs):
         company = Company(
@@ -62,6 +76,7 @@ def make_company(
             logo=kwargs.get("logo") or str(uuid4()),
             employees=kwargs.get("employees") or [employee],
             locations=kwargs.get("locations") or [location],
+            links=kwargs.get("links") or [link],
             jobs=[job],
         )
 
@@ -82,6 +97,7 @@ def company(make_company, request):
     logo = param.get("logo", None)
     employees = param.get("employees", None)
     locations = param.get("locations", None)
+    links = param.get("links", None)
 
     return make_company(
         name=name,
@@ -89,4 +105,5 @@ def company(make_company, request):
         logo=logo,
         employees=employees,
         locations=locations,
+        links=links,
     )

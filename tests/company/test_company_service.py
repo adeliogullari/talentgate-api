@@ -10,7 +10,6 @@ from src.talentgate.company.service import (
     delete,
     retrieve_by_id,
     retrieve_company_job,
-    retrieve_jobs_by_query_parameters,
     update,
     retrieve_by_name,
     upload_logo,

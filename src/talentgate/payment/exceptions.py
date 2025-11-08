@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from starlette.status import (
     HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
 )
 
 IncompleteTransactionException = HTTPException(
@@ -21,4 +22,9 @@ InactiveSubscriptionException = HTTPException(
 InvalidProductIdException = HTTPException(
     status_code=HTTP_400_BAD_REQUEST,
     detail="Invalid product id.",
+)
+
+CustomerIdNotFoundException = HTTPException(
+    status_code=HTTP_404_NOT_FOUND,
+    detail="No customer id found.",
 )
