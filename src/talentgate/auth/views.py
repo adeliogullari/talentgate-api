@@ -6,8 +6,10 @@ from typing import Annotated
 import requests
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import JSONResponse
+from google.auth.exceptions import GoogleAuthError
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
+from paddle_billing import Client
 from redis.asyncio import Redis
 from sqlmodel import Session
 from starlette.status import (
@@ -23,6 +25,8 @@ from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.enums import EmployeeTitle
 from src.talentgate.employee.models import CreateEmployee
+from src.talentgate.payment import service as payment_service
+from src.talentgate.payment.service import get_paddle_client
 from src.talentgate.user import service as user_service
 from src.talentgate.user.enums import SubscriptionPlan
 from src.talentgate.user.exceptions import (
@@ -61,8 +65,10 @@ router = APIRouter(tags=["auth"])
 @router.post(path="/api/v1/auth/login", status_code=200)
 async def login(
     *,
+    paddle_client: Annotated[Client, Depends(get_paddle_client)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
+    background_tasks: BackgroundTasks,
     credentials: LoginCredentials,
 ) -> JSONResponse:
     retrieved_user = await user_service.retrieve_by_email(
@@ -81,6 +87,14 @@ async def login(
         encoded_password=retrieved_user.password,
     ):
         raise InvalidCredentialsException
+
+    if retrieved_user.subscription.paddle_subscription_id:
+        background_tasks.add_task(
+            payment_service.sync_subscription,
+            paddle_client,
+            sqlmodel_session,
+            retrieved_user,
+        )
 
     access_token = auth_service.encode_token(
         user_id=str(retrieved_user.id),
@@ -122,17 +136,22 @@ async def login(
 @router.post(path="/api/v1/auth/google", status_code=200)
 async def google(
     *,
+    paddle_client: Annotated[Client, Depends(get_paddle_client)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
+    background_tasks: BackgroundTasks,
     credentials: GoogleCredentials,
 ) -> JSONResponse:
     request = google_requests.Request()
 
-    id_info = id_token.verify_oauth2_token(
-        id_token=credentials.token,
-        request=request,
-        audience=settings.google_client_id,
-    )
+    try:
+        id_info = id_token.verify_oauth2_token(
+            id_token=credentials.token,
+            request=request,
+            audience=settings.google_client_id,
+        )
+    except (ValueError, GoogleAuthError) as err:
+        raise InvalidGoogleIDTokenException from err
 
     if not id_info:
         raise InvalidGoogleIDTokenException
@@ -192,6 +211,14 @@ async def google(
         email=id_info["email"],
     )
 
+    if retrieved_user.subscription.paddle_subscription_id:
+        background_tasks.add_task(
+            payment_service.sync_subscription,
+            paddle_client,
+            sqlmodel_session,
+            retrieved_user,
+        )
+
     access_token = auth_service.encode_token(
         user_id=str(retrieved_user.id),
         key=settings.access_token_key,
@@ -234,8 +261,10 @@ async def google(
 )
 async def linkedin(
     *,
+    paddle_client: Annotated[Client, Depends(get_paddle_client)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
+    background_tasks: BackgroundTasks,
     credentials: LinkedInCredentials,
 ) -> JSONResponse:
     response = requests.get(
@@ -304,6 +333,14 @@ async def linkedin(
         sqlmodel_session=sqlmodel_session,
         email=email,
     )
+
+    if retrieved_user.subscription.paddle_subscription_id:
+        background_tasks.add_task(
+            payment_service.sync_subscription,
+            paddle_client,
+            sqlmodel_session,
+            retrieved_user,
+        )
 
     access_token = auth_service.encode_token(
         user_id=str(retrieved_user.id),
@@ -492,8 +529,11 @@ async def resend_verification_email(
 async def refresh(
     *,
     request: Request,
-    settings: Annotated[Settings, Depends(get_settings)],
     redis_client: Annotated[Redis, Depends(get_redis_client)],
+    paddle_client: Annotated[Client, Depends(get_paddle_client)],
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    background_tasks: BackgroundTasks,
     tokens: RefreshTokens,
 ) -> JSONResponse:
     refresh_token = request.cookies.get("refresh_token") or getattr(
@@ -532,6 +572,18 @@ async def refresh(
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )
+
+    retrieved_user = await user_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, user_id=payload["user_id"]
+    )
+
+    if retrieved_user.subscription.paddle_subscription_id:
+        background_tasks.add_task(
+            payment_service.sync_subscription,
+            paddle_client,
+            sqlmodel_session,
+            retrieved_user,
+        )
 
     content = AuthenticationTokens(
         access_token=access_token, refresh_token=refresh_token

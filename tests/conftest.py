@@ -202,7 +202,6 @@ def minio_client() -> Any:
 async def paddle_client() -> Any:
     class Customers:
         async def create(self, data: dict):
-            # Simulate Paddle Billing response
             return {
                 "id": "cus_123",
                 "email": data["email"],

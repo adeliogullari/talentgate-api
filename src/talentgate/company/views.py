@@ -18,7 +18,6 @@ from src.talentgate.auth.exceptions import InvalidAuthorizationException
 from src.talentgate.company import service as company_service
 from src.talentgate.company.exceptions import (
     CompanyIdNotFoundException,
-    CompanyLogoNotFoundException,
 )
 from src.talentgate.company.models import (
     Company,
@@ -77,9 +76,9 @@ async def retrieve_current_company_logo(
     *,
     minio_client: Annotated[Minio, Depends(get_minio_client)],
     retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
-) -> StreamingResponse:
+) -> StreamingResponse | None:
     if not retrieved_company.logo:
-        raise CompanyLogoNotFoundException
+        return None
 
     logo = await company_service.retrieve_logo(
         minio_client=minio_client, object_name=retrieved_company.logo

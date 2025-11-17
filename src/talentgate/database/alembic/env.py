@@ -9,7 +9,7 @@ from sqlmodel import SQLModel
 from config import get_settings
 from src.talentgate.database.service import get_postgres_connection_string
 
-from src.talentgate.user.models import User, UserSubscription, UserPayment
+from src.talentgate.user.models import User, UserSubscription
 from src.talentgate.employee.models import Employee
 from src.talentgate.company.models import (
     Company,

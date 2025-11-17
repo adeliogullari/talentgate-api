@@ -23,7 +23,6 @@ from src.talentgate.user.exceptions import (
     DuplicateEmailException,
     DuplicateUsernameException,
     UserIdNotFoundException,
-    UserProfileNotFoundException,
 )
 from src.talentgate.user.models import (
     CreatedUser,
@@ -91,9 +90,9 @@ async def retrieve_current_user_profile(
     *,
     minio_client: Annotated[Minio, Depends(get_minio_client)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
-) -> StreamingResponse:
+) -> StreamingResponse | None:
     if not retrieved_user.profile:
-        raise UserProfileNotFoundException
+        return None
 
     profile = await user_service.retrieve_profile(
         minio_client=minio_client, object_name=retrieved_user.profile

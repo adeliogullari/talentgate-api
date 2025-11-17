@@ -38,7 +38,12 @@ class Settings(BaseSettings):
     smtp_password: str
     paddle_api_secret_key: str
     paddle_api_environment: str
-    paddle_standard_product_id: str
+    paddle_standard_plan_product_id: str
+    paddle_standard_plan_monthly_price_id: str
+    paddle_standard_plan_annual_price_id: str
+    paddle_premium_plan_product_id: str
+    paddle_premium_plan_monthly_price_id: str
+    paddle_premium_plan_annual_price_id: str
 
     model_config = SettingsConfigDict(
         extra="allow",

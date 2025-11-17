@@ -4,6 +4,7 @@ from enum import Enum
 class SubscriptionPlan(str, Enum):
     BASIC = "basic"
     STANDARD = "standard"
+    PREMIUM = "premium"
 
 
 class SubscriptionStatus(str, Enum):

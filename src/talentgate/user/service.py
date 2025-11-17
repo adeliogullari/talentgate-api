@@ -9,17 +9,14 @@ from sqlmodel import Session, select
 from config import get_settings
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user.models import (
-    CreatePayment,
     CreateSubscription,
     CreateUser,
     UpdateCurrentUser,
-    UpdatePayment,
     UpdateSubscription,
     UpdateUser,
     UpsertSubscription,
     UpsertUser,
     User,
-    UserPayment,
     UserQueryParameters,
     UserSubscription,
 )
@@ -137,39 +134,6 @@ async def upsert_subscription(
             )
         ),
     )
-
-
-async def create_payment(
-    *,
-    sqlmodel_session: Session,
-    payment: CreatePayment,
-) -> UserPayment:
-    created_payment = UserPayment(
-        **payment.model_dump(exclude_unset=True, exclude_none=True),
-    )
-
-    sqlmodel_session.add(created_payment)
-    sqlmodel_session.commit()
-    sqlmodel_session.refresh(created_payment)
-
-    return created_payment
-
-
-async def update_payment(
-    *,
-    sqlmodel_session: Session,
-    retrieved_payment: UserPayment,
-    payment: UpdatePayment,
-) -> UserPayment:
-    retrieved_payment.sqlmodel_update(
-        payment.model_dump(exclude_none=True, exclude_unset=True),
-    )
-
-    sqlmodel_session.add(retrieved_payment)
-    sqlmodel_session.commit()
-    sqlmodel_session.refresh(retrieved_payment)
-
-    return retrieved_payment
 
 
 async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:

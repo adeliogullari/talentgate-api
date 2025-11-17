@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC
+from datetime import UTC, timedelta
 
 from paddle_billing import Client, Environment, Options
 from paddle_billing.Entities.Shared import (
@@ -15,21 +15,34 @@ from paddle_billing.Entities.Subscriptions import (
 )
 from paddle_billing.Entities.Transaction import Transaction
 from paddle_billing.Resources.Subscriptions.Operations import CancelSubscription
-from paddle_billing.Resources.Transactions.Operations import (
-    ListTransactions,
-)
+from paddle_billing.Resources.Transactions.Operations import ListTransactions
 from sqlmodel import Session
 
 from config import get_settings
-from src.talentgate.payment.models import Invoice
+from src.talentgate.payment.models import Invoice, RetrievedSubscription
 from src.talentgate.user import service as user_service
 from src.talentgate.user.enums import SubscriptionPlan
-from src.talentgate.user.models import UpdatePayment, UpdateSubscription, User
+from src.talentgate.user.models import UpdateSubscription, User
 
 settings = get_settings()
 
 product_subscription = {
-    settings.paddle_standard_product_id: SubscriptionPlan.STANDARD.value
+    settings.paddle_standard_plan_product_id: {
+        settings.paddle_standard_plan_monthly_price_id: {
+            "plan": SubscriptionPlan.STANDARD.value,
+        },
+        settings.paddle_standard_plan_annual_price_id: {
+            "plan": SubscriptionPlan.STANDARD.value,
+        },
+    },
+    settings.paddle_premium_plan_product_id: {
+        settings.paddle_premium_plan_monthly_price_id: {
+            "plan": SubscriptionPlan.PREMIUM.value,
+        },
+        settings.paddle_premium_plan_annual_price_id: {
+            "plan": SubscriptionPlan.PREMIUM.value,
+        },
+    },
 }
 
 
@@ -62,44 +75,93 @@ async def verify_subscription(subscription: Subscription | None) -> bool:
     )
 
 
+async def retrieve_subscription(
+    paddle_client: Client,
+    retrieved_user: User,
+) -> RetrievedSubscription:
+    next_billing_date = None
+    amount = None
+
+    if retrieved_user.subscription.paddle_subscription_id:
+        subscription = paddle_client.subscriptions.get(
+            subscription_id=retrieved_user.subscription.paddle_subscription_id
+        )
+        next_billing_date = subscription.next_billed_at
+
+        price = subscription.items[0].price
+        currency_code = subscription.currency_code.value
+        billing_cycle = subscription.billing_cycle.interval.value
+
+        amount = f"{price} {currency_code} / {billing_cycle}"
+
+    return RetrievedSubscription(
+        plan=retrieved_user.subscription.plan,
+        status=retrieved_user.subscription.status,
+        start_date=retrieved_user.subscription.start_date,
+        end_date=retrieved_user.subscription.end_date,
+        next_billing_date=next_billing_date,
+        amount=amount,
+    )
+
+
 async def update_subscription(
     sqlmodel_session: Session,
-    transaction: Transaction | None,
-    subscription: Subscription | None,
+    subscription: Subscription,
     retrieved_user: User,
 ) -> None:
-    plan = product_subscription.get(subscription.items[0].product.id)
+    product_id = subscription.items[0].price.product_id
+
+    plan = product_subscription[product_id]["plan"]
     start_date = subscription.current_billing_period.starts_at.replace(
         tzinfo=UTC
     ).timestamp()
-    end_date = subscription.current_billing_period.ends_at.replace(
-        tzinfo=UTC
+    end_date = (
+        subscription.current_billing_period.ends_at.replace(tzinfo=UTC)
+        + timedelta(days=3)
     ).timestamp()
 
     await user_service.update_subscription(
         sqlmodel_session=sqlmodel_session,
         retrieved_subscription=retrieved_user.subscription,
         subscription=UpdateSubscription(
-            plan=plan, start_date=start_date, end_date=end_date
+            paddle_subscription_id=subscription.id,
+            plan=plan,
+            start_date=start_date,
+            end_date=end_date,
         ),
     )
 
-    await user_service.update_payment(
+
+async def sync_subscription(
+    paddle_client: Client, sqlmodel_session: Session, retrieved_user: User
+) -> None:
+    subscription = paddle_client.subscriptions.get(
+        subscription_id=retrieved_user.subscription.paddle_subscription_id
+    )
+
+    await update_subscription(
         sqlmodel_session=sqlmodel_session,
-        retrieved_payment=retrieved_user.payment,
-        payment=UpdatePayment(
-            customer_id=transaction.customer_id,
-            transaction_id=transaction.id,
-            subscription_id=subscription.id,
+        subscription=subscription,
+        retrieved_user=retrieved_user,
+    )
+
+
+async def cancel_subscription(paddle_client: Client, retrieved_user: User) -> None:
+    paddle_client.subscriptions.cancel(
+        subscription_id=retrieved_user.subscription.paddle_subscription_id,
+        operation=CancelSubscription(
+            effective_from=SubscriptionEffectiveFrom("next_billing_period")
         ),
     )
 
 
 async def retrieve_invoices(
-    paddle_client: Client, customer_id: str
+    paddle_client: Client, retrieved_user: User
 ) -> list[Invoice] | None:
     transactions = paddle_client.transactions.list(
-        operation=ListTransactions(customer_ids=[customer_id])
+        operation=ListTransactions(
+            subscription_ids=[retrieved_user.subscription.paddle_subscription_id]
+        )
     )
 
     return [
@@ -110,7 +172,7 @@ async def retrieve_invoices(
             total=transaction.details.totals.total,
             currency_code=CurrencyCode.USD.value,
             status=TransactionStatus.Completed.value,
-            billed_at=getattr(transaction, "billed_at", None),
+            billed_at=transaction.billed_at,
         )
         for transaction in transactions
     ]
@@ -120,49 +182,14 @@ async def retrieve_invoice_document(paddle_client: Client, transaction_id: str) 
     return paddle_client.transactions.get_invoice_pdf(transaction_id=transaction_id)
 
 
-async def cancel_subscription(
-    paddle_client: Client,
-    sqlmodel_session: Session,
-    retrieved_user: User,
-) -> None:
-    subscription = paddle_client.subscriptions.get(
-        subscription_id=retrieved_user.payment.subscription_id
-    )
-
-    start_date = subscription.current_billing_period.starts_at.replace(
-        tzinfo=UTC
-    ).timestamp()
-    end_date = subscription.next_billed_at.replace(tzinfo=UTC).timestamp()
-
-    operation = CancelSubscription(
-        effective_from=SubscriptionEffectiveFrom.NextBillingPeriod
-    )
-
-    paddle_client.subscriptions.cancel(
-        subscription_id=retrieved_user.subscription_id, operation=operation
-    )
-
-    await user_service.update_subscription(
-        sqlmodel_session=sqlmodel_session,
-        retrieved_subscription=retrieved_user.subscription,
-        subscription=UpdateSubscription(start_date=start_date, end_date=end_date),
-    )
-
-    await user_service.update_payment(
-        sqlmodel_session=sqlmodel_session,
-        retrieved_payment=retrieved_user.payment,
-        payment=UpdatePayment(transaction_id=None, subscription_id=None),
-    )
-
-
-async def verify_payment(
+async def confirm_transaction(
     paddle_client: Client,
     sqlmodel_session: Session,
     retrieved_user: User,
     transaction_id: str,
     attempt: int = 0,
     retry: int = 5,
-    interval: float = 10,
+    interval: float = 5,
 ) -> bool:
     await asyncio.sleep(interval)
 
@@ -174,22 +201,18 @@ async def verify_payment(
     is_transaction_verified = await verify_transaction(transaction=transaction)
     is_subscription_verified = await verify_subscription(subscription=subscription)
 
-    is_payment_verified = is_transaction_verified and is_subscription_verified
-
-    if is_payment_verified:
-        if retrieved_user.payment.subscription_id:
+    if is_transaction_verified and is_subscription_verified:
+        if retrieved_user.subscription.paddle_subscription_id:
             await cancel_subscription(
-                paddle_client=paddle_client,
-                sqlmodel_session=sqlmodel_session,
-                retrieved_user=retrieved_user,
+                paddle_client=paddle_client, retrieved_user=retrieved_user
             )
 
         await update_subscription(
             sqlmodel_session=sqlmodel_session,
-            transaction=transaction,
             subscription=subscription,
             retrieved_user=retrieved_user,
         )
+
         return True
 
     if attempt >= retry:
@@ -197,7 +220,7 @@ async def verify_payment(
 
     attempt += 1
 
-    return await verify_payment(
+    return await confirm_transaction(
         paddle_client=paddle_client,
         sqlmodel_session=sqlmodel_session,
         retrieved_user=retrieved_user,
