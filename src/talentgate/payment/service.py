@@ -14,36 +14,23 @@ from paddle_billing.Entities.Subscriptions import (
     SubscriptionStatus,
 )
 from paddle_billing.Entities.Transaction import Transaction
+from paddle_billing.Resources.Products.Operations import ListProducts, ProductIncludes
 from paddle_billing.Resources.Subscriptions.Operations import CancelSubscription
 from paddle_billing.Resources.Transactions.Operations import ListTransactions
 from sqlmodel import Session
 
 from config import get_settings
-from src.talentgate.payment.models import Invoice, RetrievedSubscription
+from src.talentgate.payment.models import (
+    Invoice,
+    RetrievedPrice,
+    RetrievedProduct,
+    RetrievedSubscription,
+    RetrievedUnitPrice,
+)
 from src.talentgate.user import service as user_service
-from src.talentgate.user.enums import SubscriptionPlan
 from src.talentgate.user.models import UpdateSubscription, User
 
 settings = get_settings()
-
-product_subscription = {
-    settings.paddle_standard_plan_product_id: {
-        settings.paddle_standard_plan_monthly_price_id: {
-            "plan": SubscriptionPlan.STANDARD.value,
-        },
-        settings.paddle_standard_plan_annual_price_id: {
-            "plan": SubscriptionPlan.STANDARD.value,
-        },
-    },
-    settings.paddle_premium_plan_product_id: {
-        settings.paddle_premium_plan_monthly_price_id: {
-            "plan": SubscriptionPlan.PREMIUM.value,
-        },
-        settings.paddle_premium_plan_annual_price_id: {
-            "plan": SubscriptionPlan.PREMIUM.value,
-        },
-    },
-}
 
 
 def get_paddle_client() -> Client:
@@ -104,14 +91,48 @@ async def retrieve_subscription(
     )
 
 
+async def retrieve_products(
+    paddle_client: Client,
+) -> list[RetrievedProduct]:
+    products = paddle_client.products.list(
+        operation=ListProducts(
+            ids=[
+                settings.paddle_standard_plan_product_id,
+                settings.paddle_premium_plan_product_id,
+            ],
+            includes=[ProductIncludes.Prices],
+        )
+    )
+
+    return list(
+        reversed(
+            [
+                RetrievedProduct(
+                    name=product.name.lower(),
+                    description=product.description,
+                    prices=[
+                        RetrievedPrice(
+                            billing_cycle=price.billing_cycle.interval.name.lower(),
+                            unit_price=RetrievedUnitPrice(
+                                amount=str(int(price.unit_price.amount) // 100),
+                                currency_code=price.unit_price.currency_code.value.lower(),
+                            ),
+                        )
+                        for price in product.prices
+                    ],
+                )
+                for product in products
+            ]
+        )
+    )
+
+
 async def update_subscription(
     sqlmodel_session: Session,
     subscription: Subscription,
     retrieved_user: User,
 ) -> None:
-    product_id = subscription.items[0].price.product_id
-
-    plan = product_subscription[product_id]["plan"]
+    plan = subscription.items[0].product.name.lower()
     start_date = subscription.current_billing_period.starts_at.replace(
         tzinfo=UTC
     ).timestamp()

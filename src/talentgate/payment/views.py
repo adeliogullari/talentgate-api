@@ -15,6 +15,7 @@ from src.talentgate.payment.models import (
     Invoice,
     PaymentCheckout,
     RetrievedInvoice,
+    RetrievedProduct,
     RetrievedSubscription,
 )
 from src.talentgate.payment.service import get_paddle_client
@@ -55,6 +56,14 @@ async def retrieve_subscription(
     return await payment_service.retrieve_subscription(
         paddle_client=paddle_client, retrieved_user=retrieved_user
     )
+
+
+@router.get("/api/v1/payment/products")
+async def retrieve_products(
+    *,
+    paddle_client: Annotated[Client, Depends(get_paddle_client)],
+) -> list[RetrievedProduct]:
+    return await payment_service.retrieve_products(paddle_client=paddle_client)
 
 
 @router.post("/api/v1/payment/subscription/cancel")

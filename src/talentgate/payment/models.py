@@ -16,6 +16,24 @@ class RetrievedSubscription(BaseModel):
     amount: str | None = None
 
 
+class RetrievedUnitPrice(BaseModel):
+    amount: str | None = None
+    currency_code: str | None = None
+
+
+class RetrievedPrice(BaseModel):
+    id: str | None = None
+    billing_cycle: str | None = None
+    unit_price: RetrievedUnitPrice | None = None
+
+
+class RetrievedProduct(BaseModel):
+    id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    prices: list[RetrievedPrice] | None = None
+
+
 class Invoice(BaseModel):
     transaction_id: str | None = None
     invoice_id: str | None = None
