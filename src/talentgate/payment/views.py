@@ -70,6 +70,7 @@ async def retrieve_products(
 async def cancel_subscription(
     *,
     paddle_client: Annotated[Client, Depends(get_paddle_client)],
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
     background_tasks: BackgroundTasks,
 ) -> dict[str, str | None]:
@@ -79,6 +80,7 @@ async def cancel_subscription(
     background_tasks.add_task(
         payment_service.cancel_subscription,
         paddle_client,
+        sqlmodel_session,
         retrieved_user,
     )
 

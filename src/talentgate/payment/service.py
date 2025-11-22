@@ -73,9 +73,9 @@ async def retrieve_subscription(
         subscription = paddle_client.subscriptions.get(
             subscription_id=retrieved_user.subscription.paddle_subscription_id
         )
-        next_billing_date = subscription.next_billed_at
+        next_billing_date = subscription.next_billed_at.timestamp()
 
-        price = subscription.items[0].price
+        price = str(int(subscription.items[0].price.unit_price.amount) // 100)
         currency_code = subscription.currency_code.value
         billing_cycle = subscription.billing_cycle.interval.value
 
@@ -108,10 +108,12 @@ async def retrieve_products(
         reversed(
             [
                 RetrievedProduct(
+                    id=product.id,
                     name=product.name.lower(),
                     description=product.description,
                     prices=[
                         RetrievedPrice(
+                            id=price.id,
                             billing_cycle=price.billing_cycle.interval.name.lower(),
                             unit_price=RetrievedUnitPrice(
                                 amount=str(int(price.unit_price.amount) // 100),
@@ -167,11 +169,21 @@ async def sync_subscription(
     )
 
 
-async def cancel_subscription(paddle_client: Client, retrieved_user: User) -> None:
+async def cancel_subscription(
+    paddle_client: Client, sqlmodel_session: Session, retrieved_user: User
+) -> None:
     paddle_client.subscriptions.cancel(
         subscription_id=retrieved_user.subscription.paddle_subscription_id,
         operation=CancelSubscription(
             effective_from=SubscriptionEffectiveFrom("next_billing_period")
+        ),
+    )
+
+    await user_service.update_subscription(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_subscription=retrieved_user.subscription,
+        subscription=UpdateSubscription(
+            paddle_subscription_id=None,
         ),
     )
 
@@ -225,7 +237,9 @@ async def confirm_transaction(
     if is_transaction_verified and is_subscription_verified:
         if retrieved_user.subscription.paddle_subscription_id:
             await cancel_subscription(
-                paddle_client=paddle_client, retrieved_user=retrieved_user
+                paddle_client=paddle_client,
+                sqlmodel_session=sqlmodel_session,
+                retrieved_user=retrieved_user,
             )
 
         await update_subscription(
