@@ -3,7 +3,6 @@ from datetime import UTC, timedelta
 
 from paddle_billing import Client, Environment, Options
 from paddle_billing.Entities.Shared import (
-    CurrencyCode,
     PaymentAttemptStatus,
     TransactionStatus,
 )
@@ -202,10 +201,12 @@ async def retrieve_invoices(
             transaction_id=transaction.id,
             invoice_id=transaction.invoice_id,
             invoice_number=transaction.invoice_number,
-            total=transaction.details.totals.total,
-            currency_code=CurrencyCode.USD.value,
-            status=TransactionStatus.Completed.value,
+            total=str(int(transaction.details.totals.total) // 100),
+            currency_code=transaction.details.totals.currency_code.value,
+            status=transaction.status.value,
             billed_at=transaction.billed_at,
+            card_type=transaction.payments[0].method_details.card.type.value,
+            card_last4=transaction.payments[0].method_details.card.last4,
         )
         for transaction in transactions
     ]
