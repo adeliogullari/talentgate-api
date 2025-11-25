@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     refresh_token_key: str
     refresh_token_algorithm: str
     refresh_token_type: str
+    one_time_token_expiration: float
+    one_time_token_key: str
+    one_time_token_algorithm: str
+    one_time_token_type: str
     smtp_host: str
     smtp_port: int
     smtp_user: str
@@ -39,11 +43,7 @@ class Settings(BaseSettings):
     paddle_api_secret_key: str
     paddle_api_environment: str
     paddle_standard_plan_product_id: str
-    paddle_standard_plan_monthly_price_id: str
-    paddle_standard_plan_annual_price_id: str
     paddle_premium_plan_product_id: str
-    paddle_premium_plan_monthly_price_id: str
-    paddle_premium_plan_annual_price_id: str
 
     model_config = SettingsConfigDict(
         extra="allow",

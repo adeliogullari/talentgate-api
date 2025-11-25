@@ -41,7 +41,7 @@ class Invoice(BaseModel):
     total: str | None = None
     currency_code: str | None = None
     status: str | None = None
-    billed_at: datetime | None = None
+    billed_at: float | None = None
     card_type: str | None = None
     card_last4: str | None = None
 
@@ -53,6 +53,6 @@ class RetrievedInvoice(BaseModel):
     total: str | None = None
     currency_code: str | None = None
     status: str | None = None
-    billed_at: datetime | None = None
+    billed_at: float | None = None
     card_type: str | None = None
     card_last4: str | None = None

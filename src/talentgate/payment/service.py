@@ -35,7 +35,7 @@ settings = get_settings()
 def get_paddle_client() -> Client:
     return Client(
         api_key=settings.paddle_api_secret_key,
-        options=Options(Environment.SANDBOX),
+        options=Options(Environment(settings.paddle_api_environment)),
     )
 
 
@@ -204,7 +204,7 @@ async def retrieve_invoices(
             total=str(int(transaction.details.totals.total) // 100),
             currency_code=transaction.details.totals.currency_code.value,
             status=transaction.status.value,
-            billed_at=transaction.billed_at,
+            billed_at=transaction.billed_at.timestamp(),
             card_type=transaction.payments[0].method_details.card.type.value,
             card_last4=transaction.payments[0].method_details.card.last4,
         )
