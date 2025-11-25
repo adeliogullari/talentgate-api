@@ -38,7 +38,11 @@ class CompanyLocation(SQLModel, table=True):
     address_id: int | None = Field(default=None, foreign_key="company_address.id")
     address: CompanyAddress | None = Relationship(
         back_populates="location",
-        sa_relationship_kwargs={"uselist": False},
+        sa_relationship_kwargs={
+            "uselist": False,
+            "cascade": "all, delete-orphan",
+            "single_parent": True,
+        },
     )
     company_id: int | None = Field(default=None, foreign_key="company.id")
     company: Optional["Company"] = Relationship(back_populates="locations")
@@ -70,11 +74,11 @@ class Company(SQLModel, table=True):
     )
     locations: list[CompanyLocation] = Relationship(
         back_populates="company",
-        sa_relationship_kwargs={"cascade": "all"},
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
     links: list[CompanyLink] = Relationship(
         back_populates="company",
-        sa_relationship_kwargs={"cascade": "all"},
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
     jobs: list["Job"] = Relationship(
         back_populates="company",
@@ -161,36 +165,31 @@ class CreatedLocation(BaseModel):
     type: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    address: CreateAddress | None = None
+    address: CreatedAddress | None = None
 
 
 class RetrievedLocation(BaseModel):
     id: int
-    unit: str | None = None
-    street: str | None = None
-    city: str | None = None
-    state: str | None = None
-    country: str | None = None
-    postal_code: str | None = None
+    type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    address: RetrievedAddress | None = None
 
 
 class UpdateLocation(BaseModel):
-    unit: str | None = None
-    street: str | None = None
-    city: str | None = None
-    state: str | None = None
-    country: str | None = None
-    postal_code: str | None = None
+    id: int | None = None
+    type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    address: UpdateAddress | None = None
 
 
 class UpdatedLocation(BaseModel):
     id: int
-    unit: str | None = None
-    street: str | None = None
-    city: str | None = None
-    state: str | None = None
-    country: str | None = None
-    postal_code: str | None = None
+    type: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    address: UpdatedAddress | None = None
 
 
 class CreateLink(SQLModel):
@@ -211,6 +210,7 @@ class RetrievedLink(BaseModel):
 
 
 class UpdateLink(BaseModel):
+    id: int | None = None
     type: str | None = None
     url: str | None = None
 
@@ -256,7 +256,7 @@ class RetrievedCurrentCompany(BaseModel):
     name: str
     overview: str | None = None
     employees: list[CompanyEmployee] | None = None
-    locations: list[CompanyLocation] | None = None
+    locations: list[RetrievedLocation] | None = None
     links: list[RetrievedLink] | None = None
     created_at: float
     updated_at: float
@@ -287,6 +287,8 @@ class UpdatedCompany(BaseModel):
 class UpdateCurrentCompany(BaseModel):
     name: str | None = None
     overview: str | None = None
+    links: list[UpdateLink] | None = None
+    locations: list[UpdateLocation] | None = None
 
 
 class UpdatedCurrentCompany(BaseModel):

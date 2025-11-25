@@ -115,17 +115,28 @@ async def upsert_address(
     sqlmodel_session: Session,
     address: CreateAddress | UpdateAddress,
 ) -> CompanyAddress:
+    address_id = getattr(address, "id", None)
+
     retrieved_address = await retrieve_address_by_id(
         sqlmodel_session=sqlmodel_session,
-        address_id=address.id,
+        address_id=address_id,
     )
+
     if retrieved_address:
         return await update_address(
             sqlmodel_session=sqlmodel_session,
             retrieved_address=retrieved_address,
-            address=address,
+            address=-UpdateAddress(
+                **address.model_dump(exclude_none=True, exclude_unset=True)
+            ),
         )
-    return await create_address(sqlmodel_session=sqlmodel_session, address=address)
+
+    return await create_address(
+        sqlmodel_session=sqlmodel_session,
+        address=CreateAddress(
+            **address.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
+        ),
+    )
 
 
 async def create_location(
@@ -198,19 +209,28 @@ async def upsert_location(
     sqlmodel_session: Session,
     location: CreateLocation | UpdateLocation,
 ) -> CompanyLocation:
+    location_id = getattr(location, "id", None)
+
     retrieved_location = await retrieve_location_by_id(
         sqlmodel_session=sqlmodel_session,
-        location_id=location.id,
+        location_id=location_id,
     )
 
     if retrieved_location:
         return await update_location(
             sqlmodel_session=sqlmodel_session,
             retrieved_location=retrieved_location,
-            location=location,
+            location=UpdateLocation(
+                **location.model_dump(exclude_none=True, exclude_unset=True)
+            ),
         )
 
-    return await create_location(sqlmodel_session=sqlmodel_session, location=location)
+    return await create_location(
+        sqlmodel_session=sqlmodel_session,
+        location=CreateLocation(
+            **location.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
+        ),
+    )
 
 
 async def create_link(*, sqlmodel_session: Session, link: CreateLink) -> CompanyLink:
@@ -255,17 +275,24 @@ async def upsert_link(
     sqlmodel_session: Session,
     link: CreateLink | UpdateLink,
 ) -> CompanyLink:
+    link_id = getattr(link, "id", None)
+
     retrieved_link = await retrieve_link_by_id(
         sqlmodel_session=sqlmodel_session,
-        link_id=link.id,
+        link_id=link_id,
     )
     if retrieved_link:
         return await update_link(
             sqlmodel_session=sqlmodel_session,
             retrieved_link=retrieved_link,
-            link=link,
+            link=UpdateLink(**link.model_dump(exclude_none=True, exclude_unset=True)),
         )
-    return await create_link(sqlmodel_session=sqlmodel_session, link=link)
+    return await create_link(
+        sqlmodel_session=sqlmodel_session,
+        link=CreateLink(
+            **link.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
+        ),
+    )
 
 
 # JOB Services
