@@ -21,16 +21,18 @@ def verify_password(password: str, encoded_password: str) -> bool:
     )
 
 
-def encode_token(user_id: str, key: str, seconds: float) -> str:
+def encode_token(payload: dict, key: str, seconds: float) -> str:
     now = datetime.now(UTC)
     exp = (now + timedelta(seconds=seconds)).timestamp()
     jti = str(uuid.uuid4())
-    payload = {
-        "user_id": user_id,
-        "exp": exp,
-        "jti": jti,
-    }
-    return JsonWebToken.encode(payload=payload, key=key)
+    return JsonWebToken.encode(
+        payload={
+            "exp": exp,
+            "jti": jti,
+            **payload,
+        },
+        key=key,
+    )
 
 
 def decode_token(token: str) -> tuple[dict, dict, str]:

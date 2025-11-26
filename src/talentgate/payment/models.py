@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from src.talentgate.database.models import BaseModel
 
 

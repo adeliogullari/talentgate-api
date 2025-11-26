@@ -65,9 +65,9 @@ router = APIRouter(tags=["auth"])
 @router.post(path="/api/v1/auth/login", status_code=200)
 async def login(
     *,
+    settings: Annotated[Settings, Depends(get_settings)],
     paddle_client: Annotated[Client, Depends(get_paddle_client)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
-    settings: Annotated[Settings, Depends(get_settings)],
     background_tasks: BackgroundTasks,
     credentials: LoginCredentials,
 ) -> JSONResponse:
@@ -97,13 +97,13 @@ async def login(
         )
 
     access_token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        payload={"user_id": str(retrieved_user.id)},
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
 
     refresh_token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        payload={"user_id": str(retrieved_user.id)},
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )
@@ -220,13 +220,13 @@ async def google(
         )
 
     access_token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        payload={"user_id": str(retrieved_user.id)},
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
 
     refresh_token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        payload={"user_id": str(retrieved_user.id)},
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )
@@ -343,13 +343,13 @@ async def linkedin(
         )
 
     access_token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        payload={"user_id": str(retrieved_user.id)},
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
 
     refresh_token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        payload={"user_id": str(retrieved_user.id)},
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )
@@ -436,7 +436,7 @@ async def register(
     )
 
     token = auth_service.encode_token(
-        user_id=str(created_user.id),
+        payload={"user_id": str(created_user.id)},
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
@@ -501,7 +501,7 @@ async def resend_verification_email(
         raise EmailAlreadyVerifiedException
 
     token = auth_service.encode_token(
-        user_id=str(retrieved_user.id),
+        payload={"user_id": str(retrieved_user.id)},
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
@@ -562,13 +562,13 @@ async def refresh(
     )
 
     access_token = auth_service.encode_token(
-        user_id=str(payload["user_id"]),
+        payload={"user_id": str(payload["user_id"])},
         key=settings.access_token_key,
         seconds=settings.access_token_expiration,
     )
 
     refresh_token = auth_service.encode_token(
-        user_id=str(payload["user_id"]),
+        payload={"user_id": str(payload["user_id"])},
         key=settings.refresh_token_key,
         seconds=settings.refresh_token_expiration,
     )

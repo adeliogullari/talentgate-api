@@ -95,10 +95,6 @@ async def retrieve_products(
 ) -> list[RetrievedProduct]:
     products = paddle_client.products.list(
         operation=ListProducts(
-            ids=[
-                settings.paddle_standard_plan_product_id,
-                settings.paddle_premium_plan_product_id,
-            ],
             includes=[ProductIncludes.Prices],
         )
     )
