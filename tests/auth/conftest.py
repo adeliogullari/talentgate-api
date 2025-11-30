@@ -12,7 +12,7 @@ def access_token(user, settings, request) -> str:
     seconds = param.get("seconds", settings.access_token_expiration)
 
     return auth_service.encode_token(
-        payload={'user_id': user_id},
+        payload={"user_id": user_id},
         key=key,
         seconds=seconds,
     )
@@ -26,7 +26,7 @@ def refresh_token(user, settings, request) -> str:
     seconds = param.get("seconds", settings.refresh_token_expiration)
 
     return auth_service.encode_token(
-        payload={'user_id': user_id},
+        payload={"user_id": user_id},
         key=key,
         seconds=seconds,
     )

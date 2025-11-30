@@ -437,8 +437,8 @@ async def register(
 
     token = auth_service.encode_token(
         payload={"user_id": str(created_user.id)},
-        key=settings.access_token_key,
-        seconds=settings.access_token_expiration,
+        key=settings.one_time_token_key,
+        seconds=settings.one_time_token_expiration,
     )
 
     context = {

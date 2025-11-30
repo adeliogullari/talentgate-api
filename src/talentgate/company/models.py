@@ -301,3 +301,12 @@ class UpdatedCurrentCompany(BaseModel):
 
 class DeletedCompany(SQLModel):
     id: int
+
+
+class EmployeeInvitation(SQLModel):
+    title: str
+    email: str
+
+
+class InvitationAcceptance(SQLModel):
+    token: str

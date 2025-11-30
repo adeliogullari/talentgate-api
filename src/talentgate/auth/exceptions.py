@@ -14,6 +14,11 @@ InvalidRefreshTokenException = HTTPException(
     detail="The refresh token is invalid or has expired.",
 )
 
+InvalidOneTimeTokenException = HTTPException(
+    status_code=HTTP_401_UNAUTHORIZED,
+    detail="The one time token is invalid or has expired.",
+)
+
 BlacklistedTokenException = HTTPException(
     status_code=HTTP_401_UNAUTHORIZED,
     detail="The token has been blacklisted.",

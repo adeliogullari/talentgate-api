@@ -476,7 +476,7 @@ async def delete(*, sqlmodel_session: Session, retrieved_company: Company) -> Co
     return retrieved_company
 
 
-async def send_onboarding_email(
+async def send_invitation_email(
     *,
     email_client: EmailClient,
     background_tasks: BackgroundTasks,
@@ -485,17 +485,17 @@ async def send_onboarding_email(
     to_addrs: str | Sequence[str] | None = None,
 ) -> None:
     body = email_service.load_template(
-        file="src/talentgate/company/templates/onboarding.txt"
+        file="src/talentgate/company/templates/invitation.txt"
     )
 
     html = email_service.load_template(
-        file="src/talentgate/company/templates/onboarding.html"
+        file="src/talentgate/company/templates/invitation.html"
     )
 
     background_tasks.add_task(
         email_service.send_email,
         email_client,
-        "Employee Onboarding",
+        "Employee Invitation",
         body,
         html,
         context,

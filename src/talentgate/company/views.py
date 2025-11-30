@@ -1,10 +1,14 @@
+import random
+import string
 from collections.abc import Sequence
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from typing import Annotated
 from uuid import uuid4
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     File,
     Query,
@@ -12,9 +16,15 @@ from fastapi import (
 )
 from minio import Minio
 from sqlmodel import Session
-from starlette.responses import StreamingResponse
+from starlette.responses import JSONResponse, StreamingResponse
 
-from src.talentgate.auth.exceptions import InvalidAuthorizationException
+from config import Settings, get_settings
+from src.talentgate.auth import service as auth_service
+from src.talentgate.auth.exceptions import (
+    InvalidAuthorizationException,
+    InvalidOneTimeTokenException,
+)
+from src.talentgate.auth.models import AuthenticationTokens
 from src.talentgate.company import service as company_service
 from src.talentgate.company.exceptions import (
     CompanyIdNotFoundException,
@@ -25,6 +35,8 @@ from src.talentgate.company.models import (
     CreateCompany,
     CreatedCompany,
     DeletedCompany,
+    EmployeeInvitation,
+    InvitationAcceptance,
     RetrievedCompany,
     RetrievedCurrentCompany,
     UpdateCompany,
@@ -32,7 +44,10 @@ from src.talentgate.company.models import (
     UpdatedCompany,
 )
 from src.talentgate.database.service import get_sqlmodel_session
+from src.talentgate.email.client import EmailClient, get_email_client
+from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.enums import EmployeeTitle
+from src.talentgate.employee.models import UpsertEmployee
 from src.talentgate.job.models import (
     Job,
     JobQueryParameters,
@@ -41,7 +56,10 @@ from src.talentgate.job.models import (
     RetrievedJob,
 )
 from src.talentgate.storage.service import get_minio_client
+from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
+    CreateSubscription,
+    CreateUser,
     SubscriptionPlan,
     SubscriptionStatus,
     User,
@@ -368,3 +386,142 @@ async def delete_company(
         sqlmodel_session=sqlmodel_session,
         retrieved_company=retrieved_company,
     )
+
+
+@router.post(
+    path="/api/v1/companies/employee/invite",
+    status_code=200,
+)
+async def invite_employee(
+    *,
+    settings: Annotated[Settings, Depends(get_settings)],
+    email_client: Annotated[EmailClient, Depends(get_email_client)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+    background_tasks: BackgroundTasks,
+    employee: EmployeeInvitation,
+) -> None:
+    token = auth_service.encode_token(
+        payload={
+            "title": employee.title,
+            "email": employee.email,
+            "company_id": str(retrieved_user.employee.company_id),
+        },
+        key=settings.one_time_token_key,
+        seconds=settings.one_time_token_expiration,
+    )
+
+    context = {
+        "company_name": retrieved_user.employee.company.name,
+        "link": f"${settings.frontend_base_url}/company/employees/invitation?token={token}",
+    }
+
+    await company_service.send_invitation_email(
+        email_client=email_client,
+        background_tasks=background_tasks,
+        context=context,
+        from_addr=settings.smtp_email,
+        to_addrs=employee.email,
+    )
+
+
+@router.post(
+    path="/api/v1/companies/employee/invitation/accept",
+    status_code=200,
+)
+async def accept_invitation(
+    *,
+    settings: Annotated[Settings, Depends(get_settings)],
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    invitation: InvitationAcceptance,
+) -> JSONResponse:
+    is_verified = auth_service.verify_token(
+        token=invitation.token,
+        key=settings.one_time_token_key,
+    )
+
+    if not is_verified:
+        raise InvalidOneTimeTokenException
+
+    _, payload, _ = auth_service.decode_token(token=invitation.token)
+
+    retrieved_user = await user_service.retrieve_by_email(
+        sqlmodel_session=sqlmodel_session,
+        email=payload.get("email"),
+    )
+
+    if not retrieved_user:
+        firstname = "".join(random.choices(string.ascii_letters, k=5)).title()
+        lastname = "".join(random.choices(string.ascii_letters, k=5)).title()
+        email = payload.get("email")
+        username = f"{firstname}{lastname}{random.randint(1000, 9999)}"
+        password = auth_service.encode_password(
+            password="".join(
+                random.choices(string.ascii_letters + string.digits, k=16),
+            ),
+        )
+
+        await user_service.create(
+            sqlmodel_session=sqlmodel_session,
+            user=CreateUser(
+                firstname=firstname,
+                lastname=lastname,
+                username=username,
+                email=email,
+                password=password,
+                verified=True,
+                subscription=CreateSubscription(
+                    plan=payload.get("plan"),
+                    start_date=datetime.now(UTC).timestamp(),
+                    end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                ),
+            ),
+        )
+
+    retrieved_user = await user_service.retrieve_by_email(
+        sqlmodel_session=sqlmodel_session,
+        email=payload.get("email"),
+    )
+
+    await employee_service.upsert(
+        sqlmodel_session=sqlmodel_session,
+        employee=UpsertEmployee(
+            title=payload.get("title"),
+            user_id=retrieved_user.id,
+            company_id=int(payload.get("company_id")),
+        ),
+    )
+
+    access_token = auth_service.encode_token(
+        payload={"user_id": str(retrieved_user.id)},
+        key=settings.access_token_key,
+        seconds=settings.access_token_expiration,
+    )
+
+    refresh_token = auth_service.encode_token(
+        payload={"user_id": str(retrieved_user.id)},
+        key=settings.refresh_token_key,
+        seconds=settings.refresh_token_expiration,
+    )
+
+    content = AuthenticationTokens(
+        access_token=access_token, refresh_token=refresh_token
+    )
+    response = JSONResponse(content=content.model_dump())
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="strict",
+        secure=True,
+    )
+
+    return response
