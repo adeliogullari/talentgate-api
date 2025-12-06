@@ -64,15 +64,11 @@ async def create_subscription(
     subscription: CreateSubscription,
 ) -> UserSubscription:
     created_subscription = UserSubscription(
-        **subscription.model_dump(
-            exclude_unset=True, exclude_none=True, exclude={"paddle_subscription_id"}
-        ),
+        **subscription.model_dump(exclude_unset=True, exclude_none=True, exclude={"paddle_subscription_id"}),
     )
 
     if hasattr(subscription, "paddle_subscription_id"):
-        created_subscription.paddle_subscription_id = (
-            subscription.paddle_subscription_id
-        )
+        created_subscription.paddle_subscription_id = subscription.paddle_subscription_id
 
     sqlmodel_session.add(created_subscription)
     sqlmodel_session.commit()
@@ -100,14 +96,10 @@ async def update_subscription(
     subscription: UpdateSubscription,
 ) -> UserSubscription:
     if hasattr(subscription, "paddle_subscription_id"):
-        retrieved_subscription.paddle_subscription_id = (
-            subscription.paddle_subscription_id
-        )
+        retrieved_subscription.paddle_subscription_id = subscription.paddle_subscription_id
 
     retrieved_subscription.sqlmodel_update(
-        subscription.model_dump(
-            exclude_none=True, exclude_unset=True, exclude={"paddle_subscription_id"}
-        ),
+        subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"paddle_subscription_id"}),
     )
 
     sqlmodel_session.add(retrieved_subscription)
@@ -134,18 +126,14 @@ async def upsert_subscription(
             sqlmodel_session=sqlmodel_session,
             retrieved_subscription=retrieved_subscription,
             subscription=UpdateSubscription(
-                **subscription.model_dump(
-                    exclude_none=True, exclude_unset=True, exclude={"id"}
-                )
+                **subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
             ),
         )
 
     return await create_subscription(
         sqlmodel_session=sqlmodel_session,
         subscription=CreateSubscription(
-            **subscription.model_dump(
-                exclude_none=True, exclude_unset=True, exclude={"id"}
-            )
+            **subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
         ),
     )
 
@@ -154,9 +142,7 @@ async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
     password = auth_service.encode_password(password=user.password)
 
     created_user = User(
-        **user.model_dump(
-            exclude_unset=True, exclude_none=True, exclude={"password", "subscription"}
-        ),
+        **user.model_dump(exclude_unset=True, exclude_none=True, exclude={"password", "subscription"}),
         password=password,
     )
 

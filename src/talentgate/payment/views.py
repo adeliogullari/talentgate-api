@@ -53,9 +53,7 @@ async def retrieve_subscription(
     paddle_client: Annotated[Client, Depends(get_paddle_client)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ) -> RetrievedSubscription:
-    return await payment_service.retrieve_subscription(
-        paddle_client=paddle_client, retrieved_user=retrieved_user
-    )
+    return await payment_service.retrieve_subscription(paddle_client=paddle_client, retrieved_user=retrieved_user)
 
 
 @router.get("/api/v1/payment/products")
@@ -102,25 +100,19 @@ async def retrieve_invoices(
     if not retrieved_user.subscription.paddle_subscription_id:
         raise UserSubscriptionNotFoundException
 
-    return await payment_service.retrieve_invoices(
-        paddle_client=paddle_client, retrieved_user=retrieved_user
-    )
+    return await payment_service.retrieve_invoices(paddle_client=paddle_client, retrieved_user=retrieved_user)
 
 
 @router.get("/api/v1/payment/transactions/{transaction_id}/invoice/document")
 def retrieve_invoice_document(
     *, paddle_client: Annotated[Client, Depends(get_paddle_client)], transaction_id: str
 ) -> StreamingResponse:
-    invoice_document = paddle_client.transactions.get_invoice_pdf(
-        transaction_id=transaction_id
-    )
+    invoice_document = paddle_client.transactions.get_invoice_pdf(transaction_id=transaction_id)
 
     pdf_response = requests.get(invoice_document.url, timeout=10)
     pdf_bytes = pdf_response.content
 
     stream = BytesIO(pdf_bytes)
 
-    headers = {
-        "Content-Disposition": f'inline; filename="invoice_{transaction_id}.pdf"'
-    }
+    headers = {"Content-Disposition": f'inline; filename="invoice_{transaction_id}.pdf"'}
     return StreamingResponse(stream, media_type="application/pdf", headers=headers)

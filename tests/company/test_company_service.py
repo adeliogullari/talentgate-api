@@ -49,9 +49,7 @@ async def test_retrieve_logo(minio_client: Minio):
         content_type="file",
     )
 
-    retrieved_logo = await retrieve_logo(
-        minio_client=minio_client, object_name=object_name
-    )
+    retrieved_logo = await retrieve_logo(minio_client=minio_client, object_name=object_name)
 
     assert retrieved_logo == data
 

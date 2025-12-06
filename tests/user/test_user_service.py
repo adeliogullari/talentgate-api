@@ -52,9 +52,7 @@ async def test_retrieve_profile(minio_client: Minio):
         content_type="file",
     )
 
-    retrieved_profile = await user_service.retrieve_profile(
-        minio_client=minio_client, object_name=object_name
-    )
+    retrieved_profile = await user_service.retrieve_profile(minio_client=minio_client, object_name=object_name)
 
     assert retrieved_profile == data
 

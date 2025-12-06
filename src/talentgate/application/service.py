@@ -268,10 +268,7 @@ async def create(
 
     links = []
     if (getattr(application, "links", None) or None) is not None:
-        links = [
-            await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
-            for link in application.links
-        ]
+        links = [await upsert_link(sqlmodel_session=sqlmodel_session, link=link) for link in application.links]
 
     evaluations = []
     if (getattr(application, "evaluations", None) or None) is not None:
@@ -361,8 +358,7 @@ async def update(
 
     if getattr(application, "links", None) is not None:
         retrieved_application.links = [
-            await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
-            for link in application.links
+            await upsert_link(sqlmodel_session=sqlmodel_session, link=link) for link in application.links
         ]
 
     if getattr(application, "evaluations", None) is not None:

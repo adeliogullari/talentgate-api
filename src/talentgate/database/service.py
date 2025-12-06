@@ -10,9 +10,7 @@ from config import get_settings
 settings = get_settings()
 
 
-def get_postgres_connection_string(
-    schema: str, user: str, password: str, host: str, port: str, database: str
-) -> str:
+def get_postgres_connection_string(schema: str, user: str, password: str, host: str, port: str, database: str) -> str:
     return f"{schema}://{user}:{password}@{host}:{port}/{database}"
 
 

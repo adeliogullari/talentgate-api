@@ -20,8 +20,7 @@ def make_subscription(sqlmodel_session: Session) -> Any:
     ) -> UserSubscription:
         subscription = UserSubscription(
             plan=plan or SubscriptionPlan.BASIC.value,
-            start_date=start_date
-            or (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+            start_date=start_date or (datetime.now(UTC) - timedelta(days=2)).timestamp(),
             end_date=end_date or (datetime.now(UTC) - timedelta(days=1)).timestamp(),
         )
 
@@ -56,12 +55,9 @@ def make_user(sqlmodel_session: Session, subscription: UserSubscription):
             lastname=kwargs.get("lastname") or secrets.token_hex(12),
             username=kwargs.get("username") or secrets.token_hex(16),
             email=kwargs.get("email") or f"{secrets.token_hex(16)}@example.com",
-            password=kwargs.get("password")
-            or auth_service.encode_password(password=secrets.token_hex(16)),
+            password=kwargs.get("password") or auth_service.encode_password(password=secrets.token_hex(16)),
             profile=kwargs.get("profile") or str(uuid4()),
-            verified=kwargs.get("verified")
-            if kwargs.get("verified") not in (None, "")
-            else True,
+            verified=kwargs.get("verified") if kwargs.get("verified") not in (None, "") else True,
             role=kwargs.get("role") or UserRole.OWNER.value,
             subscription=kwargs.get("subscription") or subscription,
         )

@@ -175,7 +175,7 @@ def minio_client() -> Any:
                 object_name=object_name,
                 version_id="1",
                 etag="etag",
-                headers=HTTPHeaderDict(),
+                http_headers=HTTPHeaderDict(),
             )
 
         def get_object(

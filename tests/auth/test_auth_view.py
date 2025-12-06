@@ -118,9 +118,7 @@ async def test_register(
         ["username", "username@example.com"],
     ],
 )
-async def test_register_with_existing_user(
-    client: TestClient, user: User, username: str, email: str
-) -> None:
+async def test_register_with_existing_user(client: TestClient, user: User, username: str, email: str) -> None:
     response = client.post(
         url="/api/v1/auth/register",
         json={
@@ -150,9 +148,7 @@ async def test_verify_email(client: TestClient, user: User, headers: Headers) ->
     assert response.status_code == 200
 
 
-async def test_verify_email_already_verified(
-    client: TestClient, user: User, headers: Headers
-) -> None:
+async def test_verify_email_already_verified(client: TestClient, user: User, headers: Headers) -> None:
     response = client.post(url="/api/v1/auth/email/verify", headers=headers)
 
     assert response.status_code == 400
@@ -192,9 +188,7 @@ async def test_resend_email_already_verified(client: TestClient, user: User) -> 
     assert response.status_code == 400
 
 
-async def test_refresh_token(
-    client: TestClient, user: User, headers: Headers, refresh_token: str
-) -> None:
+async def test_refresh_token(client: TestClient, user: User, headers: Headers, refresh_token: str) -> None:
     client.cookies.set("refresh_token", refresh_token)
     response = client.post(
         url="/api/v1/auth/token/refresh",
@@ -216,9 +210,7 @@ async def test_refresh_token(
     ],
     indirect=True,
 )
-async def test_refresh_invalid_token(
-    client: TestClient, user: User, headers: Headers, refresh_token: str
-) -> None:
+async def test_refresh_invalid_token(client: TestClient, user: User, headers: Headers, refresh_token: str) -> None:
     client.cookies.set("refresh_token", refresh_token)
     response = client.post(
         url="/api/v1/auth/token/refresh",

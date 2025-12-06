@@ -68,9 +68,7 @@ async def retrieve_by_query_parameters(
 
     filters = employee_filters + user_filters
 
-    statement: Any = (
-        select(Employee).join(User).offset(offset).limit(limit).where(*filters)
-    )
+    statement: Any = select(Employee).join(User).offset(offset).limit(limit).where(*filters)
 
     return sqlmodel_session.exec(statement).all()
 
@@ -108,17 +106,11 @@ async def upsert(
         return await update(
             sqlmodel_session=sqlmodel_session,
             retrieved_employee=retrieved_employee,
-            employee=UpdateEmployee(
-                **employee.model_dump(
-                    exclude_none=True, exclude_unset=True, exclude={"id"}
-                )
-            ),
+            employee=UpdateEmployee(**employee.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
         )
     return await create(
         sqlmodel_session=sqlmodel_session,
-        employee=CreateEmployee(
-            **employee.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
-        ),
+        employee=CreateEmployee(**employee.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
     )
 
 

@@ -1,4 +1,6 @@
-Hi {username},
+Hello,
+
+You have been invited to join {company_name} Hiring Workspace on TalentGate.
 
 Please verify your email by clicking the link below:
 {link}

@@ -54,9 +54,7 @@ async def test_retrieve_by_id(sqlmodel_session: Session, employee: Employee) -> 
     assert retrieved_employee.id == employee.id
 
 
-async def test_retrieve_by_query_parameters(
-    sqlmodel_session: Session, employee: Employee
-) -> None:
+async def test_retrieve_by_query_parameters(sqlmodel_session: Session, employee: Employee) -> None:
     query_parameters = EmployeeQueryParameters(
         id=employee.id,
         title=employee.title,
@@ -137,9 +135,7 @@ async def test_upsert_update(sqlmodel_session: Session, make_employee) -> None:
         role=UserRole.ADMIN,
     )
 
-    employee = UpsertEmployee(
-        id=retrieved_employee.id, title=EmployeeTitle.FOUNDER, user=user
-    )
+    employee = UpsertEmployee(id=retrieved_employee.id, title=EmployeeTitle.FOUNDER, user=user)
 
     updated_employee = await employee_service.upsert(
         sqlmodel_session=sqlmodel_session,

@@ -100,9 +100,18 @@ class Company(SQLModel, table=True):
         ).user.subscription
 
 
+class EmployeeUser(BaseModel):
+    id: int | None = None
+    firstname: str | None = None
+    lastname: str | None = None
+    username: str | None = None
+    email: str | None = None
+
+
 class CompanyEmployee(BaseModel):
     id: int | None = None
     title: str | None = None
+    user: EmployeeUser | None = None
 
 
 class CreateAddress(BaseModel):

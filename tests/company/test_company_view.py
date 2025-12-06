@@ -124,9 +124,7 @@ async def test_retrieve_company(
     assert response.json()["id"] == company.id
 
 
-async def test_retrieve_current_company(
-    client: TestClient, company: Company, headers: Headers
-) -> None:
+async def test_retrieve_current_company(client: TestClient, company: Company, headers: Headers) -> None:
     response = client.get(url="/api/v1/me/company", headers=headers)
 
     assert response.status_code == 200

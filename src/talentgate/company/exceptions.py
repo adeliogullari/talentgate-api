@@ -8,6 +8,4 @@ CompanyIdNotFoundException = HTTPException(
     detail="Company not found for the provided id.",
 )
 
-CompanyLogoNotFoundException = HTTPException(
-    status_code=HTTP_404_NOT_FOUND, detail="Company has no logo image."
-)
+CompanyLogoNotFoundException = HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Company has no logo image.")

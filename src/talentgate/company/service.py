@@ -126,16 +126,12 @@ async def upsert_address(
         return await update_address(
             sqlmodel_session=sqlmodel_session,
             retrieved_address=retrieved_address,
-            address=-UpdateAddress(
-                **address.model_dump(exclude_none=True, exclude_unset=True)
-            ),
+            address=-UpdateAddress(**address.model_dump(exclude_none=True, exclude_unset=True)),
         )
 
     return await create_address(
         sqlmodel_session=sqlmodel_session,
-        address=CreateAddress(
-            **address.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
-        ),
+        address=CreateAddress(**address.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
     )
 
 
@@ -220,16 +216,12 @@ async def upsert_location(
         return await update_location(
             sqlmodel_session=sqlmodel_session,
             retrieved_location=retrieved_location,
-            location=UpdateLocation(
-                **location.model_dump(exclude_none=True, exclude_unset=True)
-            ),
+            location=UpdateLocation(**location.model_dump(exclude_none=True, exclude_unset=True)),
         )
 
     return await create_location(
         sqlmodel_session=sqlmodel_session,
-        location=CreateLocation(
-            **location.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
-        ),
+        location=CreateLocation(**location.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
     )
 
 
@@ -289,9 +281,7 @@ async def upsert_link(
         )
     return await create_link(
         sqlmodel_session=sqlmodel_session,
-        link=CreateLink(
-            **link.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
-        ),
+        link=CreateLink(**link.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
     )
 
 
@@ -344,9 +334,7 @@ async def retrieve_company_job(
     company_id: int,
     job_id: int,
 ) -> Job:
-    statement: Any = (
-        select(Job).where(Job.company_id == company_id).where(Job.id == job_id)
-    )
+    statement: Any = select(Job).where(Job.company_id == company_id).where(Job.id == job_id)
 
     return sqlmodel_session.exec(statement).one()
 
@@ -361,10 +349,7 @@ async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Compan
 
     links = []
     if getattr(company, "links", None) is not None:
-        links = [
-            await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
-            for link in company.links
-        ]
+        links = [await upsert_link(sqlmodel_session=sqlmodel_session, link=link) for link in company.links]
 
     employees = []
     if getattr(company, "employees", None) is not None:
@@ -441,8 +426,7 @@ async def update(
 
     if getattr(company, "links", None) is not None:
         retrieved_company.links = [
-            await upsert_link(sqlmodel_session=sqlmodel_session, link=link)
-            for link in company.links
+            await upsert_link(sqlmodel_session=sqlmodel_session, link=link) for link in company.links
         ]
 
     if getattr(company, "employees", None) is not None:
@@ -484,13 +468,9 @@ async def send_invitation_email(
     from_addr: str | None = None,
     to_addrs: str | Sequence[str] | None = None,
 ) -> None:
-    body = email_service.load_template(
-        file="src/talentgate/company/templates/invitation.txt"
-    )
+    body = email_service.load_template(file="src/talentgate/company/templates/invitation.txt")
 
-    html = email_service.load_template(
-        file="src/talentgate/company/templates/invitation.html"
-    )
+    html = email_service.load_template(file="src/talentgate/company/templates/invitation.html")
 
     background_tasks.add_task(
         email_service.send_email,

@@ -52,13 +52,9 @@ async def retrieve_current_user(
     request: Request,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     settings: Annotated[Settings, Depends(get_settings)],
-    http_authorization: Annotated[
-        HTTPAuthorizationCredentials, Depends(HTTPBearer(auto_error=False))
-    ],
+    http_authorization: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer(auto_error=False))],
 ) -> User:
-    token = request.cookies.get("access_token") or getattr(
-        http_authorization, "credentials", None
-    )
+    token = request.cookies.get("access_token") or getattr(http_authorization, "credentials", None)
 
     is_verified = auth_service.verify_token(
         token=token,
@@ -94,9 +90,7 @@ async def retrieve_current_user_profile(
     if not retrieved_user.profile:
         return None
 
-    profile = await user_service.retrieve_profile(
-        minio_client=minio_client, object_name=retrieved_user.profile
-    )
+    profile = await user_service.retrieve_profile(minio_client=minio_client, object_name=retrieved_user.profile)
 
     return StreamingResponse(
         content=BytesIO(profile),

@@ -27,9 +27,7 @@ UserIdNotFoundException = HTTPException(
     detail="No user found with the provided ID.",
 )
 
-UserProfileNotFoundException = HTTPException(
-    status_code=HTTP_404_NOT_FOUND, detail="User has no profile image."
-)
+UserProfileNotFoundException = HTTPException(status_code=HTTP_404_NOT_FOUND, detail="User has no profile image.")
 
 DuplicateUsernameException = HTTPException(
     status_code=HTTP_409_CONFLICT,

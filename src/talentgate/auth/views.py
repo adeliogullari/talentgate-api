@@ -108,9 +108,7 @@ async def login(
         seconds=settings.refresh_token_expiration,
     )
 
-    content = AuthenticationTokens(
-        access_token=access_token, refresh_token=refresh_token
-    )
+    content = AuthenticationTokens(access_token=access_token, refresh_token=refresh_token)
 
     response = JSONResponse(content=content.model_dump())
 
@@ -231,9 +229,7 @@ async def google(
         seconds=settings.refresh_token_expiration,
     )
 
-    content = AuthenticationTokens(
-        access_token=access_token, refresh_token=refresh_token
-    )
+    content = AuthenticationTokens(access_token=access_token, refresh_token=refresh_token)
     response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
@@ -316,9 +312,7 @@ async def linkedin(
 
         created_employee = await employee_service.create(
             sqlmodel_session=sqlmodel_session,
-            employee=CreateEmployee(
-                title=EmployeeTitle.FOUNDER.value, user_id=created_user.id
-            ),
+            employee=CreateEmployee(title=EmployeeTitle.FOUNDER.value, user_id=created_user.id),
         )
 
         await company_service.create(
@@ -354,9 +348,7 @@ async def linkedin(
         seconds=settings.refresh_token_expiration,
     )
 
-    content = AuthenticationTokens(
-        access_token=access_token, refresh_token=refresh_token
-    )
+    content = AuthenticationTokens(access_token=access_token, refresh_token=refresh_token)
     response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(
@@ -490,9 +482,7 @@ async def resend_verification_email(
     email_client: Annotated[EmailClient, Depends(get_email_client)],
     credentials: ResendCredentials,
 ) -> User:
-    retrieved_user = await user_service.retrieve_by_email(
-        sqlmodel_session=sqlmodel_session, email=credentials.email
-    )
+    retrieved_user = await user_service.retrieve_by_email(sqlmodel_session=sqlmodel_session, email=credentials.email)
 
     if not retrieved_user:
         raise InvalidCredentialsException
@@ -536,13 +526,9 @@ async def refresh(
     background_tasks: BackgroundTasks,
     tokens: RefreshTokens,
 ) -> JSONResponse:
-    refresh_token = request.cookies.get("refresh_token") or getattr(
-        tokens, "refresh_token", None
-    )
+    refresh_token = request.cookies.get("refresh_token") or getattr(tokens, "refresh_token", None)
 
-    if not refresh_token or not auth_service.verify_token(
-        token=refresh_token, key=settings.refresh_token_key
-    ):
+    if not refresh_token or not auth_service.verify_token(token=refresh_token, key=settings.refresh_token_key):
         raise InvalidRefreshTokenException
 
     _, payload, _ = auth_service.decode_token(token=refresh_token)
@@ -573,9 +559,7 @@ async def refresh(
         seconds=settings.refresh_token_expiration,
     )
 
-    retrieved_user = await user_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, user_id=payload["user_id"]
-    )
+    retrieved_user = await user_service.retrieve_by_id(sqlmodel_session=sqlmodel_session, user_id=payload["user_id"])
 
     if retrieved_user.subscription.paddle_subscription_id:
         background_tasks.add_task(
@@ -585,9 +569,7 @@ async def refresh(
             retrieved_user,
         )
 
-    content = AuthenticationTokens(
-        access_token=access_token, refresh_token=refresh_token
-    )
+    content = AuthenticationTokens(access_token=access_token, refresh_token=refresh_token)
 
     response = JSONResponse(content=content.model_dump())
 
@@ -621,13 +603,9 @@ async def logout(
     redis_client: Annotated[Redis, Depends(get_redis_client)],
     tokens: LogoutTokens,
 ) -> JSONResponse:
-    refresh_token = request.cookies.get("refresh_token") or getattr(
-        tokens, "refresh_token", None
-    )
+    refresh_token = request.cookies.get("refresh_token") or getattr(tokens, "refresh_token", None)
 
-    if not refresh_token or not auth_service.verify_token(
-        token=refresh_token, key=settings.refresh_token_key
-    ):
+    if not refresh_token or not auth_service.verify_token(token=refresh_token, key=settings.refresh_token_key):
         raise InvalidRefreshTokenException
 
     _, payload, _ = auth_service.decode_token(token=refresh_token)
@@ -649,12 +627,8 @@ async def logout(
 
     response = JSONResponse(content=content.model_dump())
 
-    response.delete_cookie(
-        key="access_token", httponly=True, samesite="strict", secure=True
-    )
+    response.delete_cookie(key="access_token", httponly=True, samesite="strict", secure=True)
 
-    response.delete_cookie(
-        key="refresh_token", httponly=True, samesite="strict", secure=True
-    )
+    response.delete_cookie(key="refresh_token", httponly=True, samesite="strict", secure=True)
 
     return response

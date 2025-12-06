@@ -23,6 +23,4 @@ def send_email(
     body = body.format(**context)
     html = html.format(**context)
 
-    email_client.send_email(
-        subject=subject, body=body, html=html, from_addr=from_addr, to_addrs=to_addrs
-    )
+    email_client.send_email(subject=subject, body=body, html=html, from_addr=from_addr, to_addrs=to_addrs)

@@ -98,9 +98,7 @@ async def retrieve_current_company_logo(
     if not retrieved_company.logo:
         return None
 
-    logo = await company_service.retrieve_logo(
-        minio_client=minio_client, object_name=retrieved_company.logo
-    )
+    logo = await company_service.retrieve_logo(minio_client=minio_client, object_name=retrieved_company.logo)
 
     return StreamingResponse(
         content=BytesIO(logo),
@@ -389,7 +387,7 @@ async def delete_company(
 
 
 @router.post(
-    path="/api/v1/companies/employee/invite",
+    path="/api/v1/me/company/employee/invite",
     status_code=200,
 )
 async def invite_employee(
@@ -425,10 +423,10 @@ async def invite_employee(
 
 
 @router.post(
-    path="/api/v1/companies/employee/invitation/accept",
+    path="/api/v1/me/company/employee/invitation/accept",
     status_code=200,
 )
-async def accept_invitation(
+async def accept_employee_invitation(
     *,
     settings: Annotated[Settings, Depends(get_settings)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
@@ -503,9 +501,7 @@ async def accept_invitation(
         seconds=settings.refresh_token_expiration,
     )
 
-    content = AuthenticationTokens(
-        access_token=access_token, refresh_token=refresh_token
-    )
+    content = AuthenticationTokens(access_token=access_token, refresh_token=refresh_token)
     response = JSONResponse(content=content.model_dump())
 
     response.set_cookie(

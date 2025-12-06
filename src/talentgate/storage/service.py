@@ -13,6 +13,4 @@ endpoint = f"{host}:{port}"
 
 
 def get_minio_client() -> Minio:
-    return Minio(
-        endpoint=endpoint, access_key=access_key, secret_key=secret_key, secure=False
-    )
+    return Minio(endpoint=endpoint, access_key=access_key, secret_key=secret_key, secure=False)

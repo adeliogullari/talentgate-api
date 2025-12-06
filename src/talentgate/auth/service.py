@@ -48,9 +48,7 @@ async def blacklist_token(*, redis_client: Redis, jti: str, ex: int) -> bool:
     return await redis_client.set(name=name, value=jti, ex=ex)
 
 
-async def retrieve_blacklisted_token(
-    *, redis_client: Redis, jti: str | None
-) -> str | None:
+async def retrieve_blacklisted_token(*, redis_client: Redis, jti: str | None) -> str | None:
     name = f"token:blacklist:{jti}"
     return await redis_client.get(name=name)
 
@@ -63,13 +61,9 @@ async def send_verification_email(
     from_addr: str | None = None,
     to_addrs: str | Sequence[str] | None = None,
 ) -> None:
-    body = email_service.load_template(
-        file="src/talentgate/auth/templates/verification.txt"
-    )
+    body = email_service.load_template(file="src/talentgate/auth/templates/verification.txt")
 
-    html = email_service.load_template(
-        file="src/talentgate/auth/templates/verification.html"
-    )
+    html = email_service.load_template(file="src/talentgate/auth/templates/verification.html")
 
     background_tasks.add_task(
         email_service.send_email,
