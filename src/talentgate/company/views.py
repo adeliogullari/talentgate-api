@@ -410,7 +410,7 @@ async def invite_employee(
 
     context = {
         "company_name": retrieved_user.employee.company.name,
-        "link": f"${settings.frontend_base_url}/company/employees/invitation?token={token}",
+        "link": f"{settings.frontend_base_url}/company/employees/invitation?token={token}",
     }
 
     await company_service.send_invitation_email(
