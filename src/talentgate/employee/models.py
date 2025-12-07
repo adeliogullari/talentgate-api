@@ -83,7 +83,9 @@ class EmployeeQueryParameters(BaseModel):
 
 class UpdateEmployee(BaseModel):
     title: str | None = None
+    user_id: int | None = None
     user: UpsertUser | None = None
+    company_id: int | None = None
 
 
 class UpdatedEmployee(BaseModel):
@@ -98,7 +100,9 @@ class UpdatedEmployee(BaseModel):
 class UpsertEmployee(BaseModel):
     id: int | None = None
     title: str | None = None
+    user_id: int | None = None
     user: UpsertUser | None = None
+    company_id: int | None = None
 
 
 class UpsertedEmployee(BaseModel):
