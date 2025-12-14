@@ -31,6 +31,8 @@ from src.talentgate.company.exceptions import (
 )
 from src.talentgate.company.models import (
     Company,
+    CompanyEmployee,
+    CompanyJob,
     CompanyQueryParameters,
     CreateCompany,
     CreatedCompany,
@@ -47,7 +49,7 @@ from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.enums import EmployeeTitle
-from src.talentgate.employee.models import UpsertEmployee
+from src.talentgate.employee.models import Employee, UpsertEmployee
 from src.talentgate.job.models import (
     Job,
     JobQueryParameters,
@@ -83,6 +85,40 @@ async def retrieve_current_company(
     return await company_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session, company_id=retrieved_user.employee.company_id
     )
+
+
+@router.get(
+    path="/api/v1/me/company/employees",
+    response_model=list[CompanyEmployee],
+    status_code=200,
+)
+async def retrieve_current_company_employees(
+    *,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+) -> list[Employee]:
+    retrieved_company = await company_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, company_id=retrieved_user.employee.company_id
+    )
+
+    return retrieved_company.employees
+
+
+@router.get(
+    path="/api/v1/me/company/jobs",
+    response_model=list[CompanyJob],
+    status_code=200,
+)
+async def retrieve_current_company_jobs(
+    *,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+) -> list[Job]:
+    retrieved_company = await company_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, company_id=retrieved_user.employee.company_id
+    )
+
+    return retrieved_company.jobs
 
 
 @router.get(

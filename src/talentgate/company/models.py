@@ -70,7 +70,7 @@ class Company(SQLModel, table=True):
     logo: str | None = Field(default=None)
     employees: list["Employee"] = Relationship(
         back_populates="company",
-        sa_relationship_kwargs={"cascade": "all"},
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
     locations: list[CompanyLocation] = Relationship(
         back_populates="company",
@@ -112,6 +112,12 @@ class CompanyEmployee(BaseModel):
     id: int | None = None
     title: str | None = None
     user: EmployeeUser | None = None
+
+
+class CompanyJob(BaseModel):
+    id: int | None = None
+    title: str | None = None
+    description: str | None = None
 
 
 class CreateAddress(BaseModel):
@@ -264,7 +270,6 @@ class RetrievedCurrentCompany(BaseModel):
     id: int
     name: str
     overview: str | None = None
-    employees: list[CompanyEmployee] | None = None
     locations: list[RetrievedLocation] | None = None
     links: list[RetrievedLink] | None = None
     created_at: float
