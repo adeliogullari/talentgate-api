@@ -22,7 +22,15 @@ class UserSubscription(SQLModel, table=True):
     end_date: float = Field(
         default_factory=lambda: (datetime.now(UTC) - timedelta(minutes=1)).timestamp(),
     )
+    user_id: int | None = Field(default=None, foreign_key="user.id", ondelete="CASCADE")
     user: Optional["User"] = Relationship(back_populates="subscription")
+    created_at: float = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp(),
+    )
+    updated_at: float = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp(),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
+    )
 
     @property
     def status(self) -> SubscriptionStatus:
@@ -44,22 +52,12 @@ class User(SQLModel, table=True):
     profile: str | None = Field(default=None)
     verified: bool = Field(default=False)
     role: str = Field(default=UserRole.OWNER.value)
-    employee: Optional["Employee"] = Relationship(
-        back_populates="user",
-        sa_relationship_kwargs={"uselist": False, "cascade": "all"},
-    )
-    subscription_id: int | None = Field(
-        default=None,
-        foreign_key="user_subscription.id",
-    )
-    subscription: UserSubscription | None = Relationship(
-        back_populates="user",
-        sa_relationship_kwargs={"uselist": False, "cascade": "all"},
-    )
-    created_at: float | None = Field(
+    employee: Optional["Employee"] = Relationship(back_populates="user")
+    subscription: UserSubscription | None = Relationship(back_populates="user", cascade_delete=True)
+    created_at: float = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
     )
-    updated_at: float | None = Field(
+    updated_at: float = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
         sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
     )
@@ -79,6 +77,8 @@ class CreatedSubscription(BaseModel):
     start_date: float
     end_date: float
     status: str
+    created_at: float
+    updated_at: float
 
 
 class RetrievedSubscription(BaseModel):
@@ -88,6 +88,8 @@ class RetrievedSubscription(BaseModel):
     start_date: float
     end_date: float
     status: str
+    created_at: float
+    updated_at: float
 
 
 class UpdateSubscription(BaseModel):
@@ -104,14 +106,8 @@ class UpdatedSubscription(BaseModel):
     start_date: float
     end_date: float
     status: str
-
-
-class UpsertSubscription(BaseModel):
-    id: int | None = None
-    paddle_subscription_id: str | None = None
-    plan: str | None = None
-    start_date: float | None = None
-    end_date: float | None = None
+    created_at: float
+    updated_at: float
 
 
 class UpsertedSubscription(BaseModel):
@@ -121,6 +117,8 @@ class UpsertedSubscription(BaseModel):
     start_date: float
     end_date: float
     status: str
+    created_at: float
+    updated_at: float
 
 
 class CreateUser(BaseModel):
@@ -132,7 +130,7 @@ class CreateUser(BaseModel):
     verified: bool | None = None
     role: str | None = None
     subscription_id: int | None = None
-    subscription: UpsertSubscription | None = None
+    subscription: CreateSubscription | None = None
 
 
 class CreatedUser(BaseModel):
@@ -196,7 +194,7 @@ class UpdateUser(BaseModel):
     role: str | None = None
     profile: str | None = None
     subscription_id: int | None = None
-    subscription: UpsertSubscription | None = None
+    subscription: UpdateSubscription | None = None
 
 
 class UpdatedUser(BaseModel):
@@ -210,19 +208,6 @@ class UpdatedUser(BaseModel):
     subscription: UpsertedSubscription | None = None
     created_at: float
     updated_at: float
-
-
-class UpsertUser(BaseModel):
-    id: int | None = None
-    firstname: str | None = None
-    lastname: str | None = None
-    username: str | None = None
-    email: str | None = None
-    password: str | None = None
-    verified: bool | None = None
-    role: str | None = None
-    subscription_id: int | None = None
-    subscription: UpsertSubscription | None = None
 
 
 class UpsertedUser(BaseModel):

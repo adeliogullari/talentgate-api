@@ -4,7 +4,8 @@ import pytest
 from sqlmodel import Session
 
 from src.talentgate.employee.models import Employee
-from src.talentgate.job.models import EmploymentType, Job
+from src.talentgate.job.enums import JobEmploymentType
+from src.talentgate.job.models import Job
 
 
 @pytest.fixture
@@ -13,20 +14,15 @@ def make_job(sqlmodel_session: Session, employee: Employee):
         title="job title",
         description="job description",
         department="job department",
-        employment_type=EmploymentType.FULL_TIME,
+        employment_type=JobEmploymentType.FULL_TIME,
         application_deadline=datetime.now(),
-        observers=None,
     ):
-        if observers is None:
-            observers = [employee]
-
         job = Job(
             title=title,
             description=description,
             department=department,
             employment_type=employment_type,
             application_deadline=application_deadline,
-            observers=observers,
         )
 
         sqlmodel_session.add(job)

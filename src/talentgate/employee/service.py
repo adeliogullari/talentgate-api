@@ -8,19 +8,18 @@ from src.talentgate.employee.models import (
     Employee,
     EmployeeQueryParameters,
     UpdateEmployee,
-    UpsertEmployee,
 )
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import User
 
 
-async def create(*, sqlmodel_session: Session, employee: CreateEmployee) -> Employee:
+async def create(*, sqlmodel_session: Session, company_id: int, employee: CreateEmployee) -> Employee:
     created_employee = Employee(
-        **employee.model_dump(exclude_unset=True, exclude_none=True, exclude={"user"}),
+        **employee.model_dump(exclude_unset=True, exclude_none=True, exclude={"user"}), company_id=company_id
     )
 
-    if getattr(employee, "user", None):
-        created_employee.user = await user_service.upsert(
+    if "user" in employee.model_fields_set and employee.user is not None:
+        created_employee.user = await user_service.create(
             sqlmodel_session=sqlmodel_session,
             user=employee.user,
         )
@@ -60,7 +59,6 @@ async def retrieve_by_query_parameters(
         user_filters = [
             getattr(User, attr) == value
             for attr, value in query_parameters.user.model_dump(
-                exclude={"offset", "limit", "user"},
                 exclude_unset=True,
                 exclude_none=True,
             ).items()
@@ -79,8 +77,10 @@ async def update(
     retrieved_employee: Employee,
     employee: UpdateEmployee,
 ) -> Employee:
-    if getattr(employee, "user", None) is not None:
-        await user_service.upsert(sqlmodel_session=sqlmodel_session, user=employee.user)
+    if "user" in employee.model_fields_set and employee.user is not None:
+        await user_service.update(
+            sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_employee.user, user=employee.user
+        )
 
     retrieved_employee.sqlmodel_update(
         employee.model_dump(exclude_none=True, exclude_unset=True, exclude={"user"}),
@@ -91,27 +91,6 @@ async def update(
     sqlmodel_session.refresh(retrieved_employee)
 
     return retrieved_employee
-
-
-async def upsert(
-    *,
-    sqlmodel_session: Session,
-    employee: UpsertEmployee,
-) -> Employee:
-    retrieved_employee = await retrieve_by_id(
-        sqlmodel_session=sqlmodel_session,
-        employee_id=employee.id,
-    )
-    if retrieved_employee:
-        return await update(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_employee=retrieved_employee,
-            employee=UpdateEmployee(**employee.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
-        )
-    return await create(
-        sqlmodel_session=sqlmodel_session,
-        employee=CreateEmployee(**employee.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
-    )
 
 
 async def delete(

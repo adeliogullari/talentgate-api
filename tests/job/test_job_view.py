@@ -7,9 +7,9 @@ from starlette.datastructures import Headers
 
 from config import get_settings
 from src.talentgate.company.models import Company
+from src.talentgate.job.enums import JobEmploymentType
 from src.talentgate.job.models import (
     CreateJob,
-    EmploymentType,
     Job,
     UpdateJob,
 )
@@ -28,7 +28,7 @@ async def test_create_job(
         title="created job title",
         description="created job description",
         department="created job department",
-        employment_type=EmploymentType.FULL_TIME,
+        employment_type=JobEmploymentType.FULL_TIME,
         application_deadline=datetime.now(),
         company_id=company.id,
     )
@@ -73,7 +73,7 @@ async def test_update_job(client: TestClient, job: Job, headers: Headers) -> Non
         title="updated job title",
         description="updated job description",
         department="updated job department",
-        employment_type=EmploymentType.PART_TIME,
+        employment_type=JobEmploymentType.PART_TIME,
         application_deadline=datetime.now() + timedelta(days=10),
     )
 

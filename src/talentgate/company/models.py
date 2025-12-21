@@ -9,7 +9,7 @@ from src.talentgate.user.models import UserSubscription
 
 if TYPE_CHECKING:
     from src.talentgate.employee.models import Employee
-    from src.talentgate.job.models import Job
+    from src.talentgate.job.models import Job, RetrievedJobLocation, RetrievedJobSalary
 
 
 class CompanyAddress(SQLModel, table=True):
@@ -22,10 +22,8 @@ class CompanyAddress(SQLModel, table=True):
     state: str | None = Field(default=None)
     country: str | None = Field(default=None)
     postal_code: str | None = Field(default=None)
-    location: Optional["CompanyLocation"] = Relationship(
-        back_populates="address",
-        sa_relationship_kwargs={"uselist": False},
-    )
+    location_id: int = Field(foreign_key="company_location.id", nullable=False, ondelete="CASCADE")
+    location: Optional["CompanyLocation"] = Relationship(back_populates="address")
 
 
 class CompanyLocation(SQLModel, table=True):
@@ -35,16 +33,8 @@ class CompanyLocation(SQLModel, table=True):
     type: str | None = Field(default=CompanyLocationType.OFFICE.value)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
-    address_id: int | None = Field(default=None, foreign_key="company_address.id")
-    address: CompanyAddress | None = Relationship(
-        back_populates="location",
-        sa_relationship_kwargs={
-            "uselist": False,
-            "cascade": "all, delete-orphan",
-            "single_parent": True,
-        },
-    )
-    company_id: int | None = Field(default=None, foreign_key="company.id")
+    address: CompanyAddress | None = Relationship(back_populates="location", cascade_delete=True)
+    company_id: int | None = Field(default=None, foreign_key="company.id", ondelete="CASCADE")
     company: Optional["Company"] = Relationship(back_populates="locations")
 
 
@@ -54,10 +44,9 @@ class CompanyLink(SQLModel, table=True):
     id: int = Field(primary_key=True)
     type: str | None = Field(default=LinkType.WEBSITE.value)
     url: str | None = Field(default=None, max_length=2048)
-    company_id: int | None = Field(default=None, foreign_key="company.id")
+    company_id: int | None = Field(default=None, foreign_key="company.id", ondelete="CASCADE")
     company: Optional["Company"] = Relationship(
         back_populates="links",
-        sa_relationship_kwargs={"cascade": "all"},
     )
 
 
@@ -68,21 +57,18 @@ class Company(SQLModel, table=True):
     name: str = Field(unique=True)
     overview: str | None = Field(default=None)
     logo: str | None = Field(default=None)
-    employees: list["Employee"] = Relationship(
-        back_populates="company",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
-    )
+    employees: list["Employee"] = Relationship(back_populates="company", cascade_delete=True)
     locations: list[CompanyLocation] = Relationship(
         back_populates="company",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+        cascade_delete=True,
     )
     links: list[CompanyLink] = Relationship(
         back_populates="company",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+        cascade_delete=True,
     )
     jobs: list["Job"] = Relationship(
         back_populates="company",
-        sa_relationship_kwargs={"cascade": "all"},
+        cascade_delete=True,
     )
     created_at: float | None = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
@@ -114,10 +100,14 @@ class CompanyEmployee(BaseModel):
     user: EmployeeUser | None = None
 
 
-class CompanyJob(BaseModel):
+class RetrievedCurrentCompanyJob(BaseModel):
     id: int | None = None
     title: str | None = None
     description: str | None = None
+    department: str | None = None
+    employment_type: str | None = None
+    location: Optional["RetrievedJobLocation"] = None
+    salary: Optional["RetrievedJobSalary"] = None
 
 
 class CreateAddress(BaseModel):

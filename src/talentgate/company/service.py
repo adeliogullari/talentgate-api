@@ -70,10 +70,11 @@ async def retrieve_logo(*, minio_client: Minio, object_name: str) -> bytes:
 async def create_address(
     *,
     sqlmodel_session: Session,
+    location_id: int,
     address: CreateAddress,
 ) -> CompanyAddress:
     created_address = CompanyAddress(
-        **address.model_dump(exclude_unset=True, exclude_none=True),
+        **address.model_dump(exclude_unset=True, exclude_none=True), location_id=location_id
     )
 
     sqlmodel_session.add(created_address)
@@ -86,9 +87,12 @@ async def create_address(
 async def retrieve_address_by_id(
     *,
     sqlmodel_session: Session,
+    location_id: int,
     address_id: int,
 ) -> CompanyAddress:
-    statement: Any = select(CompanyAddress).where(CompanyAddress.id == address_id)
+    statement: Any = select(CompanyAddress).where(
+        CompanyAddress.location_id == location_id, CompanyAddress.id == address_id
+    )
 
     return sqlmodel_session.exec(statement).one_or_none()
 
@@ -110,51 +114,25 @@ async def update_address(
     return retrieved_address
 
 
-async def upsert_address(
-    *,
-    sqlmodel_session: Session,
-    address: CreateAddress | UpdateAddress,
-) -> CompanyAddress:
-    address_id = getattr(address, "id", None)
-
-    retrieved_address = await retrieve_address_by_id(
-        sqlmodel_session=sqlmodel_session,
-        address_id=address_id,
-    )
-
-    if retrieved_address:
-        return await update_address(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_address=retrieved_address,
-            address=-UpdateAddress(**address.model_dump(exclude_none=True, exclude_unset=True)),
-        )
-
-    return await create_address(
-        sqlmodel_session=sqlmodel_session,
-        address=CreateAddress(**address.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
-    )
-
-
 async def create_location(
     *,
     sqlmodel_session: Session,
+    company_id: int,
     location: CreateLocation,
 ) -> CompanyLocation:
-    address = None
-    if getattr(location, "address", None) is not None:
-        address = await create_address(
-            sqlmodel_session=sqlmodel_session,
-            address=location.address,
-        )
-
     created_location = CompanyLocation(
         **location.model_dump(
             exclude_unset=True,
             exclude_none=True,
             exclude={"address"},
         ),
-        address=address,
+        company_id=company_id,
     )
+
+    if "address" in location.model_fields_set and location.address is not None:
+        created_location.address = await create_address(
+            sqlmodel_session=sqlmodel_session, location_id=created_location.id, address=location.address
+        )
 
     sqlmodel_session.add(created_location)
     sqlmodel_session.commit()
@@ -166,9 +144,12 @@ async def create_location(
 async def retrieve_location_by_id(
     *,
     sqlmodel_session: Session,
+    company_id: int,
     location_id: int,
 ) -> CompanyLocation:
-    statement: Any = select(CompanyLocation).where(CompanyLocation.id == location_id)
+    statement: Any = select(CompanyLocation).where(
+        CompanyLocation.company_id == company_id, CompanyLocation.id == location_id
+    )
 
     return sqlmodel_session.exec(statement).one_or_none()
 
@@ -179,9 +160,16 @@ async def update_location(
     retrieved_location: CompanyLocation,
     location: UpdateLocation,
 ) -> CompanyLocation:
-    if getattr(location, "address", None) is not None:
-        retrieved_location.address = await upsert_address(
+    if "address" in location.model_fields_set and location.address is not None:
+        retrieved_address = await retrieve_address_by_id(
             sqlmodel_session=sqlmodel_session,
+            location_id=retrieved_location.id,
+            address_id=retrieved_location.address.id,
+        )
+
+        retrieved_location.address = await update_address(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_address=retrieved_address,
             address=location.address,
         )
 
@@ -200,33 +188,8 @@ async def update_location(
     return retrieved_location
 
 
-async def upsert_location(
-    *,
-    sqlmodel_session: Session,
-    location: CreateLocation | UpdateLocation,
-) -> CompanyLocation:
-    location_id = getattr(location, "id", None)
-
-    retrieved_location = await retrieve_location_by_id(
-        sqlmodel_session=sqlmodel_session,
-        location_id=location_id,
-    )
-
-    if retrieved_location:
-        return await update_location(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_location=retrieved_location,
-            location=UpdateLocation(**location.model_dump(exclude_none=True, exclude_unset=True)),
-        )
-
-    return await create_location(
-        sqlmodel_session=sqlmodel_session,
-        location=CreateLocation(**location.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
-    )
-
-
-async def create_link(*, sqlmodel_session: Session, link: CreateLink) -> CompanyLink:
-    created_link = CompanyLink(**link.model_dump(exclude_unset=True, exclude_none=True))
+async def create_link(*, sqlmodel_session: Session, company_id: int, link: CreateLink) -> CompanyLink:
+    created_link = CompanyLink(**link.model_dump(exclude_unset=True, exclude_none=True), company_id=company_id)
 
     sqlmodel_session.add(created_link)
     sqlmodel_session.commit()
@@ -238,9 +201,10 @@ async def create_link(*, sqlmodel_session: Session, link: CreateLink) -> Company
 async def retrieve_link_by_id(
     *,
     sqlmodel_session: Session,
+    company_id: int,
     link_id: int,
 ) -> CompanyLink:
-    statement: Any = select(CompanyLink).where(CompanyLink.id == link_id)
+    statement: Any = select(CompanyLink).where(CompanyLink.company_id == company_id, CompanyLink.id == link_id)
 
     return sqlmodel_session.exec(statement).one_or_none()
 
@@ -262,30 +226,6 @@ async def update_link(
     return retrieved_link
 
 
-async def upsert_link(
-    *,
-    sqlmodel_session: Session,
-    link: CreateLink | UpdateLink,
-) -> CompanyLink:
-    link_id = getattr(link, "id", None)
-
-    retrieved_link = await retrieve_link_by_id(
-        sqlmodel_session=sqlmodel_session,
-        link_id=link_id,
-    )
-    if retrieved_link:
-        return await update_link(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_link=retrieved_link,
-            link=UpdateLink(**link.model_dump(exclude_none=True, exclude_unset=True)),
-        )
-    return await create_link(
-        sqlmodel_session=sqlmodel_session,
-        link=CreateLink(**link.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})),
-    )
-
-
-# JOB Services
 async def retrieve_jobs_by_query_parameters(
     *,
     sqlmodel_session: Session,
@@ -328,7 +268,7 @@ async def retrieve_jobs_by_query_parameters(
     return sqlmodel_session.exec(statement).all()
 
 
-async def retrieve_company_job(
+async def retrieve_job_by_id(
     *,
     sqlmodel_session: Session,
     company_id: int,
@@ -340,37 +280,27 @@ async def retrieve_company_job(
 
 
 async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Company:
-    locations = []
-    if getattr(company, "locations", None) is not None:
-        locations = [
-            await upsert_location(sqlmodel_session=sqlmodel_session, location=location)
-            for location in company.locations
-        ]
-
-    links = []
-    if getattr(company, "links", None) is not None:
-        links = [await upsert_link(sqlmodel_session=sqlmodel_session, link=link) for link in company.links]
-
-    employees = []
-    if getattr(company, "employees", None) is not None:
-        employees = [
-            await employee_service.upsert(
-                sqlmodel_session=sqlmodel_session,
-                employee=employee,
-            )
-            for employee in company.employees
-        ]
-
     created_company = Company(
         **company.model_dump(
             exclude_unset=True,
             exclude_none=True,
             exclude={"locations", "links", "employees"},
         ),
-        locations=locations,
-        links=links,
-        employees=employees,
     )
+
+    if "locations" in company.model_fields_set and company.locations is not None:
+        for location in company.locations:
+            await create_location(sqlmodel_session=sqlmodel_session, company_id=created_company.id, location=location)
+
+    if "links" in company.model_fields_set and company.links is not None:
+        for link in company.links:
+            await create_link(sqlmodel_session=sqlmodel_session, company_id=created_company.id, link=link)
+
+    if "employees" in company.model_fields_set and company.employees is not None:
+        for employee in company.employees:
+            await employee_service.create(
+                sqlmodel_session=sqlmodel_session, company_id=created_company.id, employee=employee
+            )
 
     sqlmodel_session.add(created_company)
     sqlmodel_session.commit()
@@ -418,25 +348,33 @@ async def update(
     retrieved_company: Company,
     company: UpdateCompany | UpdateCurrentCompany,
 ) -> Company:
-    if getattr(company, "locations", None) is not None:
-        retrieved_company.locations = [
-            await upsert_location(sqlmodel_session=sqlmodel_session, location=location)
-            for location in company.locations
-        ]
 
-    if getattr(company, "links", None) is not None:
-        retrieved_company.links = [
-            await upsert_link(sqlmodel_session=sqlmodel_session, link=link) for link in company.links
-        ]
-
-    if getattr(company, "employees", None) is not None:
-        retrieved_company.employees = [
-            await employee_service.upsert(
+    if "locations" in company.model_fields_set and company.locations is not None:
+        for location in company.locations:
+            retrieved_location = await retrieve_location_by_id(
                 sqlmodel_session=sqlmodel_session,
-                employee=employee,
+                company_id=retrieved_company.id,
+                location_id=location.id,
             )
-            for employee in company.employees
-        ]
+
+            await update_location(sqlmodel_session=sqlmodel_session, retrieved_location=retrieved_location, location=location)
+
+    if "links" in company.model_fields_set and company.links is not None:
+        for link in company.links:
+            retrieved_link = await retrieve_link_by_id(
+                sqlmodel_session=sqlmodel_session,
+                company_id=retrieved_company.id,
+                link_id=link.id,
+            )
+
+            await update_link(sqlmodel_session=sqlmodel_session, retrieved_link=retrieved_link, link=link)
+
+    if "employees" in company.model_fields_set and company.employees is not None:
+        for employee in company.employees:
+            await employee_service.update(
+                sqlmodel_session=sqlmodel_session, company_id=created_company.id, employee=employee
+            )
+
 
     retrieved_company.sqlmodel_update(
         company.model_dump(

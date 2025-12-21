@@ -9,7 +9,7 @@ from src.talentgate.company.service import (
     create,
     delete,
     retrieve_by_id,
-    retrieve_company_job,
+    retrieve_job_by_id,
     update,
     retrieve_by_name,
     upload_logo,
@@ -59,7 +59,7 @@ async def test_retrieve_company_job(
     company: Company,
     job: Job,
 ) -> None:
-    retrieved_company_job = await retrieve_company_job(
+    retrieved_company_job = await retrieve_job_by_id(
         sqlmodel_session=sqlmodel_session,
         company_id=company.id,
         job_id=job.id,

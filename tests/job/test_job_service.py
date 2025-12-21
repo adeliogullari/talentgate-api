@@ -1,6 +1,7 @@
 from sqlmodel import Session
 
-from src.talentgate.job.models import CreateJob, EmploymentType, Job, UpdateJob
+from src.talentgate.job.enums import JobEmploymentType
+from src.talentgate.job.models import CreateJob, Job, UpdateJob
 from src.talentgate.job.service import create, delete, retrieve_by_id, update
 
 
@@ -9,7 +10,7 @@ async def test_create(sqlmodel_session: Session) -> None:
         title="created job title",
         description="created job description",
         department="created job department",
-        employment_type=EmploymentType.PART_TIME,
+        employment_type=JobEmploymentType.PART_TIME,
     )
 
     created_job = await create(sqlmodel_session=sqlmodel_session, job=new_job)
@@ -36,7 +37,7 @@ async def test_update(sqlmodel_session: Session, job: Job) -> None:
         title="updated job title",
         description="updated job description",
         department="updated job department",
-        employment_type=EmploymentType.PART_TIME,
+        employment_type=JobEmploymentType.PART_TIME,
     )
 
     updated_job = await update(

@@ -14,8 +14,6 @@ from src.talentgate.user.models import (
     UpdateCurrentUser,
     UpdateSubscription,
     UpdateUser,
-    UpsertSubscription,
-    UpsertUser,
     User,
     UserQueryParameters,
     UserSubscription,
@@ -61,13 +59,15 @@ async def retrieve_profile(*, minio_client: Minio, object_name: str) -> bytes:
 async def create_subscription(
     *,
     sqlmodel_session: Session,
+    user_id: int,
     subscription: CreateSubscription,
 ) -> UserSubscription:
     created_subscription = UserSubscription(
         **subscription.model_dump(exclude_unset=True, exclude_none=True, exclude={"paddle_subscription_id"}),
+        user_id=user_id,
     )
 
-    if hasattr(subscription, "paddle_subscription_id"):
+    if "paddle_subscription_id" in subscription.model_fields_set:
         created_subscription.paddle_subscription_id = subscription.paddle_subscription_id
 
     sqlmodel_session.add(created_subscription)
@@ -80,9 +80,11 @@ async def create_subscription(
 async def retrieve_subscription_by_id(
     *,
     sqlmodel_session: Session,
+    user_id: int,
     subscription_id: int,
-) -> UserSubscription:
+) -> UserSubscription | None:
     statement: Any = select(UserSubscription).where(
+        UserSubscription.user_id == user_id,
         UserSubscription.id == subscription_id,
     )
 
@@ -95,47 +97,18 @@ async def update_subscription(
     retrieved_subscription: UserSubscription,
     subscription: UpdateSubscription,
 ) -> UserSubscription:
-    if hasattr(subscription, "paddle_subscription_id"):
-        retrieved_subscription.paddle_subscription_id = subscription.paddle_subscription_id
-
     retrieved_subscription.sqlmodel_update(
         subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"paddle_subscription_id"}),
     )
+
+    if "paddle_subscription_id" in subscription.model_fields_set:
+        retrieved_subscription.paddle_subscription_id = subscription.paddle_subscription_id
 
     sqlmodel_session.add(retrieved_subscription)
     sqlmodel_session.commit()
     sqlmodel_session.refresh(retrieved_subscription)
 
     return retrieved_subscription
-
-
-async def upsert_subscription(
-    *,
-    sqlmodel_session: Session,
-    subscription: UpsertSubscription,
-) -> UserSubscription:
-    subscription_id = getattr(subscription, "id", None)
-
-    retrieved_subscription = await retrieve_subscription_by_id(
-        sqlmodel_session=sqlmodel_session,
-        subscription_id=subscription_id,
-    )
-
-    if retrieved_subscription:
-        return await update_subscription(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_subscription=retrieved_subscription,
-            subscription=UpdateSubscription(
-                **subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
-            ),
-        )
-
-    return await create_subscription(
-        sqlmodel_session=sqlmodel_session,
-        subscription=CreateSubscription(
-            **subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"id"})
-        ),
-    )
 
 
 async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
@@ -146,9 +119,10 @@ async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
         password=password,
     )
 
-    if getattr(user, "subscription", None):
-        created_user.subscription = await upsert_subscription(
+    if "subscription" in user.model_fields_set:
+        created_user.subscription = await create_subscription(
             sqlmodel_session=sqlmodel_session,
+            user_id=created_user.id,
             subscription=user.subscription,
         )
 
@@ -204,12 +178,17 @@ async def update(
     retrieved_user: User,
     user: UpdateUser | UpdateCurrentUser,
 ) -> User:
-    if getattr(user, "password", None):
+    if "password" in user.model_fields_set and user.password is not None:
         retrieved_user.password = auth_service.encode_password(password=user.password)
 
-    if getattr(user, "subscription", None):
-        retrieved_user.subscription = await upsert_subscription(
+    if "subscription" in user.model_fields_set and user.subscription is not None:
+        retrieved_subscription = await retrieve_subscription_by_id(
+            sqlmodel_session=sqlmodel_session, user_id=retrieved_user.id, subscription_id=retrieved_user.subscription.id
+        )
+
+        await update_subscription(
             sqlmodel_session=sqlmodel_session,
+            retrieved_subscription=retrieved_subscription,
             subscription=user.subscription,
         )
 
@@ -226,43 +205,6 @@ async def update(
     sqlmodel_session.refresh(retrieved_user)
 
     return retrieved_user
-
-
-async def upsert(
-    *,
-    sqlmodel_session: Session,
-    user: UpsertUser,
-) -> User:
-    user_id = getattr(user, "id", None)
-
-    retrieved_user = await retrieve_by_id(
-        sqlmodel_session=sqlmodel_session,
-        user_id=user_id,
-    )
-
-    if retrieved_user:
-        return await update(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_user=retrieved_user,
-            user=UpdateUser(
-                **user.model_dump(
-                    exclude_none=True,
-                    exclude_unset=True,
-                    exclude={"id"},
-                ),
-            ),
-        )
-
-    return await create(
-        sqlmodel_session=sqlmodel_session,
-        user=CreateUser(
-            **user.model_dump(
-                exclude_none=True,
-                exclude_unset=True,
-                exclude={"id"},
-            ),
-        ),
-    )
 
 
 async def delete(*, sqlmodel_session: Session, retrieved_user: User) -> User:

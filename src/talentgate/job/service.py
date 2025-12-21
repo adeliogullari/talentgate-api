@@ -4,18 +4,18 @@ from typing import Any
 from sqlmodel import Session, select
 
 from src.talentgate.job.models import (
-    CreateAddress,
     CreateJob,
-    CreateLocation,
+    CreateJobAddress,
+    CreateJobLocation,
     CreateSalary,
     Job,
     JobAddress,
     JobLocation,
     JobQueryParameters,
     JobSalary,
-    UpdateAddress,
     UpdateJob,
-    UpdateLocation,
+    UpdateJobAddress,
+    UpdateJobLocation,
     UpdateSalary,
 )
 
@@ -23,7 +23,7 @@ from src.talentgate.job.models import (
 async def create_address(
     *,
     sqlmodel_session: Session,
-    address: CreateAddress,
+    address: CreateJobAddress,
 ) -> JobAddress:
     created_address = JobAddress(
         **address.model_dump(exclude_unset=True, exclude_none=True),
@@ -50,7 +50,7 @@ async def update_address(
     *,
     sqlmodel_session: Session,
     retrieved_address: JobAddress,
-    address: UpdateAddress,
+    address: UpdateJobAddress,
 ) -> JobAddress:
     retrieved_address.sqlmodel_update(
         address.model_dump(exclude_none=True, exclude_unset=True),
@@ -66,7 +66,7 @@ async def update_address(
 async def upsert_address(
     *,
     sqlmodel_session: Session,
-    address: CreateAddress | UpdateAddress,
+    address: CreateJobAddress | UpdateJobAddress,
 ) -> JobAddress:
     retrieved_address = await retrieve_address_by_id(
         sqlmodel_session=sqlmodel_session,
@@ -84,7 +84,7 @@ async def upsert_address(
 async def create_location(
     *,
     sqlmodel_session: Session,
-    location: CreateLocation,
+    location: CreateJobLocation,
 ) -> JobLocation:
     address = None
     if getattr(location, "address", None) is not None:
@@ -123,7 +123,7 @@ async def update_location(
     *,
     sqlmodel_session: Session,
     retrieved_location: JobLocation,
-    location: UpdateLocation,
+    location: UpdateJobLocation,
 ) -> JobLocation:
     if getattr(location, "address", None) is not None:
         retrieved_location.address = await upsert_address(
@@ -149,7 +149,7 @@ async def update_location(
 async def upsert_location(
     *,
     sqlmodel_session: Session,
-    location: CreateLocation | UpdateLocation,
+    location: CreateJobLocation | UpdateJobLocation,
 ) -> JobLocation:
     retrieved_location = await retrieve_location_by_id(
         sqlmodel_session=sqlmodel_session,

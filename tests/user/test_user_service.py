@@ -18,8 +18,6 @@ from src.talentgate.user.models import (
     UserQueryParameters,
     UserRole,
     UserSubscription,
-    UpsertSubscription,
-    UpsertUser,
 )
 
 
