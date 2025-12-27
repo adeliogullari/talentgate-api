@@ -14,11 +14,13 @@ from src.talentgate.user.models import User, UserSubscription
 @pytest.fixture
 def make_subscription(sqlmodel_session: Session) -> Any:
     def make(
+        paddle_subscription_id: str | None = None,
         plan: str | None = None,
         start_date: float | None = None,
         end_date: float | None = None,
     ) -> UserSubscription:
         subscription = UserSubscription(
+            paddle_subscription_id=paddle_subscription_id or str(uuid4()),
             plan=plan or SubscriptionPlan.BASIC.value,
             start_date=start_date or (datetime.now(UTC) - timedelta(days=2)).timestamp(),
             end_date=end_date or (datetime.now(UTC) - timedelta(days=1)).timestamp(),
@@ -36,11 +38,13 @@ def make_subscription(sqlmodel_session: Session) -> Any:
 @pytest.fixture
 def subscription(make_subscription, request):
     param = getattr(request, "param", {})
+    paddle_subscription_id = param.get("paddle_subscription_id", None)
     plan = param.get("plan", None)
     start_date = param.get("start_date", None)
     end_date = param.get("end_date", None)
 
     return make_subscription(
+        paddle_subscription_id=paddle_subscription_id,
         plan=plan,
         start_date=start_date,
         end_date=end_date,

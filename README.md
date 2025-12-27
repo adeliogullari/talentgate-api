@@ -4,7 +4,7 @@ TalentGate Restful Service
 ### Development
 
 ```commandline
-docker-compose up --build
+docker compose up --build
 fastapi dev main.py
 alembic revision --autogenerate -m "migration"
 alembic upgrade head
@@ -13,6 +13,25 @@ alembic upgrade head
 ### Production
 
 ```commandline
-docker-compose up --build --scale app=5
+docker compose up --build --scale app=5
 fastapi run main.py
+docker compose run --rm talentgate-api alembic upgrade head
+```
+
+##### Postgres
+
+_Backup_
+```commandline
+ssh user@vps \
+  "PGPASSWORD='${POSTGRES_PASSWORD}' \
+   docker exec postgres \
+   pg_dump -U ${POSTGRES_USER} ${POSTGRES_DB} | gzip" \
+  > postgres_$(date +%F).sql.gz
+```
+
+_Restore_
+```commandline
+gunzip -c postgres_2025-01-10.sql.gz | \
+ssh user@vps \
+  "docker exec -i postgres psql -U admin talentgate"
 ```

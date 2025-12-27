@@ -23,6 +23,7 @@ from src.talentgate.user.models import (
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_user(client: TestClient, headers: Headers) -> None:
     subscription = CreateSubscription(
+        paddle_subscription_id=str(uuid4()),
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
@@ -180,6 +181,7 @@ async def test_update_current_user(
     )
 
     assert response.status_code == 200
+    assert response.json()["email"] == updated_user.email
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)

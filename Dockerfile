@@ -1,4 +1,4 @@
-FROM python:3.14
+FROM python:3.14.2-alpine
 LABEL authors="talentgate-api"
 
 WORKDIR /app

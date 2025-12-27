@@ -110,17 +110,6 @@ class UpdatedSubscription(BaseModel):
     updated_at: float
 
 
-class UpsertedSubscription(BaseModel):
-    id: int
-    paddle_subscription_id: str | None = None
-    plan: str
-    start_date: float
-    end_date: float
-    status: str
-    created_at: float
-    updated_at: float
-
-
 class CreateUser(BaseModel):
     firstname: str
     lastname: str
@@ -129,7 +118,6 @@ class CreateUser(BaseModel):
     password: str
     verified: bool | None = None
     role: str | None = None
-    subscription_id: int | None = None
     subscription: CreateSubscription | None = None
 
 
@@ -141,7 +129,7 @@ class CreatedUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: UpsertedSubscription | None = None
+    subscription: CreatedSubscription | None = None
     created_at: float
     updated_at: float
 
@@ -193,7 +181,6 @@ class UpdateUser(BaseModel):
     verified: bool | None = None
     role: str | None = None
     profile: str | None = None
-    subscription_id: int | None = None
     subscription: UpdateSubscription | None = None
 
 
@@ -205,20 +192,7 @@ class UpdatedUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: UpsertedSubscription | None = None
-    created_at: float
-    updated_at: float
-
-
-class UpsertedUser(BaseModel):
-    id: int | None = None
-    firstname: str
-    lastname: str
-    username: str
-    email: str
-    verified: bool
-    role: str
-    subscription: UpsertedSubscription | None = None
+    subscription: UpdatedSubscription | None = None
     created_at: float
     updated_at: float
 
@@ -239,7 +213,7 @@ class UpdatedCurrentUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: UpsertedSubscription | None = None
+    subscription: UpdatedSubscription | None = None
     created_at: float
     updated_at: float
 

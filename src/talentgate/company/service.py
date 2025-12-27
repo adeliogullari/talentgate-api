@@ -188,6 +188,13 @@ async def update_location(
     return retrieved_location
 
 
+async def delete_location(*, sqlmodel_session: Session, retrieved_location: CompanyLocation) -> CompanyLocation:
+    sqlmodel_session.delete(retrieved_location)
+    sqlmodel_session.commit()
+
+    return retrieved_location
+
+
 async def create_link(*, sqlmodel_session: Session, company_id: int, link: CreateLink) -> CompanyLink:
     created_link = CompanyLink(**link.model_dump(exclude_unset=True, exclude_none=True), company_id=company_id)
 
@@ -222,6 +229,13 @@ async def update_link(
     sqlmodel_session.add(retrieved_link)
     sqlmodel_session.commit()
     sqlmodel_session.refresh(retrieved_link)
+
+    return retrieved_link
+
+
+async def delete_link(*, sqlmodel_session: Session, retrieved_link: CompanyLink) -> CompanyLink:
+    sqlmodel_session.delete(retrieved_link)
+    sqlmodel_session.commit()
 
     return retrieved_link
 
@@ -348,7 +362,6 @@ async def update(
     retrieved_company: Company,
     company: UpdateCompany | UpdateCurrentCompany,
 ) -> Company:
-
     if "locations" in company.model_fields_set and company.locations is not None:
         for location in company.locations:
             retrieved_location = await retrieve_location_by_id(
@@ -357,7 +370,9 @@ async def update(
                 location_id=location.id,
             )
 
-            await update_location(sqlmodel_session=sqlmodel_session, retrieved_location=retrieved_location, location=location)
+            await update_location(
+                sqlmodel_session=sqlmodel_session, retrieved_location=retrieved_location, location=location
+            )
 
     if "links" in company.model_fields_set and company.links is not None:
         for link in company.links:
@@ -371,10 +386,13 @@ async def update(
 
     if "employees" in company.model_fields_set and company.employees is not None:
         for employee in company.employees:
-            await employee_service.update(
-                sqlmodel_session=sqlmodel_session, company_id=created_company.id, employee=employee
+            retrieved_employee = await employee_service.retrieve_by_id(
+                sqlmodel_session=sqlmodel_session, company_id=retrieved_company.id, employee_id=employee.id
             )
 
+            await employee_service.update(
+                sqlmodel_session=sqlmodel_session, retrieved_employee=retrieved_employee, employee=employee
+            )
 
     retrieved_company.sqlmodel_update(
         company.model_dump(

@@ -119,7 +119,7 @@ async def create(*, sqlmodel_session: Session, user: CreateUser) -> User:
         password=password,
     )
 
-    if "subscription" in user.model_fields_set:
+    if "subscription" in user.model_fields_set and user.subscription is not None:
         created_user.subscription = await create_subscription(
             sqlmodel_session=sqlmodel_session,
             user_id=created_user.id,

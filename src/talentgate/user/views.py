@@ -103,10 +103,10 @@ async def retrieve_current_user_profile(
 )
 async def upload_current_user_profile(
     *,
-    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
-    minio_client: Annotated[Minio, Depends(get_minio_client)],
-    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
     file: Annotated[UploadFile, File()],
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ) -> None:
     data = await file.read()
 
@@ -168,8 +168,8 @@ class DeleteUserDependency:
 )
 async def create_user(
     *,
-    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     user: CreateUser,
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
 ) -> User:
     retrieved_user = await user_service.retrieve_by_username(
         sqlmodel_session=sqlmodel_session,
@@ -223,8 +223,8 @@ async def retrieve_user(
 )
 async def retrieve_users(
     *,
-    query_parameters: Annotated[UserQueryParameters, Query()],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    query_parameters: Annotated[UserQueryParameters, Query()],
 ) -> Sequence[User]:
     return await user_service.retrieve_by_query_parameters(
         sqlmodel_session=sqlmodel_session,
@@ -267,8 +267,8 @@ async def update_user(
 async def update_current_user(
     *,
     user: UpdateCurrentUser,
-    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ) -> User:
     return await user_service.update(
         sqlmodel_session=sqlmodel_session,
@@ -309,8 +309,8 @@ async def delete_user(
 )
 async def delete_current_user(
     *,
-    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ) -> User:
     return await user_service.delete(
         sqlmodel_session=sqlmodel_session,

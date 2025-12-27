@@ -307,6 +307,10 @@ class DeletedCompany(SQLModel):
     id: int
 
 
+class DeletedCurrentCompany(SQLModel):
+    id: int
+
+
 class EmployeeInvitation(SQLModel):
     title: str
     email: str

@@ -1,11 +1,12 @@
 from sqlmodel import Session
+
+from src.talentgate.company.models import Company
 from src.talentgate.employee.enums import EmployeeTitle
 from src.talentgate.employee.models import (
     CreateEmployee,
     Employee,
     UpdateEmployee,
     EmployeeQueryParameters,
-    UpsertEmployee,
 )
 from src.talentgate.employee import service as employee_service
 from src.talentgate.employee.service import (
@@ -20,11 +21,10 @@ from src.talentgate.user.models import (
     CreateUser,
     UpdateUser,
     UserQueryParameters,
-    UpsertUser,
 )
 
 
-async def test_create(sqlmodel_session: Session) -> None:
+async def test_create(sqlmodel_session: Session, company: Company) -> None:
     user = CreateUser(
         firstname="firstname",
         lastname="lastname",
@@ -39,15 +39,18 @@ async def test_create(sqlmodel_session: Session) -> None:
 
     created_employee = await create(
         sqlmodel_session=sqlmodel_session,
+        company_id=company.id,
         employee=employee,
     )
 
     assert created_employee.title == employee.title
+    assert created_employee.user.email == user.email
 
 
-async def test_retrieve_by_id(sqlmodel_session: Session, employee: Employee) -> None:
+async def test_retrieve_by_id(sqlmodel_session: Session, employee: Employee, company: Company) -> None:
     retrieved_employee = await retrieve_by_id(
         sqlmodel_session=sqlmodel_session,
+        company_id=company.id,
         employee_id=employee.id,
     )
 
@@ -98,52 +101,6 @@ async def test_update(sqlmodel_session: Session, make_employee) -> None:
     )
 
     assert employee.title == updated_employee.title
-
-
-async def test_upsert_create(sqlmodel_session: Session) -> None:
-    user = CreateUser(
-        firstname="firstname",
-        lastname="lastname",
-        username="username",
-        email="username@example.com",
-        password="password",
-        verified=True,
-        role=UserRole.ADMIN,
-    )
-
-    employee = UpsertEmployee(title=EmployeeTitle.FOUNDER, user=user)
-
-    created_employee = await employee_service.upsert(
-        sqlmodel_session=sqlmodel_session,
-        employee=employee,
-    )
-
-    assert created_employee.title == employee.title
-
-
-async def test_upsert_update(sqlmodel_session: Session, make_employee) -> None:
-    retrieved_employee = make_employee()
-
-    user = UpsertUser(
-        id=retrieved_employee.user_id,
-        firstname="firstname",
-        lastname="lastname",
-        username="username",
-        email="username@example.com",
-        password="password",
-        verified=True,
-        role=UserRole.ADMIN,
-    )
-
-    employee = UpsertEmployee(id=retrieved_employee.id, title=EmployeeTitle.FOUNDER, user=user)
-
-    updated_employee = await employee_service.upsert(
-        sqlmodel_session=sqlmodel_session,
-        employee=employee,
-    )
-
-    assert updated_employee.id == employee.id
-    assert updated_employee.user.id == user.id
 
 
 async def test_delete(sqlmodel_session: Session, employee: Employee) -> None:

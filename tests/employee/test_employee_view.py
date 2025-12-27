@@ -11,14 +11,24 @@ from src.talentgate.employee.models import (
     Employee,
     UpdateEmployee,
 )
-from src.talentgate.user.models import UserRole
+from src.talentgate.user.models import UserRole, CreateUser
 
 settings = get_settings()
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_employee(client: TestClient, headers: Headers) -> None:
-    created_employee = CreateEmployee(title=EmployeeTitle.FOUNDER)
+    user = CreateUser(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="username@example.com",
+        password="password",
+        verified=True,
+        role=UserRole.ADMIN,
+    )
+
+    created_employee = CreateEmployee(title=EmployeeTitle.FOUNDER, user=user)
 
     response = client.post(
         url="/api/v1/employees",
@@ -30,6 +40,7 @@ async def test_create_employee(client: TestClient, headers: Headers) -> None:
 
     assert response.status_code == 201
     assert response.json()["title"] == created_employee.title
+    assert response.json()["email"] == user.email
 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)

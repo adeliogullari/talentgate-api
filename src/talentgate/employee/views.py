@@ -73,6 +73,7 @@ async def create_employee(
 ) -> Employee:
     return await employee_service.create(
         sqlmodel_session=sqlmodel_session,
+        company_id="company_id",
         employee=employee,
     )
 

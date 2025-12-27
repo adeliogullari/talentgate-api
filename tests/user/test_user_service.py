@@ -55,8 +55,9 @@ async def test_retrieve_profile(minio_client: Minio):
     assert retrieved_profile == data
 
 
-async def test_create_subscription(sqlmodel_session: Session) -> None:
+async def test_create_subscription(sqlmodel_session: Session, user: User) -> None:
     subscription = CreateSubscription(
+        paddle_subscription_id=str(uuid4()),
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
@@ -64,6 +65,7 @@ async def test_create_subscription(sqlmodel_session: Session) -> None:
 
     created_subscription = await user_service.create_subscription(
         sqlmodel_session=sqlmodel_session,
+        user_id=user.id,
         subscription=subscription,
     )
 
@@ -76,6 +78,7 @@ async def test_retrieve_subscription_by_id(
 ) -> None:
     retrieved_subscription = await user_service.retrieve_subscription_by_id(
         sqlmodel_session=sqlmodel_session,
+        user_id=subscription.user_id,
         subscription_id=subscription.id,
     )
 
@@ -98,6 +101,7 @@ async def test_retrieve_subscription_with_active_status(
 ) -> None:
     retrieved_subscription = await user_service.retrieve_subscription_by_id(
         sqlmodel_session=sqlmodel_session,
+        user_id=subscription.user_id,
         subscription_id=subscription.id,
     )
 
@@ -121,6 +125,7 @@ async def test_retrieve_subscription_with_expired_status(
 ) -> None:
     retrieved_subscription = await user_service.retrieve_subscription_by_id(
         sqlmodel_session=sqlmodel_session,
+        user_id=subscription.user_id,
         subscription_id=subscription.id,
     )
 
@@ -135,6 +140,7 @@ async def test_update_subscription(
     retrieved_subscription = make_subscription()
 
     subscription = UpdateSubscription(
+        paddle_subscription_id=str(uuid4()),
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
@@ -146,43 +152,7 @@ async def test_update_subscription(
         subscription=subscription,
     )
 
-    assert updated_subscription.plan == subscription.plan
-
-
-async def test_upsert_create_subscription(sqlmodel_session: Session) -> None:
-    subscription = UpsertSubscription(
-        plan=SubscriptionPlan.STANDARD,
-        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
-        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
-    )
-
-    created_subscription = await user_service.upsert_subscription(
-        sqlmodel_session=sqlmodel_session,
-        subscription=subscription,
-    )
-
-    assert created_subscription.plan == subscription.plan
-
-
-async def test_upsert_update_subscription(
-    sqlmodel_session: Session,
-    make_subscription,
-) -> None:
-    retrieved_subscription = make_subscription()
-
-    subscription = UpsertSubscription(
-        id=retrieved_subscription.id,
-        plan=SubscriptionPlan.STANDARD,
-        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
-        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
-    )
-
-    updated_subscription = await user_service.upsert_subscription(
-        sqlmodel_session=sqlmodel_session,
-        subscription=subscription,
-    )
-
-    assert updated_subscription.id == subscription.id
+    assert updated_subscription.id == retrieved_subscription.id
     assert updated_subscription.plan == subscription.plan
 
 
@@ -267,8 +237,8 @@ async def test_retrieve_by_query_parameters(
 async def test_update(sqlmodel_session: Session, make_user, subscription) -> None:
     retrieved_user = make_user()
 
-    subscription = UpsertSubscription(
-        id=retrieved_user.subscription_id,
+    subscription = UpdateSubscription(
+        paddle_subscription_id=str(uuid4()),
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
@@ -291,66 +261,9 @@ async def test_update(sqlmodel_session: Session, make_user, subscription) -> Non
         user=user,
     )
 
-    assert updated_user.subscription_id == subscription.id
+    assert updated_user.id == retrieved_user.id
+    assert updated_user.email == user.email
     assert updated_user.subscription.plan == subscription.plan
-
-
-async def test_upsert_create(sqlmodel_session: Session) -> None:
-    subscription = CreateSubscription(
-        plan=SubscriptionPlan.STANDARD,
-        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
-        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
-    )
-
-    user = UpsertUser(
-        firstname="firstname",
-        lastname="lastname",
-        username="username",
-        email="username@example.com",
-        password="password",
-        verified=True,
-        role=UserRole.ADMIN,
-        subscription=subscription,
-    )
-
-    created_user = await user_service.upsert(
-        sqlmodel_session=sqlmodel_session,
-        user=user,
-    )
-
-    assert created_user.email == user.email
-    assert created_user.subscription.plan == subscription.plan
-
-
-async def test_upsert_update(sqlmodel_session: Session, make_user) -> None:
-    retrieved_user = make_user()
-
-    subscription = UpsertSubscription(
-        id=retrieved_user.subscription_id,
-        plan=SubscriptionPlan.STANDARD,
-        start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
-        end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
-    )
-
-    user = UpsertUser(
-        id=retrieved_user.id,
-        firstname="firstname",
-        lastname="lastname",
-        username="username",
-        email="username@example.com",
-        password="password",
-        verified=True,
-        role=UserRole.ADMIN,
-        subscription=subscription,
-    )
-
-    updated_user = await user_service.upsert(
-        sqlmodel_session=sqlmodel_session,
-        user=user,
-    )
-
-    assert updated_user.id == user.id
-    assert updated_user.subscription.id == subscription.id
 
 
 async def test_delete(sqlmodel_session, make_user) -> None:

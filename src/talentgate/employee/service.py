@@ -31,8 +31,8 @@ async def create(*, sqlmodel_session: Session, company_id: int, employee: Create
     return created_employee
 
 
-async def retrieve_by_id(*, sqlmodel_session: Session, employee_id: int) -> Employee:
-    statement: Any = select(Employee).where(Employee.id == employee_id)
+async def retrieve_by_id(*, sqlmodel_session: Session, company_id: int, employee_id: int) -> Employee:
+    statement: Any = select(Employee).where(Employee.company_id == company_id, Employee.id == employee_id)
 
     return sqlmodel_session.exec(statement).one_or_none()
 
@@ -40,13 +40,11 @@ async def retrieve_by_id(*, sqlmodel_session: Session, employee_id: int) -> Empl
 async def retrieve_by_query_parameters(
     *,
     sqlmodel_session: Session,
+    company_id: int,
     query_parameters: EmployeeQueryParameters,
 ) -> Sequence[Employee]:
-    offset = query_parameters.offset
-    limit = query_parameters.limit
-
     employee_filters = [
-        getattr(Employee, attr) == value
+        Employee.__table__.columns[attr] == value
         for attr, value in query_parameters.model_dump(
             exclude={"offset", "limit", "user"},
             exclude_unset=True,
@@ -54,19 +52,29 @@ async def retrieve_by_query_parameters(
         ).items()
     ]
 
-    user_filters = []
-    if getattr(query_parameters, "user", None):
-        user_filters = [
-            getattr(User, attr) == value
+    user_filters = (
+        [
+            User.__table__.columns[attr] == value
             for attr, value in query_parameters.user.model_dump(
                 exclude_unset=True,
                 exclude_none=True,
             ).items()
         ]
+        if query_parameters.user
+        else []
+    )
 
-    filters = employee_filters + user_filters
+    statement = select(Employee)
 
-    statement: Any = select(Employee).join(User).offset(offset).limit(limit).where(*filters)
+    if user_filters:
+        statement = statement.join(User)
+
+    statement = (
+        statement.where(Employee.company_id == company_id, *employee_filters, *user_filters)
+        .order_by(Employee.id)
+        .offset(query_parameters.offset)
+        .limit(query_parameters.limit)
+    )
 
     return sqlmodel_session.exec(statement).all()
 
