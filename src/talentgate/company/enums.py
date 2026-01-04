@@ -6,7 +6,12 @@ class CompanyLocationType(str, Enum):
     OFFICE = "Office"
 
 
-class LinkType(str, Enum):
+class CompanyLinkType(str, Enum):
     WEBSITE = "Website"
     LINKEDIN = "LinkedIn"
     GITHUB = "Github"
+
+
+class CompanyEmployeeTitle(str, Enum):
+    FOUNDER = "Founder"
+    RECRUITER = "Recruiter"

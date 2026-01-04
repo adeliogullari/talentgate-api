@@ -28,7 +28,7 @@ from src.talentgate.payment.models import (
     RetrievedUnitPrice,
 )
 from src.talentgate.user import service as user_service
-from src.talentgate.user.models import UpdateSubscription, User
+from src.talentgate.user.models import UpdateUserSubscription, User
 
 settings = get_settings()
 
@@ -137,7 +137,7 @@ async def update_subscription(
     await user_service.update_subscription(
         sqlmodel_session=sqlmodel_session,
         retrieved_subscription=retrieved_user.subscription,
-        subscription=UpdateSubscription(
+        subscription=UpdateUserSubscription(
             paddle_subscription_id=subscription.id,
             plan=plan,
             start_date=start_date,
@@ -165,7 +165,7 @@ async def cancel_subscription(paddle_client: Client, sqlmodel_session: Session, 
     await user_service.update_subscription(
         sqlmodel_session=sqlmodel_session,
         retrieved_subscription=retrieved_user.subscription,
-        subscription=UpdateSubscription(
+        subscription=UpdateUserSubscription(
             paddle_subscription_id=None,
         ),
     )

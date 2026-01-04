@@ -21,7 +21,8 @@ from src.talentgate.auth.views import router as auth_router
 from src.talentgate.company.views import router as company_router
 from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
-from src.talentgate.employee.views import router as employee_router
+
+# from src.talentgate.employee.views import router as employee_router
 from src.talentgate.job.views import router as job_router
 from src.talentgate.storage.service import get_minio_client
 from src.talentgate.user.views import router as user_router
@@ -44,7 +45,7 @@ async def start_application() -> FastAPI | None:
     app = FastAPI()
     app.include_router(auth_router)
     app.include_router(user_router)
-    app.include_router(employee_router)
+    # app.include_router(employee_router)
     app.include_router(company_router)
     app.include_router(application_router)
     app.include_router(job_router)

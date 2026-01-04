@@ -70,7 +70,6 @@ class EmployeeQueryParameters(BaseModel):
 class UpdateEmployee(BaseModel):
     title: str | None = None
     user: UpdateUser | None = None
-    company_id: int | None = None
 
 
 class UpdatedEmployee(BaseModel):

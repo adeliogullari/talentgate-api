@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from src.talentgate.company.models import Company
 from src.talentgate.database.models import BaseModel
 
 if TYPE_CHECKING:
     from src.talentgate.application.models import Application
+    from src.talentgate.company.models import Company
 
 
 class JobAddress(SQLModel, table=True):
@@ -20,10 +20,8 @@ class JobAddress(SQLModel, table=True):
     state: str | None = Field(default=None)
     country: str | None = Field(default=None)
     postal_code: str | None = Field(default=None)
-    location: Optional["JobLocation"] = Relationship(
-        back_populates="address",
-        sa_relationship_kwargs={"uselist": False},
-    )
+    location_id: int | None = Field(default=None, foreign_key="job_location.id", ondelete="CASCADE")
+    location: Optional["JobLocation"] = Relationship(back_populates="address")
 
 
 class JobLocation(SQLModel, table=True):
@@ -33,8 +31,8 @@ class JobLocation(SQLModel, table=True):
     type: str | None = Field(default=None)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
-    address_id: int | None = Field(default=None, foreign_key="job_address.id")
-    address: JobAddress | None = Relationship(back_populates="location")
+    address: JobAddress | None = Relationship(back_populates="location", cascade_delete=True)
+    job_id: int | None = Field(default=None, foreign_key="job.id", ondelete="CASCADE")
     job: Optional["Job"] = Relationship(back_populates="location")
 
 
@@ -45,6 +43,8 @@ class JobSalary(SQLModel, table=True):
     min: float | None = Field(default=None, ge=0)
     max: float | None = Field(default=None, ge=0)
     frequency: str | None = Field(default=None)
+    currency: str | None = Field(default=None)
+    job_id: int | None = Field(default=None, foreign_key="job.id", ondelete="CASCADE")
     job: Optional["Job"] = Relationship(back_populates="salary")
 
 
@@ -56,28 +56,21 @@ class Job(SQLModel, table=True):
     description: str | None = Field(default=None)
     department: str | None = Field(default=None)
     employment_type: str | None = Field(default=None)
-    applications: list["Application"] = Relationship(back_populates="job")
-    location_id: int | None = Field(foreign_key="job_location.id", ondelete="CASCADE")
+    applications: list["Application"] = Relationship(back_populates="job", cascade_delete=True)
     location: JobLocation | None = Relationship(
         back_populates="job",
-        sa_relationship_kwargs={
-            "uselist": False,
-        },
+        cascade_delete=True,
     )
-    salary_id: int | None = Field(foreign_key="job_salary.id", ondelete="CASCADE")
     salary: JobSalary | None = Relationship(
         back_populates="job",
-        sa_relationship_kwargs={"uselist": False},
+        cascade_delete=True,
     )
-    company_id: int | None = Field(foreign_key="company.id")
-    company: Company | None = Relationship(
-        back_populates="jobs",
-        sa_relationship_kwargs={"uselist": False},
-    )
-    created_at: float | None = Field(
+    company_id: int | None = Field(default=None, foreign_key="company.id", ondelete="CASCADE")
+    company: Optional["Company"] = Relationship(back_populates="jobs")
+    created_at: float = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
     )
-    updated_at: float | None = Field(
+    updated_at: float = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
         sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
     )
@@ -169,6 +162,7 @@ class CreateSalary(BaseModel):
     min: float | None = None
     max: float | None = None
     frequency: str | None = None
+    currency: str | None = None
 
 
 class CreatedSalary(BaseModel):
@@ -176,6 +170,7 @@ class CreatedSalary(BaseModel):
     min: float | None = None
     max: float | None = None
     frequency: str | None = None
+    currency: str | None = None
 
 
 class RetrievedJobSalary(BaseModel):
@@ -183,12 +178,14 @@ class RetrievedJobSalary(BaseModel):
     min: float | None = None
     max: float | None = None
     frequency: str | None = None
+    currency: str | None = None
 
 
 class UpdateSalary(BaseModel):
     min: float | None = None
     max: float | None = None
     frequency: str | None = None
+    currency: str | None = None
 
 
 class UpdatedSalary(BaseModel):
@@ -196,6 +193,7 @@ class UpdatedSalary(BaseModel):
     min: float | None = None
     max: float | None = None
     frequency: str | None = None
+    currency: str | None = None
 
 
 class JobRequest(SQLModel):
@@ -231,8 +229,16 @@ class JobQueryParameters(SQLModel):
     department: list[str] | None = None
 
 
-class CreateJob(JobRequest):
-    pass
+class CreateJob(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    department: str | None = None
+    employment_type: str | None = None
+    company_id: int | None = None
+    location: CreateJobLocation | None = None
+    salary: CreateSalary | None = None
+    created_at: float | None = None
+    updated_at: float | None = None
 
 
 class CreatedJob(JobResponse):

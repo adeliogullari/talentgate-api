@@ -23,10 +23,12 @@ from src.talentgate.job.models import (
 async def create_address(
     *,
     sqlmodel_session: Session,
+    location_id: int,
     address: CreateJobAddress,
 ) -> JobAddress:
     created_address = JobAddress(
         **address.model_dump(exclude_unset=True, exclude_none=True),
+        location_id=location_id,
     )
 
     sqlmodel_session.add(created_address)
@@ -39,9 +41,10 @@ async def create_address(
 async def retrieve_address_by_id(
     *,
     sqlmodel_session: Session,
+    location_id: int,
     address_id: int,
 ) -> JobAddress:
-    statement: Any = select(JobAddress).where(JobAddress.id == address_id)
+    statement: Any = select(JobAddress).where(JobAddress.location_id == location_id, JobAddress.id == address_id)
 
     return sqlmodel_session.exec(statement).one_or_none()
 
@@ -63,44 +66,25 @@ async def update_address(
     return retrieved_address
 
 
-async def upsert_address(
-    *,
-    sqlmodel_session: Session,
-    address: CreateJobAddress | UpdateJobAddress,
-) -> JobAddress:
-    retrieved_address = await retrieve_address_by_id(
-        sqlmodel_session=sqlmodel_session,
-        address_id=address.id,
-    )
-    if retrieved_address:
-        return await update_address(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_address=retrieved_address,
-            address=address,
-        )
-    return await create_address(sqlmodel_session=sqlmodel_session, address=address)
-
-
 async def create_location(
     *,
     sqlmodel_session: Session,
+    job_id: int,
     location: CreateJobLocation,
 ) -> JobLocation:
-    address = None
-    if getattr(location, "address", None) is not None:
-        address = await create_address(
-            sqlmodel_session=sqlmodel_session,
-            address=location.address,
-        )
-
     created_location = JobLocation(
         **location.model_dump(
             exclude_unset=True,
             exclude_none=True,
             exclude={"address"},
         ),
-        address=address,
+        job_id=job_id,
     )
+
+    if "address" in location.model_fields_set and location.address is not None:
+        created_location.address = await create_address(
+            sqlmodel_session=sqlmodel_session, location_id=created_location.id, address=location.address
+        )
 
     sqlmodel_session.add(created_location)
     sqlmodel_session.commit()
@@ -112,9 +96,10 @@ async def create_location(
 async def retrieve_location_by_id(
     *,
     sqlmodel_session: Session,
+    job_id: int,
     location_id: int,
 ) -> JobLocation:
-    statement: Any = select(JobLocation).where(JobLocation.id == location_id)
+    statement: Any = select(JobLocation).where(JobLocation.job_id == job_id, JobLocation.id == location_id)
 
     return sqlmodel_session.exec(statement).one_or_none()
 
@@ -125,9 +110,16 @@ async def update_location(
     retrieved_location: JobLocation,
     location: UpdateJobLocation,
 ) -> JobLocation:
-    if getattr(location, "address", None) is not None:
-        retrieved_location.address = await upsert_address(
+    if "address" in location.model_fields_set and location.address is not None:
+        retrieved_address = await retrieve_address_by_id(
             sqlmodel_session=sqlmodel_session,
+            location_id=retrieved_location.id,
+            address_id=retrieved_location.address.id,
+        )
+
+        retrieved_location.address = await update_address(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_address=retrieved_address,
             address=location.address,
         )
 
@@ -146,34 +138,13 @@ async def update_location(
     return retrieved_location
 
 
-async def upsert_location(
-    *,
-    sqlmodel_session: Session,
-    location: CreateJobLocation | UpdateJobLocation,
-) -> JobLocation:
-    retrieved_location = await retrieve_location_by_id(
-        sqlmodel_session=sqlmodel_session,
-        location_id=location.id,
-    )
-
-    if retrieved_location:
-        return await update_location(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_location=retrieved_location,
-            location=location,
-        )
-
-    return await create_location(sqlmodel_session=sqlmodel_session, location=location)
-
-
 async def create_salary(
     *,
     sqlmodel_session: Session,
+    job_id: int,
     salary: CreateSalary,
 ) -> JobSalary:
-    created_salary = JobSalary(
-        **salary.model_dump(exclude_unset=True, exclude_none=True),
-    )
+    created_salary = JobSalary(**salary.model_dump(exclude_unset=True, exclude_none=True), job_id=job_id)
 
     sqlmodel_session.add(created_salary)
     sqlmodel_session.commit()
@@ -185,9 +156,10 @@ async def create_salary(
 async def retrieve_salary_by_id(
     *,
     sqlmodel_session: Session,
+    job_id: int,
     salary_id: int,
 ) -> JobSalary:
-    statement: Any = select(JobSalary).where(JobSalary.id == salary_id)
+    statement: Any = select(JobSalary).where(JobSalary.job_id == job_id, JobSalary.id == salary_id)
 
     return sqlmodel_session.exec(statement).one_or_none()
 
@@ -209,48 +181,24 @@ async def update_salary(
     return retrieved_salary
 
 
-async def upsert_salary(
-    *,
-    sqlmodel_session: Session,
-    salary: CreateSalary | UpdateSalary,
-) -> JobSalary:
-    retrieved_salary = await retrieve_salary_by_id(
-        sqlmodel_session=sqlmodel_session,
-        salary_id=salary.id,
-    )
-    if retrieved_salary:
-        return await update_salary(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_salary=retrieved_salary,
-            salary=salary,
-        )
-    return await create_salary(sqlmodel_session=sqlmodel_session, salary=salary)
-
-
 async def create(*, sqlmodel_session: Session, job: CreateJob) -> Job:
-    location = None
-    if getattr(job, "location", None) is not None:
-        location = await create_location(
-            sqlmodel_session=sqlmodel_session,
-            location=job.location,
-        )
-
-    salary = None
-    if getattr(job, "salary", None) is not None:
-        salary = await create_salary(
-            sqlmodel_session=sqlmodel_session,
-            salary=job.salary,
-        )
-
     created_job = Job(
         **job.model_dump(
             exclude_unset=True,
             exclude_none=True,
             exclude={"location", "salary"},
         ),
-        location=location,
-        salary=salary,
     )
+
+    if "location" in job.model_fields_set and job.location is not None:
+        created_job.location = await create_location(
+            sqlmodel_session=sqlmodel_session, job_id=created_job.id, location=job.location
+        )
+
+    if "salary" in job.model_fields_set and job.location is not None:
+        created_job.salary = await create_salary(
+            sqlmodel_session=sqlmodel_session, job_id=created_job.id, salary=job.salary
+        )
 
     sqlmodel_session.add(created_job)
     sqlmodel_session.commit()
@@ -292,17 +240,21 @@ async def update(
     retrieved_job: Job,
     job: UpdateJob,
 ) -> Job:
-    if getattr(job, "location", None) is not None:
-        retrieved_job.location = await upsert_location(
-            sqlmodel_session=sqlmodel_session,
-            location=job.location,
+    if "location" in job.model_fields_set and job.location is not None:
+        retrieved_location = await retrieve_location_by_id(
+            sqlmodel_session=sqlmodel_session, job_id=retrieved_job.id, location_id=retrieved_job.location.id
         )
 
-    if getattr(job, "salary", None) is not None:
-        retrieved_job.salary = await upsert_salary(
-            sqlmodel_session=sqlmodel_session,
-            salary=job.salary,
+        await update_location(
+            sqlmodel_session=sqlmodel_session, retrieved_location=retrieved_location, location=job.location
         )
+
+    if "salary" in job.model_fields_set and job.salary is not None:
+        retrieved_salary = await retrieve_salary_by_id(
+            sqlmodel_session=sqlmodel_session, job_id=retrieved_job.id, salary_id=retrieved_job.salary.id
+        )
+
+        await update_salary(sqlmodel_session=sqlmodel_session, retrieved_salary=retrieved_salary, salary=job.salary)
 
     retrieved_job.sqlmodel_update(
         job.model_dump(

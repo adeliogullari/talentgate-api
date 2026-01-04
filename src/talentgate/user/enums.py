@@ -1,13 +1,13 @@
 from enum import Enum
 
 
-class SubscriptionPlan(str, Enum):
+class UserSubscriptionPlan(str, Enum):
     BASIC = "basic"
     STANDARD = "standard"
     PREMIUM = "premium"
 
 
-class SubscriptionStatus(str, Enum):
+class UserSubscriptionStatus(str, Enum):
     ACTIVE = "active"
     EXPIRED = "expired"
 

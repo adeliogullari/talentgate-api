@@ -9,11 +9,11 @@ from minio import Minio
 from starlette.datastructures import Headers
 
 from src.talentgate.user.models import (
-    CreateSubscription,
+    CreateUserSubscription,
     CreateUser,
     SubscriptionPlan,
     UpdateCurrentUser,
-    UpdateSubscription,
+    UpdateUserSubscription,
     UpdateUser,
     User,
     UserRole,
@@ -22,7 +22,7 @@ from src.talentgate.user.models import (
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_user(client: TestClient, headers: Headers) -> None:
-    subscription = CreateSubscription(
+    subscription = CreateUserSubscription(
         paddle_subscription_id=str(uuid4()),
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
@@ -130,7 +130,7 @@ async def test_retrieve_users(client: TestClient, user: User, headers: Headers) 
 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_update_user(client: TestClient, user: User, headers: Headers) -> None:
-    subscription = UpdateSubscription(
+    subscription = UpdateUserSubscription(
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),

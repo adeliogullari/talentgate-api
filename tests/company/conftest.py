@@ -4,12 +4,11 @@ from uuid import uuid4
 import pytest
 from sqlmodel import Session
 
-from src.talentgate.company.enums import LinkType
+from src.talentgate.company.enums import LinkType, CompanyLocationType
 from src.talentgate.company.models import (
     Company,
     CompanyAddress,
     CompanyLocation,
-    CompanyLocationType,
     CompanyLink,
 )
 from src.talentgate.employee.models import Employee

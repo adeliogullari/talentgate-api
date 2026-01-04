@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlmodel import Field, Relationship, SQLModel
 
 from src.talentgate.database.models import BaseModel
-from src.talentgate.user.enums import SubscriptionPlan, SubscriptionStatus, UserRole
+from src.talentgate.user.enums import UserRole, UserSubscriptionPlan, UserSubscriptionStatus
 
 if TYPE_CHECKING:
     from src.talentgate.employee.models import Employee
@@ -15,7 +15,7 @@ class UserSubscription(SQLModel, table=True):
 
     id: int = Field(primary_key=True)
     paddle_subscription_id: str | None = Field(default=None)
-    plan: str = Field(default=SubscriptionPlan.BASIC.value)
+    plan: str = Field(default=UserSubscriptionPlan.BASIC.value)
     start_date: float = Field(
         default_factory=lambda: (datetime.now(UTC) - timedelta(minutes=2)).timestamp(),
     )
@@ -33,11 +33,11 @@ class UserSubscription(SQLModel, table=True):
     )
 
     @property
-    def status(self) -> SubscriptionStatus:
+    def status(self) -> UserSubscriptionStatus:
         now = datetime.now(UTC).timestamp()
         if self.end_date >= now:
-            return SubscriptionStatus.ACTIVE
-        return SubscriptionStatus.EXPIRED
+            return UserSubscriptionStatus.ACTIVE
+        return UserSubscriptionStatus.EXPIRED
 
 
 class User(SQLModel, table=True):
@@ -63,14 +63,14 @@ class User(SQLModel, table=True):
     )
 
 
-class CreateSubscription(BaseModel):
+class CreateUserSubscription(BaseModel):
     paddle_subscription_id: str | None = None
     plan: str | None = None
     start_date: float | None = None
     end_date: float | None = None
 
 
-class CreatedSubscription(BaseModel):
+class CreatedUserSubscription(BaseModel):
     id: int
     paddle_subscription_id: str | None = None
     plan: str
@@ -81,7 +81,7 @@ class CreatedSubscription(BaseModel):
     updated_at: float
 
 
-class RetrievedSubscription(BaseModel):
+class RetrievedUserSubscription(BaseModel):
     id: int
     paddle_subscription_id: str | None = None
     plan: str
@@ -92,14 +92,14 @@ class RetrievedSubscription(BaseModel):
     updated_at: float
 
 
-class UpdateSubscription(BaseModel):
+class UpdateUserSubscription(BaseModel):
     paddle_subscription_id: str | None = None
     plan: str | None = None
     start_date: float | None = None
     end_date: float | None = None
 
 
-class UpdatedSubscription(BaseModel):
+class UpdatedUserSubscription(BaseModel):
     id: int
     paddle_subscription_id: str | None = None
     plan: str
@@ -118,7 +118,7 @@ class CreateUser(BaseModel):
     password: str
     verified: bool | None = None
     role: str | None = None
-    subscription: CreateSubscription | None = None
+    subscription: CreateUserSubscription | None = None
 
 
 class CreatedUser(BaseModel):
@@ -129,7 +129,7 @@ class CreatedUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: CreatedSubscription | None = None
+    subscription: CreatedUserSubscription | None = None
     created_at: float
     updated_at: float
 
@@ -142,7 +142,7 @@ class RetrievedUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: RetrievedSubscription | None = None
+    subscription: RetrievedUserSubscription | None = None
     created_at: float
     updated_at: float
 
@@ -155,7 +155,7 @@ class RetrievedCurrentUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: RetrievedSubscription | None = None
+    subscription: RetrievedUserSubscription | None = None
     created_at: float
     updated_at: float
 
@@ -181,7 +181,7 @@ class UpdateUser(BaseModel):
     verified: bool | None = None
     role: str | None = None
     profile: str | None = None
-    subscription: UpdateSubscription | None = None
+    subscription: UpdateUserSubscription | None = None
 
 
 class UpdatedUser(BaseModel):
@@ -192,7 +192,7 @@ class UpdatedUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: UpdatedSubscription | None = None
+    subscription: UpdatedUserSubscription | None = None
     created_at: float
     updated_at: float
 
@@ -213,7 +213,7 @@ class UpdatedCurrentUser(BaseModel):
     email: str
     verified: bool
     role: str
-    subscription: UpdatedSubscription | None = None
+    subscription: UpdatedUserSubscription | None = None
     created_at: float
     updated_at: float
 

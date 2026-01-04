@@ -8,11 +8,11 @@ from sqlmodel import Session
 
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
-    CreateSubscription,
+    CreateUserSubscription,
     CreateUser,
     SubscriptionPlan,
     SubscriptionStatus,
-    UpdateSubscription,
+    UpdateUserSubscription,
     UpdateUser,
     User,
     UserQueryParameters,
@@ -56,7 +56,7 @@ async def test_retrieve_profile(minio_client: Minio):
 
 
 async def test_create_subscription(sqlmodel_session: Session, user: User) -> None:
-    subscription = CreateSubscription(
+    subscription = CreateUserSubscription(
         paddle_subscription_id=str(uuid4()),
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
@@ -139,7 +139,7 @@ async def test_update_subscription(
 ) -> None:
     retrieved_subscription = make_subscription()
 
-    subscription = UpdateSubscription(
+    subscription = UpdateUserSubscription(
         paddle_subscription_id=str(uuid4()),
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
@@ -157,7 +157,7 @@ async def test_update_subscription(
 
 
 async def test_create(sqlmodel_session: Session) -> None:
-    subscription = CreateSubscription(
+    subscription = CreateUserSubscription(
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
@@ -237,7 +237,7 @@ async def test_retrieve_by_query_parameters(
 async def test_update(sqlmodel_session: Session, make_user, subscription) -> None:
     retrieved_user = make_user()
 
-    subscription = UpdateSubscription(
+    subscription = UpdateUserSubscription(
         paddle_subscription_id=str(uuid4()),
         plan=SubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),

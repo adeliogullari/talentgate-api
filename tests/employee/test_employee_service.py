@@ -57,7 +57,7 @@ async def test_retrieve_by_id(sqlmodel_session: Session, employee: Employee, com
     assert retrieved_employee.id == employee.id
 
 
-async def test_retrieve_by_query_parameters(sqlmodel_session: Session, employee: Employee) -> None:
+async def test_retrieve_by_query_parameters(sqlmodel_session: Session, employee: Employee, company: Company) -> None:
     query_parameters = EmployeeQueryParameters(
         id=employee.id,
         title=employee.title,
@@ -73,7 +73,7 @@ async def test_retrieve_by_query_parameters(sqlmodel_session: Session, employee:
     )
 
     retrieved_employees = await retrieve_by_query_parameters(
-        sqlmodel_session=sqlmodel_session, query_parameters=query_parameters
+        sqlmodel_session=sqlmodel_session, company_id=company.id, query_parameters=query_parameters
     )
 
     retrieved_employees[0].id = employee.id

@@ -6,7 +6,6 @@ from sqlmodel import Field, Relationship, SQLModel
 from src.talentgate.application.enums import ApplicationStatus
 
 if TYPE_CHECKING:
-    from src.talentgate.employee.models import Employee
     from src.talentgate.job.models import Job
 
 
@@ -20,10 +19,8 @@ class ApplicationAddress(SQLModel, table=True):
     state: str | None = Field(default=None)
     country: str | None = Field(default=None)
     postal_code: str | None = Field(default=None)
-    application: Optional["Application"] = Relationship(
-        back_populates="address",
-        sa_relationship_kwargs={"uselist": False},
-    )
+    application_id: int | None = Field(default=None, foreign_key="application.id", ondelete="CASCADE")
+    application: Optional["Application"] = Relationship(back_populates="address")
 
 
 class ApplicationLink(SQLModel, table=True):
@@ -32,50 +29,8 @@ class ApplicationLink(SQLModel, table=True):
     id: int = Field(primary_key=True)
     type: str | None = Field(default=None)
     url: str | None = Field(default=None, max_length=2048)
-    application_id: int | None = Field(default=None, foreign_key="application.id")
+    application_id: int | None = Field(default=None, foreign_key="application.id", ondelete="CASCADE")
     application: Optional["Application"] = Relationship(back_populates="links")
-
-
-class ApplicationEvaluation(SQLModel, table=True):
-    __tablename__ = "application_evaluation"
-
-    id: int = Field(primary_key=True)
-    comment: str | None = Field(nullable=False)
-    rating: int | None = Field(default=None, ge=0, le=5)
-    employee_id: int | None = Field(default=None, foreign_key="employee.id")
-    employee: Optional["Employee"] = Relationship(back_populates="evaluations")
-    application_id: int | None = Field(default=None, foreign_key="application.id")
-    application: Optional["Application"] = Relationship(back_populates="evaluations")
-
-    created_at: datetime | None = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime | None = Field(
-        default_factory=lambda: datetime.now(UTC),
-        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC)},
-    )
-
-
-class ApplicationEvaluationRequest(SQLModel):
-    comment: str | None = None
-    rating: int | None = None
-    employee_id: int | None = None
-    application_id: int | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-
-
-class ApplicationEvaluationQueryParameters(SQLModel):
-    offset: int | None = None
-    limit: int | None = None
-
-
-class ApplicationEvaluationResponse(SQLModel):
-    id: int | None = None
-    comment: str | None = None
-    rating: int | None = None
-    employee_id: int | None = None
-    application_id: int | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
 
 
 class Application(SQLModel, table=True):
@@ -94,9 +49,6 @@ class Application(SQLModel, table=True):
         sa_relationship_kwargs={"uselist": False},
     )
     links: list[ApplicationLink] = Relationship(back_populates="application")
-    evaluations: list[ApplicationEvaluation] = Relationship(
-        back_populates="application",
-    )
     job_id: int | None = Field(default=None, foreign_key="job.id")
     job: Optional["Job"] = Relationship(back_populates="applications")
     created_at: datetime | None = Field(default=datetime.now(UTC))
@@ -106,74 +58,80 @@ class Application(SQLModel, table=True):
     )
 
 
-class CreateResume(SQLModel):
-    name: str | None = None
-    data: bytes | None = None
+class CreateApplicationAddress(SQLModel):
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class RetrievedResume(SQLModel):
-    name: str | None = None
-    data: bytes | None = None
+class CreatedApplicationAddress(SQLModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class CreateAddress(SQLModel):
-    pass
+class RetrievedApplicationAddress(SQLModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class CreatedAddress(SQLModel):
-    pass
+class UpdateApplicationAddress(SQLModel):
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class RetrievedAddress(SQLModel):
-    pass
+class UpdatedApplicationAddress(SQLModel):
+    id: int
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
-class UpdateAddress(SQLModel):
-    pass
+class CreateApplicationLink(SQLModel):
+    type: str | None = None
+    url: str | None = None
 
 
-class UpdatedAddress(SQLModel):
-    pass
+class CreatedApplicationLink(SQLModel):
+    id: int
+    type: str | None = None
+    url: str | None = None
 
 
-class CreateEvaluation(SQLModel):
-    pass
+class RetrievedApplicationLink(SQLModel):
+    id: int
+    type: str | None = None
+    url: str | None = None
 
 
-class CreatedEvaluation(SQLModel):
-    pass
+class UpdateApplicationLink(SQLModel):
+    type: str | None = None
+    url: str | None = None
 
 
-class RetrievedEvaluation(SQLModel):
-    pass
-
-
-class UpdateEvaluation(SQLModel):
-    pass
-
-
-class UpdatedEvaluation(SQLModel):
-    pass
-
-
-class CreateLink(SQLModel):
-    pass
-
-
-class CreatedLink(SQLModel):
-    pass
-
-
-class RetrievedLink(SQLModel):
-    pass
-
-
-class UpdateLink(SQLModel):
-    pass
-
-
-class UpdatedLink(SQLModel):
-    pass
+class UpdatedApplicationLink(SQLModel):
+    id: int
+    type: str | None = None
+    url: str | None = None
 
 
 class CreateApplication(SQLModel):
@@ -181,10 +139,9 @@ class CreateApplication(SQLModel):
     lastname: str | None = None
     email: str | None = None
     phone: str | None = None
-    resume: CreateResume | None = None
-    address: CreateAddress | None = None
-    links: list[ApplicationLink] = None
-    evaluations: list[ApplicationEvaluation] = None
+    resume: str | None = None
+    address: CreateApplicationAddress | None = None
+    links: list[CreateApplicationLink] | None = None
     status: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -196,16 +153,9 @@ class CreatedApplication(SQLModel):
     lastname: str | None = None
     email: str | None = None
     phone: str | None = None
-    street: str | None = None
-    city: str | None = None
-    state: str | None = None
-    country: str | None = None
-    postal_code: str | None = None
     resume: str | None = None
-    earliest_start_date: datetime | None = None
     status: str | None = None
     links: list[ApplicationLink] = None
-    evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -221,11 +171,9 @@ class RetrievedApplication(SQLModel):
     state: str | None = None
     country: str | None = None
     postal_code: str | None = None
-    resume: RetrievedResume | None = None
-    earliest_start_date: datetime | None = None
+    resume: str | None = None
     status: str | None = None
     links: list[ApplicationLink] = None
-    evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -271,7 +219,6 @@ class UpdatedApplication(SQLModel):
     earliest_start_date: datetime | None = None
     status: str | None = None
     links: list[ApplicationLink] = None
-    evaluations: list[ApplicationEvaluation] = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

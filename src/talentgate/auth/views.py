@@ -36,7 +36,7 @@ from src.talentgate.user.exceptions import (
     InvalidCredentialsException,
     InvalidVerificationException,
 )
-from src.talentgate.user.models import CreateSubscription, CreateUser, UpdateUser, User
+from src.talentgate.user.models import CreateUser, CreateUserSubscription, UpdateUser, User
 from src.talentgate.user.views import retrieve_current_user
 
 from .exceptions import (
@@ -171,36 +171,31 @@ async def google(
             ),
         )
 
-        created_user = await user_service.create(
-            sqlmodel_session=sqlmodel_session,
-            user=CreateUser(
-                firstname=firstname,
-                lastname=lastname,
-                username=username,
-                email=email,
-                password=password,
-                verified=True,
-                subscription=CreateSubscription(
-                    plan=SubscriptionPlan.STANDARD.value,
-                    start_date=datetime.now(UTC).timestamp(),
-                    end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
-                ),
-            ),
-        )
-
-        created_company = await company_service.create(
+        company = await company_service.create(
             sqlmodel_session=sqlmodel_session,
             company=CreateCompany(
-                name=f"{created_user.username}Company",
+                name=f"{username}Company",
             ),
         )
 
         await employee_service.create(
             sqlmodel_session=sqlmodel_session,
+            company_id=company.id,
             employee=CreateEmployee(
                 title=EmployeeTitle.FOUNDER.value,
-                user_id=created_user.id,
-                company_id=created_company.id,
+                user=CreateUser(
+                    firstname=firstname,
+                    lastname=lastname,
+                    username=username,
+                    email=email,
+                    password=password,
+                    verified=True,
+                    subscription=CreateUserSubscription(
+                        plan=SubscriptionPlan.STANDARD.value,
+                        start_date=datetime.now(UTC).timestamp(),
+                        end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                    ),
+                ),
             ),
         )
 
@@ -293,33 +288,31 @@ async def linkedin(
             ),
         )
 
-        created_user = await user_service.create(
+        company = await company_service.create(
             sqlmodel_session=sqlmodel_session,
-            user=CreateUser(
-                firstname=firstname,
-                lastname=lastname,
-                username=username,
-                email=email,
-                password=password,
-                verified=True,
-                subscription=CreateSubscription(
-                    plan=SubscriptionPlan.STANDARD.value,
-                    start_date=datetime.now(UTC).timestamp(),
-                    end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
-                ),
+            company=CreateCompany(
+                name=f"{username}Company",
             ),
         )
 
-        created_employee = await employee_service.create(
+        await employee_service.create(
             sqlmodel_session=sqlmodel_session,
-            employee=CreateEmployee(title=EmployeeTitle.FOUNDER.value, user_id=created_user.id),
-        )
-
-        await company_service.create(
-            sqlmodel_session=sqlmodel_session,
-            company=CreateCompany(
-                name=f"${created_user.username}Company",
-                employees=[CreateEmployee(id=created_employee.id)],
+            company_id=company.id,
+            employee=CreateEmployee(
+                title=EmployeeTitle.FOUNDER.value,
+                user=CreateUser(
+                    firstname=firstname,
+                    lastname=lastname,
+                    username=username,
+                    email=email,
+                    password=password,
+                    verified=True,
+                    subscription=CreateUserSubscription(
+                        plan=SubscriptionPlan.STANDARD.value,
+                        start_date=datetime.now(UTC).timestamp(),
+                        end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                    ),
+                ),
             ),
         )
 
@@ -399,42 +392,37 @@ async def register(
     if retrieved_user:
         raise DuplicateEmailException
 
-    created_user = await user_service.create(
+    company = await company_service.create(
         sqlmodel_session=sqlmodel_session,
-        user=CreateUser(
-            **credentials.model_dump(exclude_unset=True, exclude_none=True),
-            subscription=CreateSubscription(
-                plan=SubscriptionPlan.STANDARD.value,
-                start_date=datetime.now(UTC).timestamp(),
-                end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+        company=CreateCompany(
+            name=f"{credentials.username}Company",
+        ),
+    )
+
+    employee = await employee_service.create(
+        sqlmodel_session=sqlmodel_session,
+        company_id=company.id,
+        employee=CreateEmployee(
+            title=EmployeeTitle.FOUNDER.value,
+            user=CreateUser(
+                **credentials.model_dump(exclude_unset=True, exclude_none=True),
+                subscription=CreateUserSubscription(
+                    plan=SubscriptionPlan.STANDARD.value,
+                    start_date=datetime.now(UTC).timestamp(),
+                    end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                ),
             ),
         ),
     )
 
-    created_company = await company_service.create(
-        sqlmodel_session=sqlmodel_session,
-        company=CreateCompany(
-            name=f"${created_user.username}Company",
-        ),
-    )
-
-    await employee_service.create(
-        sqlmodel_session=sqlmodel_session,
-        employee=CreateEmployee(
-            title=EmployeeTitle.FOUNDER.value,
-            user_id=created_user.id,
-            company_id=created_company.id,
-        ),
-    )
-
     token = auth_service.encode_token(
-        payload={"user_id": str(created_user.id)},
+        payload={"user_id": str(employee.user.id)},
         key=settings.one_time_token_key,
         seconds=settings.one_time_token_expiration,
     )
 
     context = {
-        "firstname": created_user.firstname,
+        "firstname": employee.user.firstname,
         "link": f"${settings.frontend_base_url}/verify?token={token}",
     }
 
@@ -443,10 +431,10 @@ async def register(
         background_tasks=background_tasks,
         context=context,
         from_addr=settings.smtp_email,
-        to_addrs=created_user.email,
+        to_addrs=employee.user.email,
     )
 
-    return created_user
+    return employee.user
 
 
 @router.post(

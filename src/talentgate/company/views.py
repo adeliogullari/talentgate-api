@@ -3,7 +3,7 @@ import string
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
-from typing import Annotated, Sequence
+from typing import Annotated
 from uuid import uuid4
 
 from fastapi import (
@@ -26,8 +26,10 @@ from src.talentgate.auth.exceptions import (
 )
 from src.talentgate.auth.models import AuthenticationTokens
 from src.talentgate.company import service as company_service
+from src.talentgate.company.enums import CompanyEmployeeTitle
 from src.talentgate.company.exceptions import (
     CompanyIdNotFoundException,
+    EmployeeIdNotFoundException,
 )
 from src.talentgate.company.models import (
     Company,
@@ -51,10 +53,13 @@ from src.talentgate.company.models import (
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.employee import service as employee_service
-from src.talentgate.employee.enums import EmployeeTitle
-from src.talentgate.employee.exceptions import EmployeeIdNotFoundException
-from src.talentgate.employee.models import CreateEmployee, DeletedEmployee, Employee, UpdateEmployee, \
-    EmployeeQueryParameters
+from src.talentgate.employee.models import (
+    CreateEmployee,
+    DeletedEmployee,
+    Employee,
+    EmployeeQueryParameters,
+    UpdateEmployee,
+)
 from src.talentgate.job.models import (
     Job,
     JobQueryParameters,
@@ -64,23 +69,64 @@ from src.talentgate.job.models import (
 )
 from src.talentgate.storage.service import get_minio_client
 from src.talentgate.user import service as user_service
+from src.talentgate.user.enums import UserSubscriptionPlan
 from src.talentgate.user.models import (
-    CreateSubscription,
     CreateUser,
-    SubscriptionPlan,
-    SubscriptionStatus,
+    CreateUserSubscription,
     User,
     UserRole,
+    UserSubscriptionStatus,
 )
 from src.talentgate.user.views import retrieve_current_user
 
 router = APIRouter(tags=["company"])
 
 
+class RetrieveCurrentCompanyDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if (
+            user.employee.title == CompanyEmployeeTitle.FOUNDER
+            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
+        ):
+            return True
+        raise InvalidAuthorizationException
+
+
+class RetrieveCurrentCompanyEmployeesDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if (
+            user.employee.title == CompanyEmployeeTitle.FOUNDER
+            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
+        ):
+            return True
+        raise InvalidAuthorizationException
+
+
+class UpdateCurrentCompanyEmployeeDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if (
+            user.employee.title == CompanyEmployeeTitle.FOUNDER
+            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
+        ):
+            return True
+        raise InvalidAuthorizationException
+
+
+class DeleteCurrentCompanyEmployeeDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if (
+            user.employee.title == CompanyEmployeeTitle.FOUNDER
+            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
+        ):
+            return True
+        raise InvalidAuthorizationException
+
+
 @router.get(
     path="/api/v1/me/company",
     response_model=RetrievedCurrentCompany,
     status_code=200,
+    dependencies=[Depends(RetrieveCurrentCompanyDependency())],
 )
 async def retrieve_current_company(
     *,
@@ -96,6 +142,7 @@ async def retrieve_current_company(
     path="/api/v1/me/company/employees",
     response_model=list[CompanyEmployee],
     status_code=200,
+    dependencies=[Depends(RetrieveCurrentCompanyEmployeesDependency())],
 )
 async def retrieve_current_company_employees(
     *,
@@ -112,6 +159,7 @@ async def retrieve_current_company_employees(
     path="/api/v1/me/company/employees/{employee_id}",
     response_model=list[CompanyEmployee],
     status_code=200,
+    dependencies=[Depends(UpdateCurrentCompanyEmployeeDependency())],
 )
 async def update_current_company_employee(
     *,
@@ -250,8 +298,8 @@ async def upload_current_company_logo(
 class CreateCompanyDependency:
     def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if (user.role == UserRole.ADMIN) or (
-            user.subscription.plan == SubscriptionPlan.STANDARD
-            and user.subscription.status == SubscriptionStatus.ACTIVE
+            user.subscription.plan == UserSubscriptionPlan.STANDARD
+            and user.subscription.status == UserSubscriptionStatus.ACTIVE
         ):
             return True
         raise InvalidAuthorizationException
@@ -264,9 +312,9 @@ class RetrieveCompanyDependency:
         user: User = Depends(retrieve_current_user),
     ) -> bool:
         if (user.role == UserRole.ADMIN) or (
-            user.subscription.plan == SubscriptionPlan.STANDARD
-            and user.employee.company.subscription.status == SubscriptionStatus.ACTIVE
-            and user.employee.title in [EmployeeTitle.FOUNDER, EmployeeTitle.RECRUITER]
+            user.subscription.plan == UserSubscriptionPlan.STANDARD
+            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
+            and user.employee.title in [CompanyEmployeeTitle.FOUNDER, CompanyEmployeeTitle.RECRUITER]
             and user.employee.company_id == company_id
         ):
             return True
@@ -287,9 +335,9 @@ class UpdateCompanyDependency:
         user: User = Depends(retrieve_current_user),
     ) -> bool:
         if (user.role == UserRole.ADMIN) or (
-            user.subscription.plan == SubscriptionPlan.STANDARD
-            and user.employee.company.subscription.status == SubscriptionStatus.ACTIVE
-            and user.employee.title in [EmployeeTitle.FOUNDER, EmployeeTitle.RECRUITER]
+            user.subscription.plan == UserSubscriptionPlan.STANDARD
+            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
+            and user.employee.title in [CompanyEmployeeTitle.FOUNDER, CompanyEmployeeTitle.RECRUITER]
             and user.employee.company_id == company_id
         ):
             return True
@@ -303,9 +351,9 @@ class DeleteCompanyDependency:
         user: User = Depends(retrieve_current_user),
     ) -> bool:
         if (user.role == UserRole.ADMIN) or (
-            user.subscription.plan == SubscriptionPlan.STANDARD
-            and user.subscription.status == SubscriptionStatus.ACTIVE
-            and user.employee.title == EmployeeTitle.FOUNDER
+            user.subscription.plan == UserSubscriptionPlan.STANDARD
+            and user.subscription.status == UserSubscriptionStatus.ACTIVE
+            and user.employee.title == CompanyEmployeeTitle.FOUNDER
             and user.employee.company_id == company_id
         ):
             return True
@@ -558,27 +606,6 @@ async def delete_current_company_link(
     )
 
 
-@router.delete(
-    path="/api/v1/me/company/employees/{employee_id}",
-    response_model=DeletedCurrentCompany,
-    status_code=200,
-)
-async def delete_current_company_employee(
-    *,
-    employee_id: int,
-    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
-    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
-) -> Employee:
-    retrieved_employee = await employee_service.retrieve_by_id(
-        sqlmodel_session=sqlmodel_session, company_id=retrieved_company.id, employee_id=employee_id
-    )
-
-    return await employee_service.delete(
-        sqlmodel_session=sqlmodel_session,
-        retrieved_employee=retrieved_employee,
-    )
-
-
 @router.post(
     path="/api/v1/me/company/employee/invite",
     status_code=200,
@@ -663,7 +690,7 @@ async def accept_employee_invitation(
                     email=payload.get("email"),
                     password=password,
                     verified=True,
-                    subscription=CreateSubscription(
+                    subscription=CreateUserSubscription(
                         plan=payload.get("plan"),
                         start_date=datetime.now(UTC).timestamp(),
                         end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),

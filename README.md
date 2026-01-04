@@ -35,3 +35,22 @@ gunzip -c postgres_2025-01-10.sql.gz | \
 ssh user@vps \
   "docker exec -i postgres psql -U admin talentgate"
 ```
+
+
+##### Minio
+
+_Backup_
+```commandline
+ssh user@vps \
+  "docker exec minio \
+   tar -C /data -czf -" \
+> minio_$(date +%F).tar.gz
+```
+
+_Restore_
+```commandline
+gunzip -c minio_2025-01-10.tar.gz | \
+ssh user@vps \
+  "docker exec -i minio \
+   tar -C /data -xzf -"
+```

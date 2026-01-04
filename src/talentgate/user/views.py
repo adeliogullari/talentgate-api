@@ -77,6 +77,41 @@ async def retrieve_current_user(
     return retrieved_user
 
 
+class CreateUserDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if user.role == UserRole.ADMIN:
+            return True
+        raise InvalidAuthorizationException
+
+
+class RetrieveUserDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if user.role == UserRole.ADMIN:
+            return True
+        raise InvalidAuthorizationException
+
+
+class RetrieveUsersDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if user.role == UserRole.ADMIN:
+            return True
+        raise InvalidAuthorizationException
+
+
+class UpdateUserDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if user.role == UserRole.ADMIN:
+            return True
+        raise InvalidAuthorizationException
+
+
+class DeleteUserDependency:
+    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
+        if user.role == UserRole.ADMIN:
+            return True
+        raise InvalidAuthorizationException
+
+
 @router.get(
     path="/api/v1/me/profile",
     response_model=None,
@@ -123,41 +158,6 @@ async def upload_current_user_profile(
         retrieved_user=retrieved_user,
         user=UpdateUser(profile=profile.object_name),
     )
-
-
-class CreateUserDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if user.role == UserRole.ADMIN:
-            return True
-        raise InvalidAuthorizationException
-
-
-class RetrieveUserDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if user.role == UserRole.ADMIN:
-            return True
-        raise InvalidAuthorizationException
-
-
-class RetrieveUsersDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if user.role == UserRole.ADMIN:
-            return True
-        raise InvalidAuthorizationException
-
-
-class UpdateUserDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if user.role == UserRole.ADMIN:
-            return True
-        raise InvalidAuthorizationException
-
-
-class DeleteUserDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if user.role == UserRole.ADMIN:
-            return True
-        raise InvalidAuthorizationException
 
 
 @router.post(

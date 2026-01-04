@@ -11,14 +11,16 @@ from sqlmodel import Session, and_, or_, select
 from config import get_settings
 from src.talentgate.company.models import (
     Company,
-    CompanyAddress,
+    CompanyEmployee,
     CompanyLink,
     CompanyLocation,
+    CompanyLocationAddress,
     CompanyQueryParameters,
     CreateAddress,
     CreateCompany,
     CreateLink,
     CreateLocation,
+    EmployeeQueryParameters,
     UpdateAddress,
     UpdateCompany,
     UpdateCurrentCompany,
@@ -27,8 +29,9 @@ from src.talentgate.company.models import (
 )
 from src.talentgate.email import service as email_service
 from src.talentgate.email.client import EmailClient
-from src.talentgate.employee import service as employee_service
 from src.talentgate.job.models import Job, JobLocation, JobQueryParameters
+from src.talentgate.user import service as user_service
+from src.talentgate.user.models import User
 
 settings = get_settings()
 
@@ -67,13 +70,13 @@ async def retrieve_logo(*, minio_client: Minio, object_name: str) -> bytes:
     return data
 
 
-async def create_address(
+async def create_location_address(
     *,
     sqlmodel_session: Session,
     location_id: int,
     address: CreateAddress,
-) -> CompanyAddress:
-    created_address = CompanyAddress(
+) -> CompanyLocationAddress:
+    created_address = CompanyLocationAddress(
         **address.model_dump(exclude_unset=True, exclude_none=True), location_id=location_id
     )
 
@@ -84,14 +87,14 @@ async def create_address(
     return created_address
 
 
-async def retrieve_address_by_id(
+async def retrieve_location_address_by_id(
     *,
     sqlmodel_session: Session,
     location_id: int,
     address_id: int,
-) -> CompanyAddress:
-    statement: Any = select(CompanyAddress).where(
-        CompanyAddress.location_id == location_id, CompanyAddress.id == address_id
+) -> CompanyLocationAddress:
+    statement: Any = select(CompanyLocationAddress).where(
+        CompanyLocationAddress.location_id == location_id, CompanyLocationAddress.id == address_id
     )
 
     return sqlmodel_session.exec(statement).one_or_none()
@@ -100,9 +103,9 @@ async def retrieve_address_by_id(
 async def update_address(
     *,
     sqlmodel_session: Session,
-    retrieved_address: CompanyAddress,
+    retrieved_address: CompanyLocationAddress,
     address: UpdateAddress,
-) -> CompanyAddress:
+) -> CompanyLocationAddress:
     retrieved_address.sqlmodel_update(
         address.model_dump(exclude_none=True, exclude_unset=True),
     )
@@ -130,7 +133,7 @@ async def create_location(
     )
 
     if "address" in location.model_fields_set and location.address is not None:
-        created_location.address = await create_address(
+        created_location.address = await create_location_address(
             sqlmodel_session=sqlmodel_session, location_id=created_location.id, address=location.address
         )
 
@@ -161,7 +164,7 @@ async def update_location(
     location: UpdateLocation,
 ) -> CompanyLocation:
     if "address" in location.model_fields_set and location.address is not None:
-        retrieved_address = await retrieve_address_by_id(
+        retrieved_address = await retrieve_location_address_by_id(
             sqlmodel_session=sqlmodel_session,
             location_id=retrieved_location.id,
             address_id=retrieved_location.address.id,
@@ -240,6 +243,107 @@ async def delete_link(*, sqlmodel_session: Session, retrieved_link: CompanyLink)
     return retrieved_link
 
 
+async def create_employee(
+    *, sqlmodel_session: Session, company_id: int, employee: CreateCompanyEmployee
+) -> CompanyEmployee:
+    created_employee = CompanyEmployee(
+        **employee.model_dump(exclude_unset=True, exclude_none=True, exclude={"user"}), company_id=company_id
+    )
+
+    if "user" in employee.model_fields_set and employee.user is not None:
+        created_employee.user = await user_service.create(
+            sqlmodel_session=sqlmodel_session,
+            user=employee.user,
+        )
+
+    sqlmodel_session.add(created_employee)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_employee)
+
+    return created_employee
+
+
+async def retrieve_employee_by_id(*, sqlmodel_session: Session, company_id: int, employee_id: int) -> CompanyEmployee:
+    statement: Any = select(CompanyEmployee).where(
+        CompanyEmployee.company_id == company_id, CompanyEmployee.id == employee_id
+    )
+
+    return sqlmodel_session.exec(statement).one_or_none()
+
+
+async def retrieve_employee_by_query_parameters(
+    *,
+    sqlmodel_session: Session,
+    company_id: int,
+    query_parameters: EmployeeQueryParameters,
+) -> Sequence[CompanyEmployee]:
+    employee_filters = [
+        CompanyEmployee.__table__.columns[attr] == value
+        for attr, value in query_parameters.model_dump(
+            exclude={"offset", "limit", "user"},
+            exclude_unset=True,
+            exclude_none=True,
+        ).items()
+    ]
+
+    user_filters = []
+    if "user" in query_parameters.model_fields_set and query_parameters.user is not None:
+        user_filters = [
+            User.__table__.columns[attr] == value
+            for attr, value in query_parameters.user.model_dump(
+                exclude_unset=True,
+                exclude_none=True,
+            ).items()
+        ]
+
+    statement = select(CompanyEmployee)
+
+    if user_filters:
+        statement = statement.join(User)
+
+    statement = (
+        statement.where(CompanyEmployee.company_id == company_id, *employee_filters, *user_filters)
+        .order_by(CompanyEmployee.id)
+        .offset(query_parameters.offset)
+        .limit(query_parameters.limit)
+    )
+
+    return sqlmodel_session.exec(statement).all()
+
+
+async def update_employee(
+    *,
+    sqlmodel_session: Session,
+    retrieved_employee: CompanyEmployee,
+    employee: UpdateCompanyEmployee,
+) -> CompanyEmployee:
+    if "user" in employee.model_fields_set and employee.user is not None:
+        await user_service.update(
+            sqlmodel_session=sqlmodel_session, retrieved_user=retrieved_employee.user, user=employee.user
+        )
+
+    retrieved_employee.sqlmodel_update(
+        employee.model_dump(exclude_none=True, exclude_unset=True, exclude={"user"}),
+    )
+
+    sqlmodel_session.add(retrieved_employee)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(retrieved_employee)
+
+    return retrieved_employee
+
+
+async def delete_employee(
+    *,
+    sqlmodel_session: Session,
+    retrieved_employee: CompanyEmployee,
+) -> CompanyEmployee:
+    sqlmodel_session.delete(retrieved_employee)
+    sqlmodel_session.commit()
+
+    return retrieved_employee
+
+
 async def retrieve_jobs_by_query_parameters(
     *,
     sqlmodel_session: Session,
@@ -302,6 +406,10 @@ async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Compan
         ),
     )
 
+    if "employees" in company.model_fields_set and company.employees is not None:
+        for employee in company.employees:
+            await create_employee(sqlmodel_session=sqlmodel_session, company_id=created_company.id, employee=employee)
+
     if "locations" in company.model_fields_set and company.locations is not None:
         for location in company.locations:
             await create_location(sqlmodel_session=sqlmodel_session, company_id=created_company.id, location=location)
@@ -309,12 +417,6 @@ async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Compan
     if "links" in company.model_fields_set and company.links is not None:
         for link in company.links:
             await create_link(sqlmodel_session=sqlmodel_session, company_id=created_company.id, link=link)
-
-    if "employees" in company.model_fields_set and company.employees is not None:
-        for employee in company.employees:
-            await employee_service.create(
-                sqlmodel_session=sqlmodel_session, company_id=created_company.id, employee=employee
-            )
 
     sqlmodel_session.add(created_company)
     sqlmodel_session.commit()
@@ -362,6 +464,16 @@ async def update(
     retrieved_company: Company,
     company: UpdateCompany | UpdateCurrentCompany,
 ) -> Company:
+    if "employees" in company.model_fields_set and company.employees is not None:
+        for employee in company.employees:
+            retrieved_employee = await retrieve_employee_by_id(
+                sqlmodel_session=sqlmodel_session, company_id=retrieved_company.id, employee_id=employee.id
+            )
+
+            await update_employee(
+                sqlmodel_session=sqlmodel_session, retrieved_employee=retrieved_employee, employee=employee
+            )
+
     if "locations" in company.model_fields_set and company.locations is not None:
         for location in company.locations:
             retrieved_location = await retrieve_location_by_id(
@@ -383,16 +495,6 @@ async def update(
             )
 
             await update_link(sqlmodel_session=sqlmodel_session, retrieved_link=retrieved_link, link=link)
-
-    if "employees" in company.model_fields_set and company.employees is not None:
-        for employee in company.employees:
-            retrieved_employee = await employee_service.retrieve_by_id(
-                sqlmodel_session=sqlmodel_session, company_id=retrieved_company.id, employee_id=employee.id
-            )
-
-            await employee_service.update(
-                sqlmodel_session=sqlmodel_session, retrieved_employee=retrieved_employee, employee=employee
-            )
 
     retrieved_company.sqlmodel_update(
         company.model_dump(

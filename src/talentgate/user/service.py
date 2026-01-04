@@ -9,11 +9,11 @@ from sqlmodel import Session, select
 from config import get_settings
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user.models import (
-    CreateSubscription,
     CreateUser,
+    CreateUserSubscription,
     UpdateCurrentUser,
-    UpdateSubscription,
     UpdateUser,
+    UpdateUserSubscription,
     User,
     UserQueryParameters,
     UserSubscription,
@@ -60,7 +60,7 @@ async def create_subscription(
     *,
     sqlmodel_session: Session,
     user_id: int,
-    subscription: CreateSubscription,
+    subscription: CreateUserSubscription,
 ) -> UserSubscription:
     created_subscription = UserSubscription(
         **subscription.model_dump(exclude_unset=True, exclude_none=True, exclude={"paddle_subscription_id"}),
@@ -95,7 +95,7 @@ async def update_subscription(
     *,
     sqlmodel_session: Session,
     retrieved_subscription: UserSubscription,
-    subscription: UpdateSubscription,
+    subscription: UpdateUserSubscription,
 ) -> UserSubscription:
     retrieved_subscription.sqlmodel_update(
         subscription.model_dump(exclude_none=True, exclude_unset=True, exclude={"paddle_subscription_id"}),
