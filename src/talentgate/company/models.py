@@ -41,7 +41,6 @@ class CompanyLocation(SQLModel, table=True):
     type: str | None = Field(default=None)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
-    timezone: str | None = Field(default=None)
     address: CompanyLocationAddress | None = Relationship(back_populates="location", cascade_delete=True)
     company_id: int | None = Field(default=None, foreign_key="company.id", ondelete="CASCADE")
     company: Optional["Company"] = Relationship(back_populates="locations")
@@ -260,7 +259,7 @@ class RetrievedCompanyEmployee(BaseModel):
     updated_at: float
 
 
-class EmployeeQueryParameters(BaseModel):
+class CompanyEmployeeQueryParameters(BaseModel):
     offset: int | None = None
     limit: int | None = None
     id: int | None = None

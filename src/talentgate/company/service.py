@@ -12,20 +12,22 @@ from config import get_settings
 from src.talentgate.company.models import (
     Company,
     CompanyEmployee,
+    CompanyEmployeeQueryParameters,
     CompanyLink,
     CompanyLocation,
     CompanyLocationAddress,
     CompanyQueryParameters,
-    CreateAddress,
     CreateCompany,
-    CreateLink,
-    CreateLocation,
-    EmployeeQueryParameters,
-    UpdateAddress,
+    CreateCompanyEmployee,
+    CreateCompanyLink,
+    CreateCompanyLocation,
+    CreateCompanyLocationAddress,
     UpdateCompany,
+    UpdateCompanyEmployee,
+    UpdateCompanyLink,
+    UpdateCompanyLocation,
+    UpdateCompanyLocationAddress,
     UpdateCurrentCompany,
-    UpdateLink,
-    UpdateLocation,
 )
 from src.talentgate.email import service as email_service
 from src.talentgate.email.client import EmailClient
@@ -74,7 +76,7 @@ async def create_location_address(
     *,
     sqlmodel_session: Session,
     location_id: int,
-    address: CreateAddress,
+    address: CreateCompanyLocationAddress,
 ) -> CompanyLocationAddress:
     created_address = CompanyLocationAddress(
         **address.model_dump(exclude_unset=True, exclude_none=True), location_id=location_id
@@ -100,11 +102,11 @@ async def retrieve_location_address_by_id(
     return sqlmodel_session.exec(statement).one_or_none()
 
 
-async def update_address(
+async def update_location_address(
     *,
     sqlmodel_session: Session,
     retrieved_address: CompanyLocationAddress,
-    address: UpdateAddress,
+    address: UpdateCompanyLocationAddress,
 ) -> CompanyLocationAddress:
     retrieved_address.sqlmodel_update(
         address.model_dump(exclude_none=True, exclude_unset=True),
@@ -121,7 +123,7 @@ async def create_location(
     *,
     sqlmodel_session: Session,
     company_id: int,
-    location: CreateLocation,
+    location: CreateCompanyLocation,
 ) -> CompanyLocation:
     created_location = CompanyLocation(
         **location.model_dump(
@@ -161,7 +163,7 @@ async def update_location(
     *,
     sqlmodel_session: Session,
     retrieved_location: CompanyLocation,
-    location: UpdateLocation,
+    location: UpdateCompanyLocation,
 ) -> CompanyLocation:
     if "address" in location.model_fields_set and location.address is not None:
         retrieved_address = await retrieve_location_address_by_id(
@@ -170,7 +172,7 @@ async def update_location(
             address_id=retrieved_location.address.id,
         )
 
-        retrieved_location.address = await update_address(
+        retrieved_location.address = await update_location_address(
             sqlmodel_session=sqlmodel_session,
             retrieved_address=retrieved_address,
             address=location.address,
@@ -198,7 +200,7 @@ async def delete_location(*, sqlmodel_session: Session, retrieved_location: Comp
     return retrieved_location
 
 
-async def create_link(*, sqlmodel_session: Session, company_id: int, link: CreateLink) -> CompanyLink:
+async def create_link(*, sqlmodel_session: Session, company_id: int, link: CreateCompanyLink) -> CompanyLink:
     created_link = CompanyLink(**link.model_dump(exclude_unset=True, exclude_none=True), company_id=company_id)
 
     sqlmodel_session.add(created_link)
@@ -223,7 +225,7 @@ async def update_link(
     *,
     sqlmodel_session: Session,
     retrieved_link: CompanyLink,
-    link: UpdateLink,
+    link: UpdateCompanyLink,
 ) -> CompanyLink:
     retrieved_link.sqlmodel_update(
         link.model_dump(exclude_none=True, exclude_unset=True),
@@ -275,7 +277,7 @@ async def retrieve_employee_by_query_parameters(
     *,
     sqlmodel_session: Session,
     company_id: int,
-    query_parameters: EmployeeQueryParameters,
+    query_parameters: CompanyEmployeeQueryParameters,
 ) -> Sequence[CompanyEmployee]:
     employee_filters = [
         CompanyEmployee.__table__.columns[attr] == value

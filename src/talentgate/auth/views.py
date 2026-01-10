@@ -19,16 +19,14 @@ from starlette.status import (
 from config import Settings, get_settings
 from src.talentgate.auth import service as auth_service
 from src.talentgate.company import service as company_service
-from src.talentgate.company.models import CreateCompany
+from src.talentgate.company.enums import CompanyEmployeeTitle
+from src.talentgate.company.models import CreateCompany, CreateCompanyEmployee
 from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
-from src.talentgate.employee import service as employee_service
-from src.talentgate.employee.enums import EmployeeTitle
-from src.talentgate.employee.models import CreateEmployee
 from src.talentgate.payment import service as payment_service
 from src.talentgate.payment.service import get_paddle_client
 from src.talentgate.user import service as user_service
-from src.talentgate.user.enums import SubscriptionPlan
+from src.talentgate.user.enums import UserSubscriptionPlan
 from src.talentgate.user.exceptions import (
     DuplicateEmailException,
     DuplicateUsernameException,
@@ -178,11 +176,11 @@ async def google(
             ),
         )
 
-        await employee_service.create(
+        await company_service.create_employee(
             sqlmodel_session=sqlmodel_session,
             company_id=company.id,
-            employee=CreateEmployee(
-                title=EmployeeTitle.FOUNDER.value,
+            employee=CreateCompanyEmployee(
+                title=CompanyEmployeeTitle.FOUNDER.value,
                 user=CreateUser(
                     firstname=firstname,
                     lastname=lastname,
@@ -191,7 +189,7 @@ async def google(
                     password=password,
                     verified=True,
                     subscription=CreateUserSubscription(
-                        plan=SubscriptionPlan.STANDARD.value,
+                        plan=UserSubscriptionPlan.STANDARD.value,
                         start_date=datetime.now(UTC).timestamp(),
                         end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
                     ),
@@ -295,11 +293,11 @@ async def linkedin(
             ),
         )
 
-        await employee_service.create(
+        await company_service.create_employee(
             sqlmodel_session=sqlmodel_session,
             company_id=company.id,
-            employee=CreateEmployee(
-                title=EmployeeTitle.FOUNDER.value,
+            employee=CreateCompanyEmployee(
+                title=CompanyEmployeeTitle.FOUNDER.value,
                 user=CreateUser(
                     firstname=firstname,
                     lastname=lastname,
@@ -308,7 +306,7 @@ async def linkedin(
                     password=password,
                     verified=True,
                     subscription=CreateUserSubscription(
-                        plan=SubscriptionPlan.STANDARD.value,
+                        plan=UserSubscriptionPlan.STANDARD.value,
                         start_date=datetime.now(UTC).timestamp(),
                         end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
                     ),
@@ -399,15 +397,15 @@ async def register(
         ),
     )
 
-    employee = await employee_service.create(
+    employee = await company_service.create_employee(
         sqlmodel_session=sqlmodel_session,
         company_id=company.id,
-        employee=CreateEmployee(
-            title=EmployeeTitle.FOUNDER.value,
+        employee=CreateCompanyEmployee(
+            title=CompanyEmployeeTitle.FOUNDER.value,
             user=CreateUser(
                 **credentials.model_dump(exclude_unset=True, exclude_none=True),
                 subscription=CreateUserSubscription(
-                    plan=SubscriptionPlan.STANDARD.value,
+                    plan=UserSubscriptionPlan.STANDARD.value,
                     start_date=datetime.now(UTC).timestamp(),
                     end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
                 ),

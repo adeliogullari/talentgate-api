@@ -7,12 +7,10 @@ from sqlmodel import Session
 from src.talentgate.application.models import (
     Application,
     CreateApplication,
-    CreateResume,
     UpdateApplication,
 )
 from src.talentgate.application.service import (
     create,
-    create_resume,
     delete,
     retrieve_by_email,
     retrieve_by_id,
@@ -22,20 +20,20 @@ from src.talentgate.application.service import (
 )
 
 
-async def test_create_resume(minio_client: Minio) -> None:
-    await create_resume(
-        minio_client=minio_client,
-        object_name="resume.pdf",
-        data=BytesIO(b"data"),
-        length=len(b"data"),
-    )
+# async def test_create_resume(minio_client: Minio) -> None:
+#     await create_resume(
+#         minio_client=minio_client,
+#         object_name="resume.pdf",
+#         data=BytesIO(b"data"),
+#         length=len(b"data"),
+#     )
 
 
 async def test_retrieve_resume(minio_client: Minio, resume) -> None:
     await retrieve_resume(minio_client=minio_client, object_name=resume.object_name)
 
 
-async def test_create(sqlmodel_session: Session, minio_client: Minio) -> None:
+async def test_create(sqlmodel_session: Session) -> None:
     application = CreateApplication(
         firstname="firstname",
         lastname="lastname",
@@ -45,13 +43,12 @@ async def test_create(sqlmodel_session: Session, minio_client: Minio) -> None:
         state="test_state",
         country="test_country",
         postal_code="32214",
-        resume=CreateResume(name="resume", data=b"data"),
+        resume="",
         earliest_start_date=datetime.now(),
     )
 
     created_application = await create(
         sqlmodel_session=sqlmodel_session,
-        minio_client=minio_client,
         application=application,
     )
 

@@ -10,14 +10,14 @@ from src.talentgate.user import service as user_service
 from src.talentgate.user.models import (
     CreateUserSubscription,
     CreateUser,
-    SubscriptionPlan,
-    SubscriptionStatus,
+    UserSubscription,
+    UserSubscriptionPlan,
+    UserSubscriptionStatus,
     UpdateUserSubscription,
     UpdateUser,
     User,
     UserQueryParameters,
     UserRole,
-    UserSubscription,
 )
 
 
@@ -58,7 +58,7 @@ async def test_retrieve_profile(minio_client: Minio):
 async def test_create_subscription(sqlmodel_session: Session, user: User) -> None:
     subscription = CreateUserSubscription(
         paddle_subscription_id=str(uuid4()),
-        plan=SubscriptionPlan.STANDARD,
+        plan=UserSubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
@@ -74,19 +74,19 @@ async def test_create_subscription(sqlmodel_session: Session, user: User) -> Non
 
 async def test_retrieve_subscription_by_id(
     sqlmodel_session: Session,
-    subscription: UserSubscription,
+    user_subscription: UserSubscription,
 ) -> None:
     retrieved_subscription = await user_service.retrieve_subscription_by_id(
         sqlmodel_session=sqlmodel_session,
-        user_id=subscription.user_id,
-        subscription_id=subscription.id,
+        user_id=user_subscription.user_id,
+        subscription_id=user_subscription.id,
     )
 
-    assert retrieved_subscription.id == subscription.id
+    assert retrieved_subscription.id == user_subscription.id
 
 
 @pytest.mark.parametrize(
-    "subscription",
+    "user_subscription",
     [
         {
             "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
@@ -97,20 +97,20 @@ async def test_retrieve_subscription_by_id(
 )
 async def test_retrieve_subscription_with_active_status(
     sqlmodel_session: Session,
-    subscription: UserSubscription,
+    user_subscription: UserSubscription,
 ) -> None:
     retrieved_subscription = await user_service.retrieve_subscription_by_id(
         sqlmodel_session=sqlmodel_session,
-        user_id=subscription.user_id,
-        subscription_id=subscription.id,
+        user_id=user_subscription.user_id,
+        subscription_id=user_subscription.id,
     )
 
-    assert retrieved_subscription.id == subscription.id
-    assert retrieved_subscription.status == SubscriptionStatus.ACTIVE
+    assert retrieved_subscription.id == user_subscription.id
+    assert retrieved_subscription.status == UserSubscriptionStatus.ACTIVE
 
 
 @pytest.mark.parametrize(
-    "subscription",
+    "user_subscription",
     [
         {
             "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
@@ -121,27 +121,27 @@ async def test_retrieve_subscription_with_active_status(
 )
 async def test_retrieve_subscription_with_expired_status(
     sqlmodel_session: Session,
-    subscription: UserSubscription,
+    user_subscription: UserSubscription,
 ) -> None:
     retrieved_subscription = await user_service.retrieve_subscription_by_id(
         sqlmodel_session=sqlmodel_session,
-        user_id=subscription.user_id,
-        subscription_id=subscription.id,
+        user_id=user_subscription.user_id,
+        subscription_id=user_subscription.id,
     )
 
-    assert retrieved_subscription.id == subscription.id
-    assert retrieved_subscription.status == SubscriptionStatus.EXPIRED
+    assert retrieved_subscription.id == user_subscription.id
+    assert retrieved_subscription.status == UserSubscriptionStatus.EXPIRED
 
 
 async def test_update_subscription(
     sqlmodel_session: Session,
-    make_subscription,
+    make_user_subscription,
 ) -> None:
-    retrieved_subscription = make_subscription()
+    retrieved_subscription = make_user_subscription()
 
     subscription = UpdateUserSubscription(
         paddle_subscription_id=str(uuid4()),
-        plan=SubscriptionPlan.STANDARD,
+        plan=UserSubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
@@ -158,7 +158,7 @@ async def test_update_subscription(
 
 async def test_create(sqlmodel_session: Session) -> None:
     subscription = CreateUserSubscription(
-        plan=SubscriptionPlan.STANDARD,
+        plan=UserSubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
@@ -234,12 +234,12 @@ async def test_retrieve_by_query_parameters(
     assert retrieved_users[0].id == user.id
 
 
-async def test_update(sqlmodel_session: Session, make_user, subscription) -> None:
+async def test_update(sqlmodel_session: Session, make_user) -> None:
     retrieved_user = make_user()
 
     subscription = UpdateUserSubscription(
         paddle_subscription_id=str(uuid4()),
-        plan=SubscriptionPlan.STANDARD,
+        plan=UserSubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )

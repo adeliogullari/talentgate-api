@@ -7,13 +7,13 @@ from src.talentgate.database.models import BaseModel
 from src.talentgate.user.enums import UserRole, UserSubscriptionPlan, UserSubscriptionStatus
 
 if TYPE_CHECKING:
-    from src.talentgate.employee.models import Employee
+    from src.talentgate.company.models import CompanyEmployee
 
 
 class UserSubscription(SQLModel, table=True):
     __tablename__ = "user_subscription"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     paddle_subscription_id: str | None = Field(default=None)
     plan: str = Field(default=UserSubscriptionPlan.BASIC.value)
     start_date: float = Field(
@@ -43,7 +43,7 @@ class UserSubscription(SQLModel, table=True):
 class User(SQLModel, table=True):
     __tablename__ = "user"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     firstname: str = Field(nullable=False)
     lastname: str = Field(nullable=False)
     username: str = Field(unique=True)
@@ -52,7 +52,7 @@ class User(SQLModel, table=True):
     profile: str | None = Field(default=None)
     verified: bool = Field(default=False)
     role: str = Field(default=UserRole.OWNER.value)
-    employee: Optional["Employee"] = Relationship(back_populates="user")
+    employee: Optional["CompanyEmployee"] = Relationship(back_populates="user", cascade_delete=True)
     subscription: UserSubscription | None = Relationship(back_populates="user", cascade_delete=True)
     created_at: float = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
@@ -71,7 +71,7 @@ class CreateUserSubscription(BaseModel):
 
 
 class CreatedUserSubscription(BaseModel):
-    id: int
+    id: int | None = None
     paddle_subscription_id: str | None = None
     plan: str
     start_date: float
@@ -82,7 +82,7 @@ class CreatedUserSubscription(BaseModel):
 
 
 class RetrievedUserSubscription(BaseModel):
-    id: int
+    id: int | None = None
     paddle_subscription_id: str | None = None
     plan: str
     start_date: float
@@ -100,7 +100,7 @@ class UpdateUserSubscription(BaseModel):
 
 
 class UpdatedUserSubscription(BaseModel):
-    id: int
+    id: int | None = None
     paddle_subscription_id: str | None = None
     plan: str
     start_date: float
@@ -122,7 +122,7 @@ class CreateUser(BaseModel):
 
 
 class CreatedUser(BaseModel):
-    id: int
+    id: int | None = None
     firstname: str
     lastname: str
     username: str
@@ -135,7 +135,7 @@ class CreatedUser(BaseModel):
 
 
 class RetrievedUser(BaseModel):
-    id: int
+    id: int | None = None
     firstname: str
     lastname: str
     username: str
@@ -148,7 +148,7 @@ class RetrievedUser(BaseModel):
 
 
 class RetrievedCurrentUser(BaseModel):
-    id: int
+    id: int | None = None
     firstname: str
     lastname: str
     username: str
@@ -206,7 +206,7 @@ class UpdateCurrentUser(BaseModel):
 
 
 class UpdatedCurrentUser(BaseModel):
-    id: int
+    id: int | None = None
     firstname: str
     lastname: str
     username: str
@@ -219,8 +219,8 @@ class UpdatedCurrentUser(BaseModel):
 
 
 class DeletedUser(BaseModel):
-    id: int
+    id: int | None = None
 
 
 class DeletedCurrentUser(BaseModel):
-    id: int
+    id: int | None = None

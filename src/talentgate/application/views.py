@@ -35,7 +35,6 @@ router = APIRouter(tags=["application"])
 async def create_application(
     *,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
-    minio_client: Annotated[Minio, Depends(get_minio_client)],
     application: CreateApplication,
 ) -> Application:
     retrieved_application = await application_service.retrieve_by_email(
@@ -56,7 +55,6 @@ async def create_application(
 
     return await application_service.create(
         sqlmodel_session=sqlmodel_session,
-        minio_client=minio_client,
         application=application,
     )
 

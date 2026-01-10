@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta, UTC
 from io import BytesIO
+from types import SimpleNamespace
 
 import pytest
 from collections.abc import AsyncGenerator
@@ -18,19 +20,21 @@ from urllib3 import BaseHTTPResponse, HTTPHeaderDict, HTTPResponse
 from config import Settings, get_settings
 from src.talentgate.application.views import router as application_router
 from src.talentgate.auth.views import router as auth_router
+
 from src.talentgate.company.views import router as company_router
 from src.talentgate.database.service import get_redis_client, get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
+from src.talentgate.payment.service import get_paddle_client
 
 # from src.talentgate.employee.views import router as employee_router
 from src.talentgate.job.views import router as job_router
 from src.talentgate.storage.service import get_minio_client
 from src.talentgate.user.views import router as user_router
-from tests.auth.conftest import headers, access_token, refresh_token
-from tests.company.conftest import address, company, location, link, make_company
-from tests.employee.conftest import employee, make_employee
+from tests.company.conftest import company_location_address, company_location, company_link, company_employee, company
 from tests.job.conftest import job, make_job
-from tests.user.conftest import make_subscription, make_user, subscription, user
+
+from tests.auth.conftest import headers, access_token, refresh_token
+from tests.user.conftest import make_user_subscription, user_subscription, make_user, user
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -45,7 +49,6 @@ async def start_application() -> FastAPI | None:
     app = FastAPI()
     app.include_router(auth_router)
     app.include_router(user_router)
-    # app.include_router(employee_router)
     app.include_router(company_router)
     app.include_router(application_router)
     app.include_router(job_router)
@@ -200,21 +203,55 @@ def minio_client() -> Any:
 
 
 @pytest.fixture
-async def paddle_client() -> Any:
+def paddle_client() -> Any:
     class Customers:
-        async def create(self, data: dict):
+        def create(self, data: dict):
             return {
                 "id": "cus_123",
                 "email": data["email"],
                 "status": "active",
             }
 
+    class Subscriptions:
+        def create(self, data: dict):
+            return {
+                "id": "sub_123",
+                "customer_id": data["customer_id"],
+                "status": "active",
+                "plan_id": data.get("plan_id", "plan_basic"),
+                "current_period_end": 1893456000,
+            }
+
+        def cancel(self, subscription_id: str):
+            return {
+                "id": subscription_id,
+                "status": "canceled",
+            }
+
+        def get(self, subscription_id: str):
+            return SimpleNamespace(
+                id=subscription_id,
+                status="active",
+                items=[
+                    SimpleNamespace(
+                        product=SimpleNamespace(
+                            name="Pro",
+                        )
+                    )
+                ],
+                current_billing_period=SimpleNamespace(
+                    starts_at=datetime.now(UTC),
+                    ends_at=datetime.now(UTC) + timedelta(days=30),
+                ),
+            )
+
     class PaddleClient:
         def __init__(self):
             self.customers = Customers()
+            self.subscriptions = Subscriptions()
             self.store = {}
 
-        async def set(
+        def set(
             self,
             name: KeyT,
             value: EncodableT,
@@ -223,10 +260,10 @@ async def paddle_client() -> Any:
             self.store[name] = value
             return True
 
-        async def get(self, name: KeyT):
+        def get(self, name: KeyT):
             return self.store.get(name)
 
-        async def close(self):
+        def close(self):
             pass
 
     return PaddleClient()
@@ -276,7 +313,7 @@ async def client(
     app.dependency_overrides[get_email_client] = _get_email_client
     app.dependency_overrides[get_redis_client] = _get_redis_client
     app.dependency_overrides[get_minio_client] = _get_minio_client
-    app.dependency_overrides[_get_paddle_client] = _get_paddle_client
+    app.dependency_overrides[get_paddle_client] = _get_paddle_client
     app.dependency_overrides[get_settings] = _get_settings
 
     with TestClient(app) as client:

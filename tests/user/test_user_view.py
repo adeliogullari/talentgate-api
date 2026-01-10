@@ -11,7 +11,7 @@ from starlette.datastructures import Headers
 from src.talentgate.user.models import (
     CreateUserSubscription,
     CreateUser,
-    SubscriptionPlan,
+    UserSubscriptionPlan,
     UpdateCurrentUser,
     UpdateUserSubscription,
     UpdateUser,
@@ -24,7 +24,7 @@ from src.talentgate.user.models import (
 async def test_create_user(client: TestClient, headers: Headers) -> None:
     subscription = CreateUserSubscription(
         paddle_subscription_id=str(uuid4()),
-        plan=SubscriptionPlan.STANDARD,
+        plan=UserSubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )
@@ -131,7 +131,7 @@ async def test_retrieve_users(client: TestClient, user: User, headers: Headers) 
 @pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_update_user(client: TestClient, user: User, headers: Headers) -> None:
     subscription = UpdateUserSubscription(
-        plan=SubscriptionPlan.STANDARD,
+        plan=UserSubscriptionPlan.STANDARD,
         start_date=(datetime.now(UTC) - timedelta(days=2)).timestamp(),
         end_date=(datetime.now(UTC) + timedelta(days=1)).timestamp(),
     )

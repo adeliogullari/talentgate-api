@@ -34,12 +34,15 @@ from src.talentgate.company.exceptions import (
 from src.talentgate.company.models import (
     Company,
     CompanyEmployee,
+    CompanyEmployeeQueryParameters,
     CompanyLink,
     CompanyLocation,
     CompanyQueryParameters,
     CreateCompany,
+    CreateCompanyEmployee,
     CreatedCompany,
     DeletedCompany,
+    DeletedCompanyEmployee,
     DeletedCurrentCompany,
     EmployeeInvitation,
     InvitationAcceptance,
@@ -47,19 +50,12 @@ from src.talentgate.company.models import (
     RetrievedCurrentCompany,
     RetrievedCurrentCompanyJob,
     UpdateCompany,
+    UpdateCompanyEmployee,
     UpdateCurrentCompany,
     UpdatedCompany,
 )
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
-from src.talentgate.employee import service as employee_service
-from src.talentgate.employee.models import (
-    CreateEmployee,
-    DeletedEmployee,
-    Employee,
-    EmployeeQueryParameters,
-    UpdateEmployee,
-)
 from src.talentgate.job.models import (
     Job,
     JobQueryParameters,
@@ -148,9 +144,9 @@ async def retrieve_current_company_employees(
     *,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     retrieved_company: Annotated[User, Depends(retrieve_current_company)],
-    query_parameters: Annotated[EmployeeQueryParameters, Query()],
-) -> Sequence[Employee]:
-    return await employee_service.retrieve_by_query_parameters(
+    query_parameters: Annotated[CompanyEmployeeQueryParameters, Query()],
+) -> Sequence[CompanyEmployee]:
+    return await company_service.retrieve_employee_by_query_parameters(
         sqlmodel_session=sqlmodel_session, company_id=retrieved_company.id, query_parameters=query_parameters
     )
 
@@ -164,11 +160,11 @@ async def retrieve_current_company_employees(
 async def update_current_company_employee(
     *,
     employee_id: int,
-    employee: UpdateEmployee,
+    employee: UpdateCompanyEmployee,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     retrieved_company: Annotated[User, Depends(retrieve_current_company)],
-) -> Employee:
-    retrieved_employee = await employee_service.retrieve_by_id(
+) -> CompanyEmployee:
+    retrieved_employee = await company_service.retrieve_employee_by_id(
         sqlmodel_session=sqlmodel_session,
         company_id=retrieved_company.id,
         employee_id=employee_id,
@@ -177,7 +173,7 @@ async def update_current_company_employee(
     if not retrieved_employee:
         raise EmployeeIdNotFoundException
 
-    return await employee_service.update(
+    return await company_service.update_employee(
         sqlmodel_session=sqlmodel_session,
         retrieved_employee=retrieved_employee,
         employee=employee,
@@ -186,7 +182,7 @@ async def update_current_company_employee(
 
 @router.delete(
     path="/api/v1/me/company/employees/{employee_id}",
-    response_model=DeletedEmployee,
+    response_model=DeletedCompanyEmployee,
     status_code=200,
 )
 async def delete_current_company_employee(
@@ -194,8 +190,8 @@ async def delete_current_company_employee(
     employee_id: int,
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     retrieved_company: Annotated[User, Depends(retrieve_current_company)],
-) -> Employee:
-    retrieved_employee = await employee_service.retrieve_by_id(
+) -> CompanyEmployee:
+    retrieved_employee = await company_service.retrieve_employee_by_id(
         sqlmodel_session=sqlmodel_session,
         company_id=retrieved_company.id,
         employee_id=employee_id,
@@ -204,7 +200,7 @@ async def delete_current_company_employee(
     if not retrieved_employee:
         raise EmployeeIdNotFoundException
 
-    return await employee_service.delete(
+    return await company_service.delete_employee(
         sqlmodel_session=sqlmodel_session,
         retrieved_employee=retrieved_employee,
     )
@@ -677,10 +673,10 @@ async def accept_employee_invitation(
             ),
         )
 
-        await employee_service.create(
+        await company_service.create_employee(
             sqlmodel_session=sqlmodel_session,
             company_id=payload.get("company_id"),
-            employee=CreateEmployee(
+            employee=CreateCompanyEmployee(
                 title=payload.get("title"),
                 company_id=int(payload.get("company_id")),
                 user=CreateUser(
@@ -701,15 +697,15 @@ async def accept_employee_invitation(
 
     retrieved_user = await user_service.retrieve_by_email(sqlmodel_session=sqlmodel_session, email=payload.get("email"))
 
-    retrieved_employee = await employee_service.retrieve_by_id(
+    retrieved_employee = await company_service.retrieve_employee_by_id(
         sqlmodel_session=sqlmodel_session, company_id=payload.get("company_id"), employee_id=retrieved_user.employee.id
     )
 
     if retrieved_employee:
-        await employee_service.update(
+        await company_service.update_employee(
             sqlmodel_session=sqlmodel_session,
             retrieved_employee=retrieved_employee,
-            employee=UpdateEmployee(
+            employee=UpdateCompanyEmployee(
                 title=payload.get("title"),
                 user_id=retrieved_user.employee.id,
                 company_id=int(payload.get("company_id")),

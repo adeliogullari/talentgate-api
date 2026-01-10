@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from starlette.datastructures import Headers
 
 from src.talentgate.auth import service as auth_service
-from src.talentgate.user.enums import SubscriptionPlan, SubscriptionStatus
+from src.talentgate.user.enums import UserSubscriptionPlan, UserSubscriptionStatus
 from src.talentgate.user.models import User
 
 
@@ -96,8 +96,8 @@ async def test_register(
 
     assert response.status_code == 201
     assert response.json()["email"] == email
-    assert response.json()["subscription"]["plan"] == SubscriptionPlan.STANDARD
-    assert response.json()["subscription"]["status"] == SubscriptionStatus.ACTIVE
+    assert response.json()["subscription"]["plan"] == UserSubscriptionPlan.STANDARD
+    assert response.json()["subscription"]["status"] == UserSubscriptionStatus.ACTIVE
 
 
 @pytest.mark.parametrize(

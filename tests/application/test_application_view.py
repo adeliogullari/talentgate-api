@@ -6,10 +6,7 @@ from starlette.datastructures import Headers
 from config import get_settings
 from src.talentgate.application.models import (
     Application,
-    ApplicationEvaluation,
-    ApplicationEvaluationRequest,
     CreateApplication,
-    CreateResume,
     UpdateApplication,
 )
 
@@ -22,7 +19,7 @@ async def test_create_application(client: TestClient, headers: Headers) -> None:
         lastname="created lastname",
         email="created_applicant_email@gmail.com",
         phone="+90532556345",
-        resume=CreateResume(name="resume", data=b"data"),
+        resume="",
     )
 
     response = client.post(

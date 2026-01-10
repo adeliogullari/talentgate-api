@@ -3,13 +3,12 @@ from datetime import datetime
 import pytest
 from sqlmodel import Session
 
-from src.talentgate.employee.models import Employee
 from src.talentgate.job.enums import JobEmploymentType
 from src.talentgate.job.models import Job
 
 
 @pytest.fixture
-def make_job(sqlmodel_session: Session, employee: Employee):
+def make_job(sqlmodel_session: Session):
     def make(
         title="job title",
         description="job description",

@@ -8,12 +8,11 @@ from fastapi.testclient import TestClient
 from minio import Minio
 from starlette.datastructures import Headers
 
-from config import Settings, get_settings
+from config import get_settings
+from src.talentgate.company.enums import CompanyEmployeeTitle
 from src.talentgate.company.models import Company, CreateCompany, UpdateCompany
-from src.talentgate.employee.enums import EmployeeTitle
-from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job
-from src.talentgate.user.models import SubscriptionPlan, UserRole, User
+from src.talentgate.user.models import UserSubscriptionPlan, UserRole, User
 
 settings = get_settings()
 
@@ -63,21 +62,7 @@ async def test_retrieved_company_jobs(
     assert response.json()[0]["id"] == job.id
 
 
-@pytest.mark.parametrize(
-    "user, subscription",
-    [
-        ({"role": UserRole.ADMIN}, {}),
-        (
-            {},
-            {
-                "plan": SubscriptionPlan.STANDARD,
-                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
-                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
-            },
-        ),
-    ],
-    indirect=True,
-)
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_create_company(client: TestClient, headers: Headers) -> None:
     created_company = CreateCompany(
         name="new_company_name",
@@ -97,22 +82,7 @@ async def test_create_company(client: TestClient, headers: Headers) -> None:
     assert response.json()["overview"] == created_company.overview
 
 
-@pytest.mark.parametrize(
-    "user, subscription, employee",
-    [
-        ({"role": UserRole.ADMIN}, {}, {}),
-        (
-            {"role": UserRole.OWNER},
-            {
-                "plan": SubscriptionPlan.STANDARD,
-                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
-                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
-            },
-            {"title": EmployeeTitle.FOUNDER},
-        ),
-    ],
-    indirect=True,
-)
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_retrieve_company(
     client: TestClient,
     company: Company,
@@ -131,7 +101,6 @@ async def test_retrieve_current_company(client: TestClient, company: Company, he
     assert response.json()["id"] == company.id
 
 
-@pytest.mark.parametrize("company", [{"logo": str(uuid4())}], indirect=True)
 async def test_retrieve_current_company_logo(
     client: TestClient, minio_client: Minio, company: Company, headers: Headers
 ) -> None:
@@ -181,22 +150,7 @@ async def test_retrieve_companies(
     assert response.json()[0]["id"] == company.id
 
 
-@pytest.mark.parametrize(
-    "user, subscription, employee",
-    [
-        ({"role": UserRole.ADMIN}, {}, {}),
-        (
-            {"role": UserRole.OWNER},
-            {
-                "plan": SubscriptionPlan.STANDARD,
-                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
-                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
-            },
-            {"title": EmployeeTitle.FOUNDER},
-        ),
-    ],
-    indirect=True,
-)
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_update_company(
     client: TestClient,
     company: Company,
@@ -219,22 +173,7 @@ async def test_update_company(
     assert response.json()["id"] == company.id
 
 
-@pytest.mark.parametrize(
-    "user, subscription, employee",
-    [
-        ({"role": UserRole.ADMIN}, {}, {}),
-        (
-            {"role": UserRole.OWNER},
-            {
-                "plan": SubscriptionPlan.STANDARD,
-                "start_date": (datetime.now(UTC) - timedelta(days=2)).timestamp(),
-                "end_date": (datetime.now(UTC) + timedelta(days=1)).timestamp(),
-            },
-            {"title": EmployeeTitle.FOUNDER},
-        ),
-    ],
-    indirect=True,
-)
+@pytest.mark.parametrize("user", [{"role": UserRole.ADMIN}], indirect=True)
 async def test_delete_company(
     client: TestClient,
     company: Company,

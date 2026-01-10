@@ -9,10 +9,8 @@ from config import get_settings
 from src.talentgate.application.models import (
     Application,
     ApplicationAddress,
-    ApplicationEvaluation,
     ApplicationLink,
 )
-from src.talentgate.employee.models import Employee
 
 settings = get_settings()
 
@@ -74,39 +72,6 @@ def make_application_link(sqlmodel_session: Session):
 @pytest.fixture
 def application_link(make_application_link):
     return make_application_link()
-
-
-@pytest.fixture
-def make_application_evaluation(
-    sqlmodel_session: Session,
-    employee: Employee,
-    application: Application,
-):
-    def make(
-        comment: str = "text123",
-        rating: str = "5",
-        employee_id: int = employee.id,
-        application_id: int = application.id,
-    ):
-        evaluation = ApplicationEvaluation(
-            comment=comment,
-            rating=rating,
-            employee_id=employee_id,
-            application_id=application_id,
-        )
-
-        sqlmodel_session.add(evaluation)
-        sqlmodel_session.commit()
-        sqlmodel_session.refresh(evaluation)
-
-        return evaluation
-
-    return make
-
-
-@pytest.fixture
-def application_evaluation(make_application_evaluation):
-    return make_application_evaluation()
 
 
 @pytest.fixture

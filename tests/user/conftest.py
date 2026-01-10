@@ -7,23 +7,18 @@ import pytest
 from sqlmodel import Session
 
 from src.talentgate.auth import service as auth_service
-from src.talentgate.user.enums import SubscriptionPlan, UserRole
+from src.talentgate.user.enums import UserSubscriptionPlan, UserRole
 from src.talentgate.user.models import User, UserSubscription
 
 
 @pytest.fixture
-def make_subscription(sqlmodel_session: Session) -> Any:
-    def make(
-        paddle_subscription_id: str | None = None,
-        plan: str | None = None,
-        start_date: float | None = None,
-        end_date: float | None = None,
-    ) -> UserSubscription:
+def make_user_subscription(sqlmodel_session: Session) -> Any:
+    def make(**kwargs) -> UserSubscription:
         subscription = UserSubscription(
-            paddle_subscription_id=paddle_subscription_id or str(uuid4()),
-            plan=plan or SubscriptionPlan.BASIC.value,
-            start_date=start_date or (datetime.now(UTC) - timedelta(days=2)).timestamp(),
-            end_date=end_date or (datetime.now(UTC) - timedelta(days=1)).timestamp(),
+            paddle_subscription_id=kwargs.get("paddle_subscription_id") or str(uuid4()),
+            plan=kwargs.get("plan") or UserSubscriptionPlan.BASIC.value,
+            start_date=kwargs.get("start_date") or (datetime.now(UTC) - timedelta(days=2)).timestamp(),
+            end_date=kwargs.get("end_date") or (datetime.now(UTC) - timedelta(days=1)).timestamp(),
         )
 
         sqlmodel_session.add(subscription)
@@ -36,14 +31,14 @@ def make_subscription(sqlmodel_session: Session) -> Any:
 
 
 @pytest.fixture
-def subscription(make_subscription, request):
+def user_subscription(make_user_subscription, request):
     param = getattr(request, "param", {})
     paddle_subscription_id = param.get("paddle_subscription_id", None)
     plan = param.get("plan", None)
     start_date = param.get("start_date", None)
     end_date = param.get("end_date", None)
 
-    return make_subscription(
+    return make_user_subscription(
         paddle_subscription_id=paddle_subscription_id,
         plan=plan,
         start_date=start_date,
@@ -52,7 +47,7 @@ def subscription(make_subscription, request):
 
 
 @pytest.fixture
-def make_user(sqlmodel_session: Session, subscription: UserSubscription):
+def make_user(sqlmodel_session: Session, user_subscription: UserSubscription):
     def make(**kwargs):
         user = User(
             firstname=kwargs.get("firstname") or secrets.token_hex(12),
@@ -63,7 +58,7 @@ def make_user(sqlmodel_session: Session, subscription: UserSubscription):
             profile=kwargs.get("profile") or str(uuid4()),
             verified=kwargs.get("verified") if kwargs.get("verified") not in (None, "") else True,
             role=kwargs.get("role") or UserRole.OWNER.value,
-            subscription=kwargs.get("subscription") or subscription,
+            subscription=kwargs.get("subscription") or user_subscription,
         )
 
         sqlmodel_session.add(user)

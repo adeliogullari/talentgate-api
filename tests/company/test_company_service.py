@@ -16,7 +16,6 @@ from src.talentgate.company.service import (
     retrieve_logo,
 )
 
-from src.talentgate.employee.models import Employee
 from src.talentgate.job.models import Job, JobQueryParameters
 
 

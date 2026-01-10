@@ -43,12 +43,8 @@ class Application(SQLModel, table=True):
     phone: str = Field(nullable=False)
     resume: str | None = Field(default=None)
     status: str | None = Field(default=ApplicationStatus.APPLIED.value)
-    address_id: int | None = Field(default=None, foreign_key="application_address.id")
-    address: ApplicationAddress | None = Relationship(
-        back_populates="application",
-        sa_relationship_kwargs={"uselist": False},
-    )
-    links: list[ApplicationLink] = Relationship(back_populates="application")
+    address: ApplicationAddress | None = Relationship(back_populates="application", cascade_delete=True)
+    links: list[ApplicationLink] = Relationship(back_populates="application", cascade_delete=True)
     job_id: int | None = Field(default=None, foreign_key="job.id")
     job: Optional["Job"] = Relationship(back_populates="applications")
     created_at: datetime | None = Field(default=datetime.now(UTC))
