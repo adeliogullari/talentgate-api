@@ -22,35 +22,38 @@ from src.talentgate.user.models import (
 
 
 async def test_upload_profile(minio_client: Minio):
-    object_name = str(uuid4())
+    object_name = "users/1/profile"
     data = BytesIO(b"data")
 
     await user_service.upload_profile(
         minio_client=minio_client,
+        bucket_name="talentgate",
         object_name=object_name,
         data=data,
         length=4,
         content_type="file",
     )
 
-    data = minio_client.get_object(bucket_name="profile", object_name=object_name)
+    data = minio_client.get_object(bucket_name="talentgate", object_name=object_name)
 
     assert data == data
 
 
 async def test_retrieve_profile(minio_client: Minio):
-    object_name = str(uuid4())
+    object_name = "users/1/profile"
     data = b"data"
 
     minio_client.put_object(
-        bucket_name="profile",
+        bucket_name="talentgate",
         object_name=object_name,
         data=BytesIO(data),
         length=4,
         content_type="file",
     )
 
-    retrieved_profile = await user_service.retrieve_profile(minio_client=minio_client, object_name=object_name)
+    retrieved_profile = await user_service.retrieve_profile(
+        minio_client=minio_client, bucket_name="talentgate", object_name=object_name
+    )
 
     assert retrieved_profile == data
 

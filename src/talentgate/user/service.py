@@ -6,7 +6,6 @@ from minio import Minio
 from minio.helpers import ObjectWriteResult
 from sqlmodel import Session, select
 
-from config import get_settings
 from src.talentgate.auth import service as auth_service
 from src.talentgate.user.models import (
     CreateUser,
@@ -19,19 +18,18 @@ from src.talentgate.user.models import (
     UserSubscription,
 )
 
-settings = get_settings()
-
 
 async def upload_profile(
     *,
     minio_client: Minio,
+    bucket_name: str,
     object_name: str,
     data: BytesIO,
     length: int,
     content_type: str,
 ) -> ObjectWriteResult:
     return minio_client.put_object(
-        bucket_name="profile",
+        bucket_name=bucket_name,
         object_name=object_name,
         data=data,
         length=length,
@@ -39,12 +37,12 @@ async def upload_profile(
     )
 
 
-async def retrieve_profile(*, minio_client: Minio, object_name: str) -> bytes:
+async def retrieve_profile(*, minio_client: Minio, bucket_name: str, object_name: str) -> bytes:
     response = None
 
     try:
         response = minio_client.get_object(
-            bucket_name="profile",
+            bucket_name=bucket_name,
             object_name=object_name,
         )
         data = response.data

@@ -72,15 +72,14 @@ async def test_retrieve_current_user(
     assert response.json()["id"] == user.id
 
 
-@pytest.mark.parametrize("user", [{"profile": str(uuid4())}], indirect=True)
 async def test_retrieve_current_user_profile(
     client: TestClient, minio_client: Minio, user: User, headers: Headers
 ) -> None:
     data = b"data"
 
     minio_client.put_object(
-        bucket_name="profile",
-        object_name=user.profile,
+        bucket_name="talentgate",
+        object_name=f"users/{user.id}/profile",
         data=BytesIO(data),
         length=4,
         content_type="file",
@@ -100,11 +99,11 @@ async def test_upload_current_user_profile(
 
     response = client.post(
         url="/api/v1/me/profile",
-        files={"file": ("profile.txt", file_stream, "octet/stream")},
+        files={"file": ("profile.jpg", file_stream, "octet/stream")},
         headers=headers,
     )
 
-    profile = minio_client.get_object(bucket_name="profile", object_name=user.profile)
+    profile = minio_client.get_object(bucket_name="talentgate", object_name=f"users/{user.id}/profile")
 
     assert response.status_code == 201
     assert profile.data == data

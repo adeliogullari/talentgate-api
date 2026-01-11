@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from typing import Annotated
-from uuid import uuid4
 
 from fastapi import (
     APIRouter,
@@ -80,40 +79,28 @@ router = APIRouter(tags=["company"])
 
 class RetrieveCurrentCompanyDependency:
     def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if (
-            user.employee.title == CompanyEmployeeTitle.FOUNDER
-            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
-        ):
+        if user.employee.title == CompanyEmployeeTitle.FOUNDER:
             return True
         raise InvalidAuthorizationException
 
 
 class RetrieveCurrentCompanyEmployeesDependency:
     def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if (
-            user.employee.title == CompanyEmployeeTitle.FOUNDER
-            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
-        ):
+        if user.employee.title == CompanyEmployeeTitle.FOUNDER:
             return True
         raise InvalidAuthorizationException
 
 
 class UpdateCurrentCompanyEmployeeDependency:
     def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if (
-            user.employee.title == CompanyEmployeeTitle.FOUNDER
-            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
-        ):
+        if user.employee.title == CompanyEmployeeTitle.FOUNDER:
             return True
         raise InvalidAuthorizationException
 
 
 class DeleteCurrentCompanyEmployeeDependency:
     def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if (
-            user.employee.title == CompanyEmployeeTitle.FOUNDER
-            and user.employee.company.subscription.status == UserSubscriptionStatus.ACTIVE
-        ):
+        if user.employee.title == CompanyEmployeeTitle.FOUNDER:
             return True
         raise InvalidAuthorizationException
 
@@ -129,9 +116,14 @@ async def retrieve_current_company(
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     retrieved_user: Annotated[User, Depends(retrieve_current_user)],
 ) -> Company:
-    return await company_service.retrieve_by_id(
+    retrieved_company = await company_service.retrieve_by_id(
         sqlmodel_session=sqlmodel_session, company_id=retrieved_user.employee.company_id
     )
+
+    if not retrieved_company:
+        raise CompanyIdNotFoundException
+
+    return retrieved_company
 
 
 @router.get(
@@ -250,13 +242,15 @@ async def retrieve_current_company_job_applications(
 )
 async def retrieve_current_company_logo(
     *,
+    settings: Annotated[Settings, Depends(get_settings)],
     minio_client: Annotated[Minio, Depends(get_minio_client)],
     retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
 ) -> StreamingResponse | None:
-    if not retrieved_company.logo:
-        return None
-
-    logo = await company_service.retrieve_logo(minio_client=minio_client, object_name=retrieved_company.logo)
+    logo = await company_service.retrieve_logo(
+        minio_client=minio_client,
+        bucket_name=settings.minio_default_bucket,
+        object_name=f"companies/{retrieved_company.id}/logo",
+    )
 
     return StreamingResponse(
         content=BytesIO(logo),
@@ -269,25 +263,20 @@ async def retrieve_current_company_logo(
 )
 async def upload_current_company_logo(
     *,
-    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    file: Annotated[UploadFile, File()],
+    settings: Annotated[Settings, Depends(get_settings)],
     minio_client: Annotated[Minio, Depends(get_minio_client)],
     retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
-    file: Annotated[UploadFile, File()],
 ) -> None:
     data = await file.read()
 
-    logo = await company_service.upload_logo(
+    await company_service.upload_logo(
         minio_client=minio_client,
-        object_name=retrieved_company.logo or f"{uuid4()}",
+        bucket_name=settings.minio_default_bucket,
+        object_name=f"companies/{retrieved_company.id}/logo",
         data=BytesIO(data),
         length=len(data),
         content_type=file.content_type,
-    )
-
-    await company_service.update(
-        sqlmodel_session=sqlmodel_session,
-        retrieved_company=retrieved_company,
-        company=UpdateCompany(logo=logo.object_name),
     )
 
 

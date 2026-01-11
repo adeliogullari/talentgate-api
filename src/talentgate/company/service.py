@@ -41,13 +41,14 @@ settings = get_settings()
 async def upload_logo(
     *,
     minio_client: Minio,
+    bucket_name: str,
     object_name: str,
     data: BytesIO,
     length: int,
     content_type: str,
 ) -> ObjectWriteResult:
     return minio_client.put_object(
-        bucket_name="logo",
+        bucket_name=bucket_name,
         object_name=object_name,
         data=data,
         length=length,
@@ -55,12 +56,12 @@ async def upload_logo(
     )
 
 
-async def retrieve_logo(*, minio_client: Minio, object_name: str) -> bytes:
+async def retrieve_logo(*, minio_client: Minio, bucket_name: str, object_name: str) -> bytes:
     response = None
 
     try:
         response = minio_client.get_object(
-            bucket_name="logo",
+            bucket_name=bucket_name,
             object_name=object_name,
         )
         data = response.data
@@ -273,13 +274,13 @@ async def retrieve_employee_by_id(*, sqlmodel_session: Session, company_id: int,
     return sqlmodel_session.exec(statement).one_or_none()
 
 
-async def retrieve_employee_by_query_parameters(
+async def retrieve_employees_by_query_parameters(
     *,
     sqlmodel_session: Session,
     company_id: int,
     query_parameters: CompanyEmployeeQueryParameters,
 ) -> Sequence[CompanyEmployee]:
-    employee_filters = [
+    filters = [
         CompanyEmployee.__table__.columns[attr] == value
         for attr, value in query_parameters.model_dump(
             exclude={"offset", "limit", "user"},
@@ -288,23 +289,19 @@ async def retrieve_employee_by_query_parameters(
         ).items()
     ]
 
-    user_filters = []
     if "user" in query_parameters.model_fields_set and query_parameters.user is not None:
-        user_filters = [
+        filters.append(
             User.__table__.columns[attr] == value
             for attr, value in query_parameters.user.model_dump(
                 exclude_unset=True,
                 exclude_none=True,
             ).items()
-        ]
-
-    statement = select(CompanyEmployee)
-
-    if user_filters:
-        statement = statement.join(User)
+        )
 
     statement = (
-        statement.where(CompanyEmployee.company_id == company_id, *employee_filters, *user_filters)
+        select(CompanyEmployee)
+        .join(User)
+        .where(CompanyEmployee.company_id == company_id, *filters)
         .order_by(CompanyEmployee.id)
         .offset(query_parameters.offset)
         .limit(query_parameters.limit)

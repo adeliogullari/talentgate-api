@@ -107,8 +107,8 @@ async def test_retrieve_current_company_logo(
     data = b"data"
 
     minio_client.put_object(
-        bucket_name="logo",
-        object_name=company.logo,
+        bucket_name="talentgate",
+        object_name=f"companies/{company.id}/logo",
         data=BytesIO(data),
         length=4,
         content_type="file",
@@ -128,11 +128,11 @@ async def test_upload_current_company_logo(
 
     response = client.post(
         url="/api/v1/me/company/logo",
-        files={"file": ("logo.txt", file_stream, "octet/stream")},
+        files={"file": ("logo.jpg", file_stream, "octet/stream")},
         headers=headers,
     )
 
-    logo = minio_client.get_object(bucket_name="logo", object_name=company.logo)
+    logo = minio_client.get_object(bucket_name="talentgate", object_name=f"companies/{company.id}/logo")
 
     assert response.status_code == 201
     assert logo.data == data

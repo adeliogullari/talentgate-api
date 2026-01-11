@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     minio_port: str
     minio_root_user: str
     minio_root_password: str
+    minio_default_bucket: str
     google_client_id: str
     password_hash_algorithm: str
     message_digest_algorithm: str

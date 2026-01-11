@@ -278,6 +278,7 @@ def settings() -> Settings:
         access_token_key="fY7mNQvA9HdJcT1E2RpOXaZ5LbVgK4sM",
         refresh_token_expiration=86400,
         refresh_token_key="ZcQ5TRjUmn28XeFoBKHvAGd0wL7iyE6Y",
+        minio_default_bucket="talentgate",
     )
 
 
