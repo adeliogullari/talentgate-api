@@ -18,6 +18,7 @@ from sqlmodel import Session
 from starlette.responses import JSONResponse, StreamingResponse
 
 from config import Settings, get_settings
+from src.talentgate.application import service as application_service
 from src.talentgate.auth import service as auth_service
 from src.talentgate.auth.exceptions import (
     InvalidAuthorizationException,
@@ -25,9 +26,10 @@ from src.talentgate.auth.exceptions import (
 )
 from src.talentgate.auth.models import AuthenticationTokens
 from src.talentgate.company import service as company_service
-from src.talentgate.company.enums import CompanyEmployeeTitle
+from src.talentgate.company.enums import CompanyEmployeeTitle, CompanyInvitationStatus
 from src.talentgate.company.exceptions import (
     CompanyIdNotFoundException,
+    CompanyInvitationNotFoundException,
     EmployeeIdNotFoundException,
 )
 from src.talentgate.company.models import (
@@ -50,16 +52,16 @@ from src.talentgate.company.models import (
     RetrievedCurrentCompanyJob,
     UpdateCompany,
     UpdateCompanyEmployee,
+    UpdateCompanyInvitation,
     UpdateCurrentCompany,
     UpdatedCompany,
+    UpsertCompanyInvitation,
 )
 from src.talentgate.database.service import get_sqlmodel_session
 from src.talentgate.email.client import EmailClient, get_email_client
 from src.talentgate.job.models import (
     Job,
     JobQueryParameters,
-    RetrievedCompanyJob,
-    RetrievedCompanyJobs,
     RetrievedJob,
 )
 from src.talentgate.storage.service import get_minio_client
@@ -74,14 +76,7 @@ from src.talentgate.user.models import (
 )
 from src.talentgate.user.views import retrieve_current_user
 
-router = APIRouter(tags=["company"])
-
-
-class RetrieveCurrentCompanyDependency:
-    def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
-        if user.employee.title == CompanyEmployeeTitle.FOUNDER:
-            return True
-        raise InvalidAuthorizationException
+router = APIRouter(tags=["companies"])
 
 
 class RetrieveCurrentCompanyEmployeesDependency:
@@ -109,7 +104,6 @@ class DeleteCurrentCompanyEmployeeDependency:
     path="/api/v1/me/company",
     response_model=RetrievedCurrentCompany,
     status_code=200,
-    dependencies=[Depends(RetrieveCurrentCompanyDependency())],
 )
 async def retrieve_current_company(
     *,
@@ -127,6 +121,100 @@ async def retrieve_current_company(
 
 
 @router.get(
+    path="/api/v1/me/company/logo",
+    response_model=None,
+    status_code=200,
+)
+async def retrieve_current_company_logo(
+    *,
+    settings: Annotated[Settings, Depends(get_settings)],
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
+) -> StreamingResponse | None:
+    logo = await company_service.retrieve_logo(
+        minio_client=minio_client,
+        bucket_name=settings.minio_default_bucket,
+        object_name=f"companies/{retrieved_company.id}/logo",
+    )
+
+    return StreamingResponse(
+        content=BytesIO(logo),
+    )
+
+
+@router.post(
+    path="/api/v1/me/company/logo",
+    status_code=201,
+)
+async def upload_current_company_logo(
+    *,
+    file: Annotated[UploadFile, File()],
+    settings: Annotated[Settings, Depends(get_settings)],
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
+) -> None:
+    data = await file.read()
+
+    await company_service.upload_logo(
+        minio_client=minio_client,
+        bucket_name=settings.minio_default_bucket,
+        object_name=f"companies/{retrieved_company.id}/logo",
+        data=BytesIO(data),
+        length=len(data),
+        content_type=file.content_type,
+    )
+
+
+@router.get(
+    path="/api/v1/me/company/jobs/{job_id}/applications/{application_id}/resume",
+    response_model=None,
+    status_code=200,
+)
+async def retrieve_current_company_job_application_resume(
+    *,
+    job_id: int,
+    application_id: int,
+    settings: Annotated[Settings, Depends(get_settings)],
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
+) -> StreamingResponse | None:
+    logo = await application_service.retrieve_resume(
+        minio_client=minio_client,
+        bucket_name=settings.minio_default_bucket,
+        object_name=f"companies/{retrieved_company.id}/jobs/{job_id}/applications/{application_id}/resume",
+    )
+
+    return StreamingResponse(
+        content=BytesIO(logo),
+    )
+
+
+@router.post(
+    path="/api/v1/me/company/jobs/{job_id}/applications/{application_id}/resume",
+    status_code=201,
+)
+async def upload_current_company_job_application_resume(
+    *,
+    job_id: int,
+    application_id: int,
+    file: Annotated[UploadFile, File()],
+    settings: Annotated[Settings, Depends(get_settings)],
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
+) -> None:
+    data = await file.read()
+
+    await application_service.upload_resume(
+        minio_client=minio_client,
+        bucket_name=settings.minio_default_bucket,
+        object_name=f"companies/{retrieved_company.id}/jobs/{job_id}/applications/{application_id}/resume",
+        data=BytesIO(data),
+        length=len(data),
+        content_type=file.content_type,
+    )
+
+
+@router.get(
     path="/api/v1/me/company/employees",
     response_model=list[CompanyEmployee],
     status_code=200,
@@ -138,7 +226,7 @@ async def retrieve_current_company_employees(
     retrieved_company: Annotated[User, Depends(retrieve_current_company)],
     query_parameters: Annotated[CompanyEmployeeQueryParameters, Query()],
 ) -> Sequence[CompanyEmployee]:
-    return await company_service.retrieve_employee_by_query_parameters(
+    return await company_service.retrieve_employees_by_query_parameters(
         sqlmodel_session=sqlmodel_session, company_id=retrieved_company.id, query_parameters=query_parameters
     )
 
@@ -235,51 +323,6 @@ async def retrieve_current_company_job_applications(
     return job.applications
 
 
-@router.get(
-    path="/api/v1/me/company/logo",
-    response_model=None,
-    status_code=200,
-)
-async def retrieve_current_company_logo(
-    *,
-    settings: Annotated[Settings, Depends(get_settings)],
-    minio_client: Annotated[Minio, Depends(get_minio_client)],
-    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
-) -> StreamingResponse | None:
-    logo = await company_service.retrieve_logo(
-        minio_client=minio_client,
-        bucket_name=settings.minio_default_bucket,
-        object_name=f"companies/{retrieved_company.id}/logo",
-    )
-
-    return StreamingResponse(
-        content=BytesIO(logo),
-    )
-
-
-@router.post(
-    path="/api/v1/me/company/logo",
-    status_code=201,
-)
-async def upload_current_company_logo(
-    *,
-    file: Annotated[UploadFile, File()],
-    settings: Annotated[Settings, Depends(get_settings)],
-    minio_client: Annotated[Minio, Depends(get_minio_client)],
-    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
-) -> None:
-    data = await file.read()
-
-    await company_service.upload_logo(
-        minio_client=minio_client,
-        bucket_name=settings.minio_default_bucket,
-        object_name=f"companies/{retrieved_company.id}/logo",
-        data=BytesIO(data),
-        length=len(data),
-        content_type=file.content_type,
-    )
-
-
 class CreateCompanyDependency:
     def __call__(self, user: User = Depends(retrieve_current_user)) -> bool:
         if (user.role == UserRole.ADMIN) or (
@@ -347,7 +390,7 @@ class DeleteCompanyDependency:
 
 @router.get(
     path="/api/v1/careers/companies/{company_id}/jobs",
-    response_model=list[RetrievedCompanyJobs],
+    response_model=list[RetrievedJob],
     status_code=200,
 )
 async def retrieved_career_jobs(
@@ -365,7 +408,7 @@ async def retrieved_career_jobs(
 
 @router.get(
     path="/api/v1/careers/companies/{company_id}/jobs/{job_id}",
-    response_model=RetrievedCompanyJob,
+    response_model=RetrievedJob,
     status_code=200,
 )
 async def retrieved_careers_job(
@@ -592,14 +635,15 @@ async def delete_current_company_link(
 
 
 @router.post(
-    path="/api/v1/me/company/employee/invite",
+    path="/api/v1/me/company/employee-invitations",
     status_code=200,
 )
 async def invite_employee(
     *,
     settings: Annotated[Settings, Depends(get_settings)],
     email_client: Annotated[EmailClient, Depends(get_email_client)],
-    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+    retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
     background_tasks: BackgroundTasks,
     employee: EmployeeInvitation,
 ) -> None:
@@ -607,15 +651,15 @@ async def invite_employee(
         payload={
             "title": employee.title,
             "email": employee.email,
-            "company_id": str(retrieved_user.employee.company_id),
+            "company_id": str(retrieved_company.id),
         },
         key=settings.one_time_token_key,
         seconds=settings.one_time_token_expiration,
     )
 
     context = {
-        "company_name": retrieved_user.employee.company.name,
-        "link": f"{settings.frontend_base_url}/company/employees/invitation?token={token}",
+        "company_name": retrieved_company.name,
+        "link": f"{settings.frontend_base_url}/company/accept-invitation?token={token}",
     }
 
     await company_service.send_invitation_email(
@@ -626,9 +670,20 @@ async def invite_employee(
         to_addrs=employee.email,
     )
 
+    retrieved_invitation = await company_service.retrieve_invitation_by_email(
+        sqlmodel_session=sqlmodel_session, company_id=retrieved_company.id, email=employee.email
+    )
+
+    await company_service.upsert_invitation(
+        sqlmodel_session=sqlmodel_session,
+        company_id=retrieved_company.id,
+        retrieved_invitation=retrieved_invitation,
+        invitation=UpsertCompanyInvitation(email=employee.email, status=CompanyInvitationStatus.PENDING.value),
+    )
+
 
 @router.post(
-    path="/api/v1/me/company/employee/invitation/accept",
+    path="/api/v1/company/employee-invitations/accept",
     status_code=200,
 )
 async def accept_employee_invitation(
@@ -646,6 +701,13 @@ async def accept_employee_invitation(
         raise InvalidOneTimeTokenException
 
     _, payload, _ = auth_service.decode_token(token=invitation.token)
+
+    retrieved_invitation = await company_service.retrieve_invitation_by_email(
+        sqlmodel_session=sqlmodel_session, company_id=payload.get("company_id"), email=payload.get("email")
+    )
+
+    if not retrieved_invitation:
+        raise CompanyInvitationNotFoundException
 
     retrieved_user = await user_service.retrieve_by_email(
         sqlmodel_session=sqlmodel_session,
@@ -700,6 +762,12 @@ async def accept_employee_invitation(
                 company_id=int(payload.get("company_id")),
             ),
         )
+
+    await company_service.update_invitation(
+        sqlmodel_session=sqlmodel_session,
+        retrieved_invitation=retrieved_invitation,
+        invitation=UpdateCompanyInvitation(status=CompanyInvitationStatus.ACCEPTED.value),
+    )
 
     access_token = auth_service.encode_token(
         payload={"user_id": str(retrieved_user.id)},

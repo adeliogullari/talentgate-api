@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-from src.talentgate.company.enums import CompanyEmployeeTitle, CompanyLinkType
+from src.talentgate.company.enums import CompanyEmployeeTitle
 from src.talentgate.database.models import BaseModel
 from src.talentgate.user.models import (
     CreatedUser,
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class CompanyLocationAddress(SQLModel, table=True):
     __tablename__ = "company_location_address"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     unit: str | None = Field(default=None)
     street: str | None = Field(default=None)
     city: str | None = Field(default=None)
@@ -37,7 +37,7 @@ class CompanyLocationAddress(SQLModel, table=True):
 class CompanyLocation(SQLModel, table=True):
     __tablename__ = "company_location"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     type: str | None = Field(default=None)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
@@ -49,12 +49,29 @@ class CompanyLocation(SQLModel, table=True):
 class CompanyLink(SQLModel, table=True):
     __tablename__ = "company_link"
 
-    id: int = Field(primary_key=True)
-    type: str | None = Field(default=CompanyLinkType.WEBSITE.value)
+    id: int | None = Field(default=None, primary_key=True)
+    type: str | None = Field(default=None)
     url: str | None = Field(default=None, max_length=2048)
     company_id: int | None = Field(default=None, foreign_key="company.id", ondelete="CASCADE")
     company: Optional["Company"] = Relationship(
         back_populates="links",
+    )
+
+
+class CompanyInvitation(SQLModel, table=True):
+    __tablename__ = "company_invitation"
+
+    id: int | None = Field(default=None, primary_key=True)
+    email: str = Field(unique=True)
+    status: str | None = Field(default=None)
+    company_id: int | None = Field(default=None, foreign_key="company.id", ondelete="CASCADE")
+    company: Optional["Company"] = Relationship(back_populates="invitations")
+    created_at: float | None = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp(),
+    )
+    updated_at: float | None = Field(
+        default_factory=lambda: datetime.now(UTC).timestamp(),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC).timestamp()},
     )
 
 
@@ -83,7 +100,6 @@ class Company(SQLModel, table=True):
     name: str = Field(unique=True)
     overview: str | None = Field(default=None)
     logo: str | None = Field(default=None)
-    employees: list["CompanyEmployee"] = Relationship(back_populates="company", cascade_delete=True)
     locations: list[CompanyLocation] = Relationship(
         back_populates="company",
         cascade_delete=True,
@@ -92,6 +108,8 @@ class Company(SQLModel, table=True):
         back_populates="company",
         cascade_delete=True,
     )
+    invitations: list["CompanyInvitation"] = Relationship(back_populates="company", cascade_delete=True)
+    employees: list["CompanyEmployee"] = Relationship(back_populates="company", cascade_delete=True)
     jobs: list["Job"] = Relationship(
         back_populates="company",
         cascade_delete=True,
@@ -236,6 +254,33 @@ class UpdatedCompanyLink(BaseModel):
     id: int
     type: str | None = None
     url: str | None = None
+
+
+class CreateCompanyInvitation(BaseModel):
+    email: str
+    status: str | None = None
+
+
+class RetrievedCompanyInvitation(BaseModel):
+    id: int | None = None
+    email: str
+    status: str | None = None
+    start_date: float | None = None
+    end_date: float | None = None
+
+
+class UpdateCompanyInvitation(BaseModel):
+    email: str
+    status: str | None = None
+
+
+class UpsertCompanyInvitation(BaseModel):
+    email: str
+    status: str | None = None
+
+
+class DeleteCompanyInvitation(BaseModel):
+    id: int
 
 
 class CreateCompanyEmployee(BaseModel):

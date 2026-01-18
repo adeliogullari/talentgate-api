@@ -23,13 +23,14 @@ from src.talentgate.application.models import (
 async def upload_resume(
     *,
     minio_client: Minio,
+    bucket_name: str,
     object_name: str,
     data: BytesIO,
     length: int,
     content_type: str,
 ) -> ObjectWriteResult:
     return minio_client.put_object(
-        bucket_name="resume",
+        bucket_name=bucket_name,
         object_name=object_name,
         data=data,
         length=length,
@@ -37,12 +38,12 @@ async def upload_resume(
     )
 
 
-async def retrieve_resume(*, minio_client: Minio, object_name: str) -> bytes:
+async def retrieve_resume(*, minio_client: Minio, bucket_name: str, object_name: str) -> bytes:
     response = None
 
     try:
         response = minio_client.get_object(
-            bucket_name="resume",
+            bucket_name=bucket_name,
             object_name=object_name,
         )
         data = response.data

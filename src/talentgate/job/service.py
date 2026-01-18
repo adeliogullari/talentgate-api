@@ -5,28 +5,28 @@ from sqlmodel import Session, select
 
 from src.talentgate.job.models import (
     CreateJob,
-    CreateJobAddress,
     CreateJobLocation,
+    CreateJobLocationAddress,
     CreateSalary,
     Job,
-    JobAddress,
     JobLocation,
+    JobLocationAddress,
     JobQueryParameters,
     JobSalary,
     UpdateJob,
-    UpdateJobAddress,
     UpdateJobLocation,
+    UpdateJobLocationAddress,
     UpdateSalary,
 )
 
 
-async def create_address(
+async def create_location_address(
     *,
     sqlmodel_session: Session,
     location_id: int,
-    address: CreateJobAddress,
-) -> JobAddress:
-    created_address = JobAddress(
+    address: CreateJobLocationAddress,
+) -> JobLocationAddress:
+    created_address = JobLocationAddress(
         **address.model_dump(exclude_unset=True, exclude_none=True),
         location_id=location_id,
     )
@@ -38,23 +38,25 @@ async def create_address(
     return created_address
 
 
-async def retrieve_address_by_id(
+async def retrieve_location_address_by_id(
     *,
     sqlmodel_session: Session,
     location_id: int,
     address_id: int,
-) -> JobAddress:
-    statement: Any = select(JobAddress).where(JobAddress.location_id == location_id, JobAddress.id == address_id)
+) -> JobLocationAddress:
+    statement: Any = select(JobLocationAddress).where(
+        JobLocationAddress.location_id == location_id, JobLocationAddress.id == address_id
+    )
 
     return sqlmodel_session.exec(statement).one_or_none()
 
 
-async def update_address(
+async def update_location_address(
     *,
     sqlmodel_session: Session,
-    retrieved_address: JobAddress,
-    address: UpdateJobAddress,
-) -> JobAddress:
+    retrieved_address: JobLocationAddress,
+    address: UpdateJobLocationAddress,
+) -> JobLocationAddress:
     retrieved_address.sqlmodel_update(
         address.model_dump(exclude_none=True, exclude_unset=True),
     )
@@ -82,7 +84,7 @@ async def create_location(
     )
 
     if "address" in location.model_fields_set and location.address is not None:
-        created_location.address = await create_address(
+        created_location.address = await create_location_address(
             sqlmodel_session=sqlmodel_session, location_id=created_location.id, address=location.address
         )
 
@@ -111,13 +113,13 @@ async def update_location(
     location: UpdateJobLocation,
 ) -> JobLocation:
     if "address" in location.model_fields_set and location.address is not None:
-        retrieved_address = await retrieve_address_by_id(
+        retrieved_address = await retrieve_location_address_by_id(
             sqlmodel_session=sqlmodel_session,
             location_id=retrieved_location.id,
             address_id=retrieved_location.address.id,
         )
 
-        retrieved_location.address = await update_address(
+        retrieved_location.address = await update_location_address(
             sqlmodel_session=sqlmodel_session,
             retrieved_address=retrieved_address,
             address=location.address,

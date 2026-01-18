@@ -12,6 +12,11 @@ class CompanyLinkType(str, Enum):
     GITHUB = "Github"
 
 
+class CompanyInvitationStatus(str, Enum):
+    PENDING = "Pending"
+    ACCEPTED = "Accepted"
+
+
 class CompanyEmployeeTitle(str, Enum):
     FOUNDER = "Founder"
     RECRUITER = "Recruiter"

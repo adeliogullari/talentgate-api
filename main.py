@@ -29,19 +29,19 @@ app.description = "TalentGate Platform"
 
 app.openapi_tags = [
     {"name": "auth", "description": "Operations with auth"},
-    {"name": "location", "description": "Operations with location"},
     {"name": "users", "description": "Operations with users"},
+    {"name": "companies", "description": "Operations with companies"},
+    {"name": "location", "description": "Operations with location"},
     {"name": "application", "description": "Operations with applications"},
     {"name": "job", "description": "Operations with jobs"},
-    {"name": "company", "description": "Operations with companies"},
     {"name": "payment", "description": "Operations with payments"},
 ]
 
-app.include_router(user_router)
 app.include_router(auth_router)
+app.include_router(user_router)
+app.include_router(company_router)
 app.include_router(application_router)
 app.include_router(job_router)
-app.include_router(company_router)
 app.include_router(payment_router)
 
 

@@ -10,10 +10,10 @@ if TYPE_CHECKING:
     from src.talentgate.company.models import Company
 
 
-class JobAddress(SQLModel, table=True):
-    __tablename__ = "job_address"
+class JobLocationAddress(SQLModel, table=True):
+    __tablename__ = "job_location_address"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     unit: str | None = Field(default=None)
     street: str | None = Field(default=None)
     city: str | None = Field(default=None)
@@ -27,11 +27,11 @@ class JobAddress(SQLModel, table=True):
 class JobLocation(SQLModel, table=True):
     __tablename__ = "job_location"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     type: str | None = Field(default=None)
     latitude: float | None = Field(default=None)
     longitude: float | None = Field(default=None)
-    address: JobAddress | None = Relationship(back_populates="location", cascade_delete=True)
+    address: JobLocationAddress | None = Relationship(back_populates="location", cascade_delete=True)
     job_id: int | None = Field(default=None, foreign_key="job.id", ondelete="CASCADE")
     job: Optional["Job"] = Relationship(back_populates="location")
 
@@ -39,7 +39,7 @@ class JobLocation(SQLModel, table=True):
 class JobSalary(SQLModel, table=True):
     __tablename__ = "job_salary"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     min: float | None = Field(default=None, ge=0)
     max: float | None = Field(default=None, ge=0)
     frequency: str | None = Field(default=None)
@@ -51,7 +51,7 @@ class JobSalary(SQLModel, table=True):
 class Job(SQLModel, table=True):
     __tablename__ = "job"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     title: str | None = Field(default=None)
     description: str | None = Field(default=None)
     department: str | None = Field(default=None)
@@ -76,7 +76,7 @@ class Job(SQLModel, table=True):
     )
 
 
-class CreateJobAddress(BaseModel):
+class CreateJobLocationAddress(BaseModel):
     unit: str | None = None
     street: str | None = None
     city: str | None = None
@@ -85,8 +85,8 @@ class CreateJobAddress(BaseModel):
     postal_code: str | None = None
 
 
-class CreatedJobAddress(BaseModel):
-    id: int
+class CreatedJobLocationAddress(BaseModel):
+    id: int | None = None
     unit: str | None = None
     street: str | None = None
     city: str | None = None
@@ -95,8 +95,8 @@ class CreatedJobAddress(BaseModel):
     postal_code: str | None = None
 
 
-class RetrievedJobAddress(BaseModel):
-    id: int
+class RetrievedJobLocationAddress(BaseModel):
+    id: int | None = None
     unit: str | None = None
     street: str | None = None
     city: str | None = None
@@ -105,7 +105,7 @@ class RetrievedJobAddress(BaseModel):
     postal_code: str | None = None
 
 
-class UpdateJobAddress(BaseModel):
+class UpdateJobLocationAddress(BaseModel):
     unit: str | None = None
     street: str | None = None
     city: str | None = None
@@ -114,8 +114,8 @@ class UpdateJobAddress(BaseModel):
     postal_code: str | None = None
 
 
-class UpdatedJobAddress(BaseModel):
-    id: int
+class UpdatedJobLocationAddress(BaseModel):
+    id: int | None = None
     unit: str | None = None
     street: str | None = None
     city: str | None = None
@@ -128,19 +128,19 @@ class CreateJobLocation(BaseModel):
     type: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    address: CreateJobAddress | None = None
+    address: CreateJobLocationAddress | None = None
 
 
 class CreatedJobLocation(BaseModel):
-    id: int
+    id: int | None = None
     type: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    address: CreateJobAddress | None = None
+    address: CreateJobLocationAddress | None = None
 
 
 class RetrievedJobLocation(BaseModel):
-    id: int
+    id: int | None = None
     unit: str | None = None
     street: str | None = None
     city: str | None = None
@@ -158,6 +158,16 @@ class UpdateJobLocation(BaseModel):
     postal_code: str | None = None
 
 
+class UpdatedJobLocation(BaseModel):
+    id: int | None = None
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
 class CreateSalary(BaseModel):
     min: float | None = None
     max: float | None = None
@@ -166,7 +176,7 @@ class CreateSalary(BaseModel):
 
 
 class CreatedSalary(BaseModel):
-    id: int
+    id: int | None = None
     min: float | None = None
     max: float | None = None
     frequency: str | None = None
@@ -174,7 +184,7 @@ class CreatedSalary(BaseModel):
 
 
 class RetrievedJobSalary(BaseModel):
-    id: int
+    id: int | None = None
     min: float | None = None
     max: float | None = None
     frequency: str | None = None
@@ -189,33 +199,20 @@ class UpdateSalary(BaseModel):
 
 
 class UpdatedSalary(BaseModel):
-    id: int
+    id: int | None = None
     min: float | None = None
     max: float | None = None
     frequency: str | None = None
     currency: str | None = None
 
 
-class JobRequest(SQLModel):
+class JobResponse(SQLModel):
     title: str | None = None
     description: str | None = None
     department: str | None = None
     employment_type: str | None = None
-    job_post_deadline: datetime | None = None
-    company_id: int | None = None
     location: CreateJobLocation | None = None
     salary: CreateSalary | None = None
-    created_at: float | None = None
-    updated_at: float | None = None
-
-
-class JobResponse(SQLModel):
-    id: int | None = None
-    title: str | None = None
-    department: str | None = None
-    employment_type: str | None = None
-    job_post_deadline: datetime | None = None
-    company_id: int | None = None
     created_at: float | None = None
     updated_at: float | None = None
 
@@ -234,41 +231,60 @@ class CreateJob(BaseModel):
     description: str | None = None
     department: str | None = None
     employment_type: str | None = None
-    company_id: int | None = None
+    location: CreateJobLocation | None = None
+    salary: CreateSalary | None = None
+
+
+class CreatedJob(BaseModel):
+    id: int | None = None
+    title: str | None = None
+    description: str | None = None
+    department: str | None = None
+    employment_type: str | None = None
     location: CreateJobLocation | None = None
     salary: CreateSalary | None = None
     created_at: float | None = None
     updated_at: float | None = None
 
 
-class CreatedJob(JobResponse):
-    pass
-
-
-class RetrievedJob(JobResponse):
+class RetrievedJob(BaseModel):
+    id: int | None = None
+    title: str | None = None
     description: str | None = None
-    location: RetrievedJobLocation | None = None
+    department: str | None = None
+    employment_type: str | None = None
+    location: CreateJobLocation | None = None
+    salary: CreateSalary | None = None
+    created_at: float | None = None
+    updated_at: float | None = None
 
 
-class RetrievedCompanyJob(RetrievedJob):
+class UpdateJob(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    department: str | None = None
+    employment_type: str | None = None
+    location: CreateJobLocation | None = None
+    salary: CreateSalary | None = None
+    created_at: float | None = None
+    updated_at: float | None = None
+
+
+class UpdatedJob(BaseModel):
+    id: int | None = None
+    title: str | None = None
+    description: str | None = None
+    department: str | None = None
+    employment_type: str | None = None
+    location: CreateJobLocation | None = None
+    salary: CreateSalary | None = None
+    created_at: float | None = None
+    updated_at: float | None = None
+
+
+class DeleteJob(BaseModel):
     pass
 
 
-class RetrievedCompanyJobs(JobResponse):
-    location: RetrievedJobLocation | None = None
-
-
-class UpdateJob(JobRequest):
-    pass
-
-
-class UpdatedJob(JobResponse):
-    pass
-
-
-class DeleteJob(JobRequest):
-    pass
-
-
-class DeletedJob(JobResponse):
+class DeletedJob(BaseModel):
     pass

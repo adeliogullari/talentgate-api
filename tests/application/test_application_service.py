@@ -20,13 +20,13 @@ from src.talentgate.application.service import (
 )
 
 
-# async def test_create_resume(minio_client: Minio) -> None:
-#     await create_resume(
-#         minio_client=minio_client,
-#         object_name="resume.pdf",
-#         data=BytesIO(b"data"),
-#         length=len(b"data"),
-#     )
+async def test_create_resume(minio_client: Minio) -> None:
+    await create_resume(
+        minio_client=minio_client,
+        object_name="resume.pdf",
+        data=BytesIO(b"data"),
+        length=len(b"data"),
+    )
 
 
 async def test_retrieve_resume(minio_client: Minio, resume) -> None:

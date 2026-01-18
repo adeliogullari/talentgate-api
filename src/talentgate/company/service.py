@@ -13,21 +13,25 @@ from src.talentgate.company.models import (
     Company,
     CompanyEmployee,
     CompanyEmployeeQueryParameters,
+    CompanyInvitation,
     CompanyLink,
     CompanyLocation,
     CompanyLocationAddress,
     CompanyQueryParameters,
     CreateCompany,
     CreateCompanyEmployee,
+    CreateCompanyInvitation,
     CreateCompanyLink,
     CreateCompanyLocation,
     CreateCompanyLocationAddress,
     UpdateCompany,
     UpdateCompanyEmployee,
+    UpdateCompanyInvitation,
     UpdateCompanyLink,
     UpdateCompanyLocation,
     UpdateCompanyLocationAddress,
     UpdateCurrentCompany,
+    UpsertCompanyInvitation,
 )
 from src.talentgate.email import service as email_service
 from src.talentgate.email.client import EmailClient
@@ -237,6 +241,82 @@ async def update_link(
     sqlmodel_session.refresh(retrieved_link)
 
     return retrieved_link
+
+
+async def create_invitation(
+    *, sqlmodel_session: Session, company_id: int, invitation: CreateCompanyInvitation
+) -> CompanyInvitation:
+    created_invitation = CompanyInvitation(
+        **invitation.model_dump(exclude_unset=True, exclude_none=True), company_id=company_id
+    )
+
+    sqlmodel_session.add(created_invitation)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(created_invitation)
+
+    return created_invitation
+
+
+async def retrieve_invitation_by_id(
+    *, sqlmodel_session: Session, company_id: int, invitation_id: int
+) -> CompanyInvitation:
+    statement: Any = select(CompanyInvitation).where(
+        CompanyInvitation.company_id == company_id, CompanyInvitation.id == invitation_id
+    )
+
+    return sqlmodel_session.exec(statement).one_or_none()
+
+
+async def retrieve_invitation_by_email(*, sqlmodel_session: Session, company_id: int, email: str) -> CompanyInvitation:
+    statement: Any = select(CompanyInvitation).where(
+        CompanyInvitation.company_id == company_id, CompanyInvitation.email == email
+    )
+
+    return sqlmodel_session.exec(statement).one_or_none()
+
+
+async def update_invitation(
+    *,
+    sqlmodel_session: Session,
+    retrieved_invitation: CompanyInvitation,
+    invitation: UpdateCompanyInvitation,
+) -> CompanyInvitation:
+    retrieved_invitation.sqlmodel_update(
+        invitation.model_dump(exclude_none=True, exclude_unset=True),
+    )
+
+    sqlmodel_session.add(retrieved_invitation)
+    sqlmodel_session.commit()
+    sqlmodel_session.refresh(retrieved_invitation)
+
+    return retrieved_invitation
+
+
+async def upsert_invitation(
+    *,
+    sqlmodel_session: Session,
+    company_id: int,
+    retrieved_invitation: CompanyInvitation,
+    invitation: UpsertCompanyInvitation,
+) -> CompanyInvitation:
+    if retrieved_invitation:
+        return await update_invitation(
+            sqlmodel_session=sqlmodel_session,
+            retrieved_invitation=retrieved_invitation,
+            invitation=UpdateCompanyInvitation(**invitation.model_dump()),
+        )
+    return await create_invitation(
+        sqlmodel_session=sqlmodel_session,
+        company_id=company_id,
+        invitation=CreateCompanyInvitation(**invitation.model_dump()),
+    )
+
+
+async def delete_invitation(*, sqlmodel_session: Session, retrieved_invitation: CompanyInvitation) -> CompanyInvitation:
+    sqlmodel_session.delete(retrieved_invitation)
+    sqlmodel_session.commit()
+
+    return retrieved_invitation
 
 
 async def delete_link(*, sqlmodel_session: Session, retrieved_link: CompanyLink) -> CompanyLink:
