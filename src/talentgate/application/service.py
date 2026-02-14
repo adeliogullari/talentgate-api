@@ -18,6 +18,7 @@ from src.talentgate.application.models import (
     UpdateApplicationAddress,
     UpdateApplicationLink,
 )
+from src.talentgate.job.models import Job
 
 
 async def upload_resume(
@@ -197,9 +198,10 @@ async def create(
 async def retrieve_by_id(
     *,
     sqlmodel_session: Session,
+    job_id: int,
     application_id: int,
 ) -> Application:
-    statement: Any = select(Application).where(Application.id == application_id)
+    statement: Any = select(Application).where(Job.id == job_id, Application.id == application_id)
 
     retrieved_application: Application = sqlmodel_session.exec(statement).one_or_none()
 

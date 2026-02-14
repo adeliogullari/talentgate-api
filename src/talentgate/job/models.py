@@ -206,24 +206,12 @@ class UpdatedSalary(BaseModel):
     currency: str | None = None
 
 
-class JobResponse(SQLModel):
-    title: str | None = None
-    description: str | None = None
-    department: str | None = None
-    employment_type: str | None = None
-    location: CreateJobLocation | None = None
-    salary: CreateSalary | None = None
-    created_at: float | None = None
-    updated_at: float | None = None
-
-
 class JobQueryParameters(SQLModel):
     offset: int | None = None
     limit: int | None = None
     title: str | None = None
-    employment_type: list[str] | None = None
-    location_type: list[str] | None = None
-    department: list[str] | None = None
+    department: str | None = None
+    employment_type: str | None = None
 
 
 class CreateJob(BaseModel):
@@ -264,8 +252,8 @@ class UpdateJob(BaseModel):
     description: str | None = None
     department: str | None = None
     employment_type: str | None = None
-    location: CreateJobLocation | None = None
-    salary: CreateSalary | None = None
+    location: UpdateJobLocation | None = None
+    salary: UpdateSalary | None = None
     created_at: float | None = None
     updated_at: float | None = None
 
@@ -283,8 +271,8 @@ class UpdatedJob(BaseModel):
 
 
 class DeleteJob(BaseModel):
-    pass
+    id: int | None = None
 
 
 class DeletedJob(BaseModel):
-    pass
+    id: int | None = None

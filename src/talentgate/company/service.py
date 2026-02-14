@@ -5,8 +5,7 @@ from typing import Any
 from fastapi import BackgroundTasks
 from minio import Minio
 from minio.helpers import ObjectWriteResult
-from sqlalchemy import func
-from sqlmodel import Session, and_, or_, select
+from sqlmodel import Session, select
 
 from config import get_settings
 from src.talentgate.company.models import (
@@ -35,7 +34,6 @@ from src.talentgate.company.models import (
 )
 from src.talentgate.email import service as email_service
 from src.talentgate.email.client import EmailClient
-from src.talentgate.job.models import Job, JobLocation, JobQueryParameters
 from src.talentgate.user import service as user_service
 from src.talentgate.user.models import User
 
@@ -360,6 +358,9 @@ async def retrieve_employees_by_query_parameters(
     company_id: int,
     query_parameters: CompanyEmployeeQueryParameters,
 ) -> Sequence[CompanyEmployee]:
+    offset = query_parameters.offset
+    limit = query_parameters.limit
+
     filters = [
         CompanyEmployee.__table__.columns[attr] == value
         for attr, value in query_parameters.model_dump(
@@ -383,8 +384,8 @@ async def retrieve_employees_by_query_parameters(
         .join(User)
         .where(CompanyEmployee.company_id == company_id, *filters)
         .order_by(CompanyEmployee.id)
-        .offset(query_parameters.offset)
-        .limit(query_parameters.limit)
+        .offset(offset)
+        .limit(limit)
     )
 
     return sqlmodel_session.exec(statement).all()
@@ -421,59 +422,6 @@ async def delete_employee(
     sqlmodel_session.commit()
 
     return retrieved_employee
-
-
-async def retrieve_jobs_by_query_parameters(
-    *,
-    sqlmodel_session: Session,
-    query_parameters: JobQueryParameters,
-    company_id: int,
-) -> Sequence[Job]:
-    filters = [Job.company_id == company_id]
-
-    if query_parameters.employment_type:
-        employment_filter = or_(
-            *[Job.employment_type == et for et in query_parameters.employment_type],
-        )
-        filters.append(employment_filter)
-
-    if query_parameters.location_type:
-        location_filter = or_(
-            *[JobLocation.type == lt for lt in query_parameters.location_type],
-        )
-        filters.append(location_filter)
-
-    if query_parameters.department:
-        department_filter = or_(
-            *[Job.department == dept for dept in query_parameters.department],
-        )
-        filters.append(department_filter)
-
-    if query_parameters.title:
-        filters.append(
-            func.lower(Job.title).ilike(f"%{query_parameters.title.lower()}%"),
-        )
-
-    statement = (
-        select(Job)
-        .join(JobLocation)
-        .where(and_(*filters))
-        .offset(query_parameters.offset)
-        .limit(query_parameters.limit)
-    )
-
-    return sqlmodel_session.exec(statement).all()
-
-
-async def retrieve_job_by_id(
-    *,
-    sqlmodel_session: Session,
-    company_id: int,
-    job_id: int,
-) -> Job:
-    statement: Any = select(Job).where(Job.company_id == company_id).where(Job.id == job_id)
-
-    return sqlmodel_session.exec(statement).one()
 
 
 async def create(*, sqlmodel_session: Session, company: CreateCompany) -> Company:

@@ -22,7 +22,6 @@ from src.talentgate.application import service as application_service
 from src.talentgate.auth import service as auth_service
 from src.talentgate.auth.exceptions import (
     InvalidAuthorizationException,
-    InvalidOneTimeTokenException,
 )
 from src.talentgate.auth.models import AuthenticationTokens
 from src.talentgate.company import service as company_service
@@ -120,6 +119,15 @@ async def retrieve_current_company(
     return retrieved_company
 
 
+class CreateEmployeeInvitationDependency:
+    def __call__(
+        self, user: User = Depends(retrieve_current_user), company: Company = Depends(retrieve_current_company)
+    ) -> bool:
+        if (len(company.invitations) >= 1) and user.employee.title == CompanyEmployeeTitle.FOUNDER:
+            return True
+        raise InvalidAuthorizationException
+
+
 @router.get(
     path="/api/v1/me/company/logo",
     response_model=None,
@@ -170,7 +178,7 @@ async def upload_current_company_logo(
     response_model=None,
     status_code=200,
 )
-async def retrieve_current_company_job_application_resume(
+async def retrieve_resume(
     *,
     job_id: int,
     application_id: int,
@@ -178,14 +186,14 @@ async def retrieve_current_company_job_application_resume(
     minio_client: Annotated[Minio, Depends(get_minio_client)],
     retrieved_company: Annotated[Company, Depends(retrieve_current_company)],
 ) -> StreamingResponse | None:
-    logo = await application_service.retrieve_resume(
+    resume = await application_service.retrieve_resume(
         minio_client=minio_client,
         bucket_name=settings.minio_default_bucket,
         object_name=f"companies/{retrieved_company.id}/jobs/{job_id}/applications/{application_id}/resume",
     )
 
     return StreamingResponse(
-        content=BytesIO(logo),
+        content=BytesIO(resume),
     )
 
 
@@ -193,7 +201,7 @@ async def retrieve_current_company_job_application_resume(
     path="/api/v1/me/company/jobs/{job_id}/applications/{application_id}/resume",
     status_code=201,
 )
-async def upload_current_company_job_application_resume(
+async def upload_resume(
     *,
     job_id: int,
     application_id: int,
@@ -637,6 +645,7 @@ async def delete_current_company_link(
 @router.post(
     path="/api/v1/me/company/employee-invitations",
     status_code=200,
+    dependencies=[Depends(CreateEmployeeInvitationDependency())],
 )
 async def invite_employee(
     *,
@@ -692,14 +701,6 @@ async def accept_employee_invitation(
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
     invitation: InvitationAcceptance,
 ) -> JSONResponse:
-    is_verified = auth_service.verify_token(
-        token=invitation.token,
-        key=settings.one_time_token_key,
-    )
-
-    if not is_verified:
-        raise InvalidOneTimeTokenException
-
     _, payload, _ = auth_service.decode_token(token=invitation.token)
 
     retrieved_invitation = await company_service.retrieve_invitation_by_email(
@@ -738,7 +739,7 @@ async def accept_employee_invitation(
                     password=password,
                     verified=True,
                     subscription=CreateUserSubscription(
-                        plan=payload.get("plan"),
+                        plan=UserSubscriptionPlan.BASIC.value,
                         start_date=datetime.now(UTC).timestamp(),
                         end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
                     ),

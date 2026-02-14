@@ -1,9 +1,14 @@
 from collections.abc import Sequence
+from io import BytesIO
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
+from minio import Minio
 from sqlmodel import Session
 
+from config import Settings, get_settings
+from src.talentgate.application import service as application_service
+from src.talentgate.application.exceptions import ApplicationIdNotFoundException, ResumeAlreadyExistsException
 from src.talentgate.auth.exceptions import (
     InvalidAuthorizationException,
 )
@@ -20,6 +25,7 @@ from src.talentgate.job.models import (
     UpdatedJob,
     UpdateJob,
 )
+from src.talentgate.storage.service import get_minio_client
 from src.talentgate.user.models import User, UserRole
 from src.talentgate.user.views import retrieve_current_user
 
@@ -59,6 +65,47 @@ class DeleteJobDependency:
         if user.role == UserRole.ADMIN:
             return True
         raise InvalidAuthorizationException
+
+
+@router.post(
+    path="/api/v1/jobs/{job_id}/applications/{application_id}/resume",
+    status_code=201,
+)
+async def upload_resume(
+    *,
+    job_id: int,
+    application_id: int,
+    file: Annotated[UploadFile, File()],
+    settings: Annotated[Settings, Depends(get_settings)],
+    minio_client: Annotated[Minio, Depends(get_minio_client)],
+    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
+) -> None:
+    data = await file.read()
+
+    retrieved_application = application_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, job_id=job_id, application_id=application_id
+    )
+
+    if not retrieved_application:
+        raise ApplicationIdNotFoundException
+
+    retrieved_resume = application_service.retrieve_resume(
+        minio_client=minio_client,
+        bucket_name=settings.minio_default_bucket,
+        object_name=f"jobs/{job_id}/applications/{application_id}/resume",
+    )
+
+    if retrieved_resume:
+        raise ResumeAlreadyExistsException
+
+    await application_service.upload_resume(
+        minio_client=minio_client,
+        bucket_name=settings.minio_default_bucket,
+        object_name=f"jobs/{job_id}/applications/{application_id}/resume",
+        data=BytesIO(data),
+        length=len(data),
+        content_type=file.content_type,
+    )
 
 
 @router.post(

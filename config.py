@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     minio_root_user: str
     minio_root_password: str
     minio_default_bucket: str
+    docling_schema: str
+    docling_host: str
+    docling_port: str
+    docling_api_key: str
+    gemini_api_key: str
     google_client_id: str
     password_hash_algorithm: str
     message_digest_algorithm: str

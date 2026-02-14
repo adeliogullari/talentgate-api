@@ -1,6 +1,6 @@
 import random
 import string
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Annotated
 
 import requests
@@ -35,16 +35,17 @@ from src.talentgate.user.exceptions import (
     InvalidVerificationException,
 )
 from src.talentgate.user.models import CreateUser, CreateUserSubscription, UpdateUser, User
-from src.talentgate.user.views import retrieve_current_user
 
 from .exceptions import (
     BlacklistedTokenException,
     InvalidGoogleIDTokenException,
     InvalidLinkedInAccessTokenException,
+    InvalidOneTimeTokenException,
     InvalidRefreshTokenException,
 )
 from .models import (
     AuthenticationTokens,
+    EmailVerification,
     GoogleCredentials,
     LinkedInCredentials,
     LoginCredentials,
@@ -52,8 +53,6 @@ from .models import (
     RefreshTokens,
     RegisterCredentials,
     RegisteredUser,
-    ResendCredentials,
-    ResendEmail,
     VerifiedEmail,
 )
 
@@ -189,9 +188,9 @@ async def google(
                     password=password,
                     verified=True,
                     subscription=CreateUserSubscription(
-                        plan=UserSubscriptionPlan.STANDARD.value,
+                        plan=UserSubscriptionPlan.BASIC.value,
                         start_date=datetime.now(UTC).timestamp(),
-                        end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                        end_date=None,
                     ),
                 ),
             ),
@@ -306,9 +305,9 @@ async def linkedin(
                     password=password,
                     verified=True,
                     subscription=CreateUserSubscription(
-                        plan=UserSubscriptionPlan.STANDARD.value,
+                        plan=UserSubscriptionPlan.BASIC.value,
                         start_date=datetime.now(UTC).timestamp(),
-                        end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                        end_date=None,
                     ),
                 ),
             ),
@@ -405,9 +404,9 @@ async def register(
             user=CreateUser(
                 **credentials.model_dump(exclude_unset=True, exclude_none=True),
                 subscription=CreateUserSubscription(
-                    plan=UserSubscriptionPlan.STANDARD.value,
+                    plan=UserSubscriptionPlan.BASIC.value,
                     start_date=datetime.now(UTC).timestamp(),
-                    end_date=(datetime.now(UTC) + timedelta(days=15)).timestamp(),
+                    end_date=None,
                 ),
             ),
         ),
@@ -436,15 +435,28 @@ async def register(
 
 
 @router.post(
-    path="/api/v1/auth/email/verify",
+    path="/api/v1/auth/email-verifications",
     response_model=VerifiedEmail,
     status_code=200,
 )
 async def verify_email(
     *,
+    settings: Annotated[Settings, Depends(get_settings)],
     sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
-    retrieved_user: Annotated[User, Depends(retrieve_current_user)],
+    verification: EmailVerification,
 ) -> User:
+    if not verification.token or auth_service.verify_token(
+        token=verification.token,
+        key=settings.one_time_token_key,
+    ):
+        raise InvalidOneTimeTokenException
+
+    _, payload, _ = auth_service.decode_token(token=verification.token)
+
+    retrieved_user = await user_service.retrieve_by_id(
+        sqlmodel_session=sqlmodel_session, user_id=int(payload["user_id"])
+    )
+
     if retrieved_user.verified:
         raise EmailAlreadyVerifiedException
 
@@ -456,50 +468,7 @@ async def verify_email(
 
 
 @router.post(
-    path="/api/v1/auth/email/verify/resend",
-    response_model=ResendEmail,
-    status_code=200,
-)
-async def resend_verification_email(
-    *,
-    sqlmodel_session: Annotated[Session, Depends(get_sqlmodel_session)],
-    background_tasks: BackgroundTasks,
-    settings: Annotated[Settings, Depends(get_settings)],
-    email_client: Annotated[EmailClient, Depends(get_email_client)],
-    credentials: ResendCredentials,
-) -> User:
-    retrieved_user = await user_service.retrieve_by_email(sqlmodel_session=sqlmodel_session, email=credentials.email)
-
-    if not retrieved_user:
-        raise InvalidCredentialsException
-
-    if retrieved_user.verified:
-        raise EmailAlreadyVerifiedException
-
-    token = auth_service.encode_token(
-        payload={"user_id": str(retrieved_user.id)},
-        key=settings.access_token_key,
-        seconds=settings.access_token_expiration,
-    )
-
-    context = {
-        "firstname": retrieved_user.firstname,
-        "link": f"${settings.frontend_base_url}/verify?token={token}",
-    }
-
-    await auth_service.send_verification_email(
-        email_client=email_client,
-        background_tasks=background_tasks,
-        context=context,
-        from_addr=settings.smtp_email,
-        to_addrs=retrieved_user.email,
-    )
-
-    return retrieved_user
-
-
-@router.post(
-    path="/api/v1/auth/token/refresh",
+    path="/api/v1/auth/refresh-token",
     status_code=200,
 )
 async def refresh(

@@ -17,10 +17,10 @@ class UserSubscription(SQLModel, table=True):
     paddle_subscription_id: str | None = Field(default=None)
     plan: str = Field(default=UserSubscriptionPlan.BASIC.value)
     start_date: float = Field(
-        default_factory=lambda: (datetime.now(UTC) - timedelta(minutes=2)).timestamp(),
+        default_factory=(datetime.now(UTC) - timedelta(minutes=2)).timestamp,
     )
     end_date: float = Field(
-        default_factory=lambda: (datetime.now(UTC) - timedelta(minutes=1)).timestamp(),
+        default_factory=(datetime.now(UTC) - timedelta(minutes=1)).timestamp,
     )
     user_id: int | None = Field(default=None, foreign_key="user.id", ondelete="CASCADE")
     user: Optional["User"] = Relationship(back_populates="subscription")
@@ -35,7 +35,7 @@ class UserSubscription(SQLModel, table=True):
     @property
     def status(self) -> UserSubscriptionStatus:
         now = datetime.now(UTC).timestamp()
-        if self.end_date >= now:
+        if self.end_date is None or self.end_date >= now:
             return UserSubscriptionStatus.ACTIVE
         return UserSubscriptionStatus.EXPIRED
 

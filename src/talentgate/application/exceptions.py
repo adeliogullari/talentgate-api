@@ -4,18 +4,6 @@ from starlette.status import (
     HTTP_409_CONFLICT,
 )
 
-# Application Evaluation Exceptions
-EvaluationIdNotFoundException = HTTPException(
-    status_code=HTTP_404_NOT_FOUND,
-    detail="Evaluation not found for the provided id.",
-)
-
-DuplicateEvaluationException = HTTPException(
-    status_code=HTTP_409_CONFLICT,
-    detail="You have already submitted an evaluation for this application.",
-)
-
-# Applcation Exceptions
 ApplicationIdNotFoundException = HTTPException(
     status_code=HTTP_404_NOT_FOUND,
     detail="Application not found for the provided id.",
@@ -30,3 +18,5 @@ DuplicatePhoneException = HTTPException(
     status_code=HTTP_409_CONFLICT,
     detail="An applicant with this phone number already exists.",
 )
+
+ResumeAlreadyExistsException = HTTPException(status_code=HTTP_409_CONFLICT, detail="Resume already exists.")

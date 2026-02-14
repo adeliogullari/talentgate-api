@@ -1,20 +1,20 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class JobEmploymentType(str, Enum):
+class JobEmploymentType(StrEnum):
     INTERNSHIP = "internship"
     CONTRACTOR = "contractor"
     PART_TIME = "part-time"
     FULL_TIME = "full-time"
 
 
-class JobLocationType(str, Enum):
+class JobLocationType(StrEnum):
     REMOTE = "remote"
     HYBRID = "hybrid"
     ON_SITE = "on-site"
 
 
-class JobSalaryFrequency(str, Enum):
+class JobSalaryFrequency(StrEnum):
     HOURLY = "hourly"
     DAILY = "daily"
     WEEKLY = "weekly"

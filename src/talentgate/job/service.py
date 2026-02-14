@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlmodel import Session, select
 
+from src.talentgate.company.models import Company
 from src.talentgate.job.models import (
     CreateJob,
     CreateJobLocation,
@@ -183,13 +184,14 @@ async def update_salary(
     return retrieved_salary
 
 
-async def create(*, sqlmodel_session: Session, job: CreateJob) -> Job:
+async def create(*, sqlmodel_session: Session, company_id: int, job: CreateJob) -> Job:
     created_job = Job(
         **job.model_dump(
             exclude_unset=True,
             exclude_none=True,
             exclude={"location", "salary"},
         ),
+        company_id=company_id,
     )
 
     if "location" in job.model_fields_set and job.location is not None:
@@ -209,8 +211,8 @@ async def create(*, sqlmodel_session: Session, job: CreateJob) -> Job:
     return created_job
 
 
-async def retrieve_by_id(*, sqlmodel_session: Session, job_id: int) -> Job:
-    statement: Any = select(Job).where(Job.id == job_id)
+async def retrieve_by_id(*, sqlmodel_session: Session, company_id: int, job_id: int) -> Job:
+    statement: Any = select(Job).where(Company.id == company_id, Job.id == job_id)
 
     return sqlmodel_session.exec(statement).one_or_none()
 
@@ -218,12 +220,14 @@ async def retrieve_by_id(*, sqlmodel_session: Session, job_id: int) -> Job:
 async def retrieve_by_query_parameters(
     *,
     sqlmodel_session: Session,
+    company_id: int,
     query_parameters: JobQueryParameters,
 ) -> Sequence[Job]:
     offset = query_parameters.offset
     limit = query_parameters.limit
+
     filters = {
-        getattr(Job, attr) == value
+        Job.__table__.columns[attr] == value
         for attr, value in query_parameters.model_dump(
             exclude={"offset", "limit"},
             exclude_unset=True,
@@ -231,7 +235,15 @@ async def retrieve_by_query_parameters(
         )
     }
 
-    statement: Any = select(Job).offset(offset).limit(limit).where(*filters)
+    statement: Any = (
+        select(Job)
+        .join(JobLocation)
+        .join(JobSalary)
+        .where(Job.company_id == company_id, *filters)
+        .order_by(Job.id)
+        .offset(offset)
+        .limit(limit)
+    )
 
     return sqlmodel_session.exec(statement).all()
 
@@ -271,26 +283,6 @@ async def update(
     sqlmodel_session.refresh(retrieved_job)
 
     return retrieved_job
-
-
-async def upsert(
-    *,
-    sqlmodel_session: Session,
-    job: CreateJob | UpdateJob,
-) -> Job:
-    retrieved_job = await retrieve_by_id(
-        sqlmodel_session=sqlmodel_session,
-        job_id=job.id,
-    )
-
-    if retrieved_job:
-        return await update(
-            sqlmodel_session=sqlmodel_session,
-            retrieved_job=retrieved_job,
-            job=job,
-        )
-
-    return await create(sqlmodel_session=sqlmodel_session, job=job)
 
 
 async def delete(*, sqlmodel_session: Session, retrieved_job: Job) -> Job:

@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -36,16 +36,15 @@ class ApplicationLink(SQLModel, table=True):
 class Application(SQLModel, table=True):
     __tablename__ = "application"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     firstname: str = Field(nullable=False)
     lastname: str = Field(nullable=False)
     email: str = Field(nullable=False)
     phone: str = Field(nullable=False)
-    resume: str | None = Field(default=None)
     status: str | None = Field(default=ApplicationStatus.APPLIED.value)
     address: ApplicationAddress | None = Relationship(back_populates="application", cascade_delete=True)
     links: list[ApplicationLink] = Relationship(back_populates="application", cascade_delete=True)
-    job_id: int | None = Field(default=None, foreign_key="job.id")
+    job_id: int | None = Field(default=None, foreign_key="job.id", ondelete="CASCADE")
     job: Optional["Job"] = Relationship(back_populates="applications")
     created_at: datetime | None = Field(default=datetime.now(UTC))
     updated_at: datetime | None = Field(
@@ -131,11 +130,10 @@ class UpdatedApplicationLink(SQLModel):
 
 
 class CreateApplication(SQLModel):
-    firstname: str | None = None
-    lastname: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    resume: str | None = None
+    firstname: str
+    lastname: str
+    email: str
+    phone: str
     address: CreateApplicationAddress | None = None
     links: list[CreateApplicationLink] | None = None
     status: str | None = None
@@ -149,7 +147,6 @@ class CreatedApplication(SQLModel):
     lastname: str | None = None
     email: str | None = None
     phone: str | None = None
-    resume: str | None = None
     status: str | None = None
     links: list[ApplicationLink] = None
     created_at: datetime | None = None
@@ -167,7 +164,6 @@ class RetrievedApplication(SQLModel):
     state: str | None = None
     country: str | None = None
     postal_code: str | None = None
-    resume: str | None = None
     status: str | None = None
     links: list[ApplicationLink] = None
     created_at: datetime | None = None
@@ -193,8 +189,6 @@ class UpdateApplication(SQLModel):
     state: str | None = None
     country: str | None = None
     postal_code: str | None = None
-    resume: Any | None = None
-    earliest_start_date: datetime | None = None
     status: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -211,8 +205,6 @@ class UpdatedApplication(SQLModel):
     state: str | None = None
     country: str | None = None
     postal_code: str | None = None
-    resume: Any | None = None
-    earliest_start_date: datetime | None = None
     status: str | None = None
     links: list[ApplicationLink] = None
     created_at: datetime | None = None

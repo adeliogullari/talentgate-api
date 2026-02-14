@@ -31,9 +31,8 @@ app.openapi_tags = [
     {"name": "auth", "description": "Operations with auth"},
     {"name": "users", "description": "Operations with users"},
     {"name": "companies", "description": "Operations with companies"},
-    {"name": "location", "description": "Operations with location"},
-    {"name": "application", "description": "Operations with applications"},
-    {"name": "job", "description": "Operations with jobs"},
+    {"name": "applications", "description": "Operations with applications"},
+    {"name": "jobs", "description": "Operations with jobs"},
     {"name": "payment", "description": "Operations with payments"},
 ]
 

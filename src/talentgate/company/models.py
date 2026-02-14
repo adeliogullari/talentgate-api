@@ -83,7 +83,7 @@ class CompanyEmployee(SQLModel, table=True):
     user_id: int | None = Field(default=None, foreign_key="user.id")
     user: User | None = Relationship(back_populates="employee")
     company_id: int | None = Field(default=None, foreign_key="company.id", ondelete="CASCADE")
-    company: Optional["Company"] | None = Relationship(back_populates="employees")
+    company: None | "Company" = Relationship(back_populates="employees")
     created_at: float | None = Field(
         default_factory=lambda: datetime.now(UTC).timestamp(),
     )

@@ -70,6 +70,10 @@ class VerifiedEmail(BaseModel):
     email: str
 
 
+class EmailVerification(BaseModel):
+    token: str
+
+
 class RefreshTokens(BaseModel):
     refresh_token: str | None = None
 

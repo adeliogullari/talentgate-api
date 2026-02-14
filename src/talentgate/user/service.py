@@ -157,7 +157,7 @@ async def retrieve_by_query_parameters(
     offset = query_parameters.offset
     limit = query_parameters.limit
     filters = [
-        getattr(User, attr) == value
+        User.__table__.columns[attr] == value
         for attr, value in query_parameters.model_dump(
             exclude={"offset", "limit"},
             exclude_unset=True,

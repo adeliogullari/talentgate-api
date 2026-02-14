@@ -1,17 +1,17 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class UserSubscriptionPlan(str, Enum):
+class UserSubscriptionPlan(StrEnum):
     BASIC = "basic"
     STANDARD = "standard"
     PREMIUM = "premium"
 
 
-class UserSubscriptionStatus(str, Enum):
+class UserSubscriptionStatus(StrEnum):
     ACTIVE = "active"
     EXPIRED = "expired"
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     OWNER = "owner"
     ADMIN = "admin"

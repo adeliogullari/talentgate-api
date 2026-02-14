@@ -1,22 +1,22 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class CompanyLocationType(str, Enum):
+class CompanyLocationType(StrEnum):
     HEADQUARTERS = "Headquarters"
     OFFICE = "Office"
 
 
-class CompanyLinkType(str, Enum):
+class CompanyLinkType(StrEnum):
     WEBSITE = "Website"
     LINKEDIN = "LinkedIn"
     GITHUB = "Github"
 
 
-class CompanyInvitationStatus(str, Enum):
+class CompanyInvitationStatus(StrEnum):
     PENDING = "Pending"
     ACCEPTED = "Accepted"
 
 
-class CompanyEmployeeTitle(str, Enum):
+class CompanyEmployeeTitle(StrEnum):
     FOUNDER = "Founder"
     RECRUITER = "Recruiter"
