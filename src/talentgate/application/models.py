@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -9,48 +10,120 @@ if TYPE_CHECKING:
     from src.talentgate.job.models import Job
 
 
-class ApplicationAddress(SQLModel, table=True):
-    __tablename__ = "application_address"
+class ApplicantAddress(SQLModel, table=True):
+    __tablename__ = "applicant_address"
 
-    id: int = Field(primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     unit: str | None = Field(default=None)
     street: str | None = Field(default=None)
     city: str | None = Field(default=None)
     state: str | None = Field(default=None)
     country: str | None = Field(default=None)
     postal_code: str | None = Field(default=None)
-    application_id: int | None = Field(default=None, foreign_key="application.id", ondelete="CASCADE")
-    application: Optional["Application"] = Relationship(back_populates="address")
+    applicant_id: uuid.UUID | None = Field(default=None, foreign_key="applicant.id", ondelete="CASCADE")
+    applicant: Optional["Applicant"] = Relationship(back_populates="address")
 
 
-class ApplicationLink(SQLModel, table=True):
-    __tablename__ = "application_link"
+class ApplicantLink(SQLModel, table=True):
+    __tablename__ = "applicant_link"
 
-    id: int = Field(primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     type: str | None = Field(default=None)
     url: str | None = Field(default=None, max_length=2048)
-    application_id: int | None = Field(default=None, foreign_key="application.id", ondelete="CASCADE")
-    application: Optional["Application"] = Relationship(back_populates="links")
+    applicant_id: uuid.UUID | None = Field(default=None, foreign_key="applicant.id", ondelete="CASCADE")
+    applicant: Optional["Applicant"] = Relationship(back_populates="links")
+
+
+class ApplicantEducation(SQLModel, table=True):
+    __tablename__ = "applicant_education"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    institution: str | None = Field(default=None)
+    degree: str | None = Field(default=None)
+    field_of_study: str | None = Field(default=None)
+    start_date: str | None = Field(default=None)
+    end_date: str | None = Field(default=None)
+    applicant_id: uuid.UUID | None = Field(default=None, foreign_key="applicant.id", ondelete="CASCADE")
+    applicant: Optional["Applicant"] = Relationship(back_populates="education")
+
+
+class ApplicantExperience(SQLModel, table=True):
+    __tablename__ = "applicant_experience"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    title: str | None = Field(default=None)
+    company: str | None = Field(default=None)
+    description: str | None = Field(default=None)
+    skills: str | None = Field(default=None)
+    start_date: str | None = Field(default=None)
+    end_date: str | None = Field(default=None)
+    applicant_id: uuid.UUID | None = Field(default=None, foreign_key="applicant.id", ondelete="CASCADE")
+    applicant: Optional["Applicant"] = Relationship(back_populates="experiences")
+
+
+class Applicant(SQLModel, table=True):
+    __tablename__ = "applicant"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    firstname: str | None = Field(default=None)
+    lastname: str | None = Field(default=None)
+    email: str | None = Field(default=None)
+    phone: str | None = Field(default=None)
+    address: ApplicantAddress | None = Relationship(back_populates="applicant", cascade_delete=True)
+    links: list[ApplicantLink] | None = Relationship(back_populates="applicant", cascade_delete=True)
+    education: ApplicantEducation | None = Relationship(back_populates="applicant", cascade_delete=True)
+    experiences: list[ApplicantExperience] | None = Relationship(back_populates="applicant", cascade_delete=True)
+    application_id: uuid.UUID | None = Field(default=None, foreign_key="applicant.id", ondelete="CASCADE")
+    application: Optional["Application"] = Relationship(back_populates="applicant")
+    created_at: datetime | None = Field(default=datetime.now(UTC))
+    updated_at: datetime | None = Field(
+        default=datetime.now(UTC),
+        sa_column_kwargs={"onupdate": datetime.now(UTC)},
+    )
 
 
 class Application(SQLModel, table=True):
     __tablename__ = "application"
 
-    id: int | None = Field(default=None, primary_key=True)
-    firstname: str = Field(nullable=False)
-    lastname: str = Field(nullable=False)
-    email: str = Field(nullable=False)
-    phone: str = Field(nullable=False)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     status: str | None = Field(default=ApplicationStatus.APPLIED.value)
-    address: ApplicationAddress | None = Relationship(back_populates="application", cascade_delete=True)
-    links: list[ApplicationLink] = Relationship(back_populates="application", cascade_delete=True)
-    job_id: int | None = Field(default=None, foreign_key="job.id", ondelete="CASCADE")
+    applicant: Applicant | None = Relationship(back_populates="application", cascade_delete=True)
+    job_id: uuid.UUID | None = Field(default=None, foreign_key="job.id", ondelete="CASCADE")
     job: Optional["Job"] = Relationship(back_populates="applications")
     created_at: datetime | None = Field(default=datetime.now(UTC))
     updated_at: datetime | None = Field(
         default=datetime.now(UTC),
         sa_column_kwargs={"onupdate": datetime.now(UTC)},
     )
+
+
+class CreateApplicantAddress(SQLModel):
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class CreatedApplicantAddress(SQLModel):
+    id: uuid.UUID
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
+
+
+class RetrievedApplicantAddress(SQLModel):
+    id: uuid.UUID
+    unit: str | None = None
+    street: str | None = None
+    city: str | None = None
+    state: str | None = None
+    country: str | None = None
+    postal_code: str | None = None
 
 
 class CreateApplicationAddress(SQLModel):

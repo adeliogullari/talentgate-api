@@ -1,24 +1,28 @@
+from datetime import date
+
+from pydantic import Field
+
 from src.talentgate.database.models import BaseModel
 
 
-class ResumeParse(BaseModel):
-    id: int | None = None
-    unit: str | None = None
-    street: str | None = None
-    city: str | None = None
-    state: str | None = None
-    country: str | None = None
-    postal_code: str | None = None
-
-class EducationEvaluation(BaseModel):
-    score: float | None = None
+class Experience(BaseModel):
+    company: str | None = None
+    title: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    description: str | None = None
 
 
-class ResumeEvaluation(BaseModel):
-    score: float | None = None
-    unit: str | None = None
-    street: str | None = None
-    city: str | None = None
-    state: str | None = None
-    country: str | None = None
-    postal_code: str | None = None
+class Education(BaseModel):
+    institution: str | None = None
+    degree: str | None = None
+    field_of_study: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+
+
+class ParsedResume(BaseModel):
+    summary: str | None = None
+    experiences: list[Experience] = Field(default_factory=list)
+    educations: list[Education] = Field(default_factory=list)
+    skills: list[str] = Field(default_factory=list)

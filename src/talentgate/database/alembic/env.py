@@ -10,18 +10,15 @@ from config import get_settings
 from src.talentgate.database.service import get_postgres_connection_string
 
 from src.talentgate.user.models import User, UserSubscription
-from src.talentgate.employee.models import Employee
 from src.talentgate.company.models import (
     Company,
     CompanyLink,
     CompanyLocation,
-    CompanyAddress,
 )
-from src.talentgate.job.models import JobLocation, JobAddress, JobSalary, Job
+from src.talentgate.job.models import JobLocation, JobSalary, Job
 from src.talentgate.application.models import (
     ApplicationAddress,
     ApplicationLink,
-    ApplicationEvaluation,
     Application,
 )
 

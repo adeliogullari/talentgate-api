@@ -22,7 +22,7 @@ from src.talentgate.application.models import (
 )
 from src.talentgate.database.service import get_sqlmodel_session
 
-router = APIRouter(tags=["application"])
+router = APIRouter(tags=["applications"])
 
 
 @router.post(
