@@ -65,175 +65,159 @@ def convert(file: bytes) -> Any:
     return response.json()["document"]["md_content"]
 
 
-def parse(file: bytes) -> str | None:
+def parse(file: bytes, job_description: str) -> str | None:
     contents = convert(file)
     contents = clean(contents)
 
-    job_description = """
-
-    About us
-
-    Are you looking for an exciting opportunity to join a fast-growing fintech company that is revolutionizing the payment industry? Do you want to work with cutting-edge technologies and a talented team of professionals? If yes, then Wallester AS might be the perfect place for you!
-    Wallester AS is an Estonian licensed payment service provider that develops financial digital technology and issues VISA cards. Since 2018, we have been an official Visa partner and Visa FinTech Fast Track Member issuing physical and virtual cards of any type: debit cards, credit cards, prepaid cards, and cards for business. Our distinctive advantage is a unique REST API created by our in-house development team. Easily integrated with any platform, it allows you to launch your card program in no time!
-    We are looking for passionate and driven individuals who share our vision of creating truly high-quality and profitable products for our clients.
-
-
-    About the role
-
-    As the QA Team Lead at Wallester, you will guide and manage a team of QA engineers, ensuring the consistent delivery of high-quality software. Your role involves planning, organizing, and supervising the entire quality assurance process to meet deadlines and uphold standards. You will work closely with cross-functional teams and stakeholders to achieve key QA objectives and performance metrics.
-    In addition, you’ll play a crucial role in shaping the team’s practices—whether by introducing new procedures, refining workflows, developing training initiatives, updating role definitions, or setting measurable performance goals.
-    If you're passionate about fintech and payment technologies, excel in quality assurance, and thrive in a dynamic, fast-paced environment, we invite you to bring your expertise to our team.
-
-
-    Location
-
-    We are seeking QA Team Lead specialists to join Wallester’s headquarters in Tallinn (Golden Gate, Rotermanni Quarter) and our Latvian office in Riga (Jupiter Tower).
-
-
-    Technology stack
-
-    Python
-    pytest
-    Appium
-    Postman/Apidog
-    TestRail
-    JSON REST API
-    PostgreSQL
-    AWS infrastructure
-    Microservice Architecture
-    …but don’t worry we don’t expect you to know everything!
-
-
-    What will you do?
-
-    Directly manage and lead QA team members.
-    Assign tasks and projects based on team skills and capacity.
-    Mentor and guide Junior, Mid-level, and Senior QA engineers.
-    Ensure deadlines are met and deliverables maintain high quality.
-    Develop and oversee detailed test plans and test cases.
-    Manage and monitor execution of test cases (manual and automated).
-    Oversee bug lifecycle management and defect triage.
-    Ensure testing coverage for all scenarios and use cases.
-    Implement, enforce, and improve QA processes and standards.
-    Maintain and update test documentation.
-    Manage and maintain QA tools and platforms.
-    Train team members on QA tools and practices.
-    Identify training needs and upskilling opportunities.
-    Track and report on QA metrics (coverage, defect rates, automation progress, etc.).
-    Lead continuous improvement initiatives for QA processes.
-    Represent QA in cross-functional and project-level discussions.
-    Advocate for QA needs and resources across the organization.
-    Collaborate with development, product, and business stakeholders to integrate quality throughout the SDLC.
-    Participate in agile ceremonies (planning, retrospectives, reviews).
-    Stay up-to-date with testing methodologies, tools, and industry standards.
-
-
-    What you'll need
-
-    5+ years of experience in QA, with focus on software testing.
-    1+ years of proven experience in team leadership or management.
-    Strong understanding of QA best practices, processes, and methodologies.
-    Hands-on experience with a variety of QA tools and platforms.
-    Excellent communication, organizational, and interpersonal skills.Ability to manage deadlines and deliver high-quality outcomes.
-    Capable of working independently while fostering team collaboration.
-
-
-     We offer
-
-    Competitive salary
-    Development and career opportunities
-    Medical Insurance upon the completion of the probationary period
-    Supportive and caring Leadership
-    A modern office in the center of Tallinn
-    A chance to work as part of a highly motivated and talented team
-    Referral program
-    Team building and Company Events
-    Free parking
-
-    """
-
     prompt = f"""
-    Return ONLY valid JSON.
-    Do not include explanations outside JSON.
-    If a field is missing, return null.
-    Do NOT invent, assume, or hallucinate information.
+    You are a structured data extraction and evaluation engine.
 
-    You are evaluating the resume AGAINST the provided Job Description.
+    Your task is to:
+        - Extract structured information from the Resume.
+        - Evaluate the candidate against the Job Description.
 
-    Format:
+    CRITICAL RULES:
+        - Return ONLY valid JSON.
+        - If information is missing or unclear, return null.
+        - Do NOT invent, assume, infer, or hallucinate information.
+        - Use only information explicitly present in the Resume.
+
+    -----------------------------------
+
+    EVALUATION RULES:
+
+    OVERVIEW:
+        - Must be 1–2 short sentences.
+        - Focus ONLY on job-critical strengths or gaps.
+
+    -----------------------------------
+
+    EDUCATION (weights):
+
+    1. Degree relevance (0.60)
+        - Alignment of degree with the job field.
+
+    2. Education level (0.20)
+        - Highest completed degree.
+
+    3. Institution quality (0.10)
+        - Reputation or recognition of the institution.
+
+    4. Academic performance (0.10)
+        - GPA, honors, distinctions, or awards.
+
+    -----------------------------------
+
+    EXPERIENCE (weights):
+
+    1. Role relevance (0.50):
+        - Total relevant experience
+        - Alignment of titles and responsibilities.
+
+    2. Skill alignment (0.50):
+        - Match required and preferred skills.
+
+    Important:
+    - Use ONLY explicitly stated information from the resume.
+    - Do NOT infer missing experience, skills, or impact.
+    - If evidence is weak or unclear, reflect that in the score.
+
+    -----------------------------------
+
+    SCORING SCALE:
+
+    9–10 = extremely strong match, minimal gaps
+    7–8  = strong match with minor gaps
+    5–6  = partial match, noticeable gaps
+    3–4  = weak match
+    0–2  = poor or irrelevant
+
+    -----------------------------------
+
+    WEIGHTED SCORES (round to 1 decimal):
+
+    education_score =
+        (degree_relevance × 0.60) +
+        (education_level × 0.20) +
+        (institution_quality × 0.10) +
+        (academic_performance × 0.10)
+
+    experience_score =
+        (role_relevance × 0.50) +
+        (skill_alignment × 0.50)
+
+    overall_score =
+        (education_score × 0.30) +
+        (experience_score × 0.70)
+
+    -----------------------------------
+
+    JSON SCHEMA (STRICT):
+
     {{
-      "summary": string | null,
-
-      "education": {{
+      "applicant": {{
+        "firstname": string | null,
+        "lastname": string | null,
+        "email": string | null,
+        "phone": string | null,
+        "address": {{
+          "unit": string | null,
+          "street": string | null,
+          "city": string | null,
+          "state": string | null,
+          "country": string | null,
+          "postal_code": string | null
+        }},
+        "links":[
+          {{
+            "type": "LINKEDIN" | "GITHUB" | "MEDIUM" | "OTHER" | null,
+            "url": string | null
+          }}
+        ],
+        "education": {{
           "institution": string | null,
           "degree": string | null,
           "field_of_study": string | null,
           "start_date": string | null,
           "end_date": string | null
+        }},
+        "experiences": [
+          {{
+            "title": string | null,
+            "company": string | null,
+            "description": string | null,
+            "skills": string | null,
+            "start_date": string | null,
+            "end_date": string | null
+          }}
+        ]
       }},
-      "experiences": [
-        {{
-          "company": string | null,
-          "title": string | null,
-          "description": string | null,
-          "skills": string | null,
-          "start_date": string | null,
-          "end_date": string | null,
-        }}
-      ],
-
+      "summary": string | null,
       "evaluation": {{
         "education": {{
-          "score": number,
+          "score": number | null
         }},
         "experience": {{
-          "score": number,
+          "score": number | null
         }},
-        "skills": {{
-          "score": number,
-        }},
-        "overall_score": number
+        "overview": string | null,
+        "overall_score": number | null
       }}
     }}
 
     -----------------------------------
-    Strict Skill Extraction Rules:
-    - Include only skills that are explicitly stated or clearly demonstrated through specific actions or tasks.
-    - Do NOT add generic soft skills unless they are explicitly mentioned.
-    - Do NOT assume familiarity with tools, technologies, or methodologies unless directly referenced.
-    - Select up to 3 of the most relevant and clearly supported skills.
 
-    -----------------------------------
-    Evaluation Rules (Against Job Description):
-
-    Score each category from 0 to 10.
-
-    Weights:
-    - experience: 0.60
-    - skills: 0.30
-    - education: 0.10
-
-    overall_score =
-    (experience_relevance_to_job × 0.60) +
-    (skills_match_to_job × 0.30) +
-    (education_match × 0.10)
-
-    Round overall_score to 1 decimal place.
-
-    Scoring Guidelines:
-    9-10 = extremely strong match, minimal gaps
-    7-8  = strong match with minor gaps
-    5-6  = partial match, noticeable gaps
-    3-4  = weak match
-    0-2  = poor or irrelevant
-
-    -----------------------------------
-
-    Job Description:
+    JOB DESCRIPTION:
     {job_description}
 
-    Resume:
+    -----------------------------------
+
+    RESUME:
     {contents}
+
+    -----------------------------------
+
+    Return ONLY the JSON result.
     """
 
     response = client.models.generate_content(

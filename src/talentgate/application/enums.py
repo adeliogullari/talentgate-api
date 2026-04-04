@@ -2,8 +2,8 @@ from enum import StrEnum
 
 
 class ApplicationStatus(StrEnum):
-    APPLIED = "Applied"
-    SCREENING = "Screening"
-    INTERVIEW = "Interview"
-    OFFER = "Offer"
-    WITHDRAWN = "Withdrawn"
+    APPLIED = "applied"
+    SCREENING = "screening"
+    INTERVIEW = "interview"
+    OFFER = "offer"
+    WITHDRAWN = "withdrawn"
